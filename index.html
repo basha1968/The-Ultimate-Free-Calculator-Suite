@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculator Pro | Your Complete Financial & Mathematical Toolkit</title>
-    <meta name="description" content="A comprehensive suite of 161+ free online calculators for finance, math, health, and more. Instant, accurate, and easy to use.">
+    <meta name="description" content="160+ free calculators: finance, math, health & more. Instant, accurate tools for everyday calculations. Your complete solution for quick math.">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,6 +22,15 @@
             --border-color: #e2e8f0; /* Slate 200 */
             --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+            
+            /* Dark mode variables */
+            --dark-bg: #0f172a;
+            --dark-card: #1e293b;
+            --dark-text: #e2e8f0;
+            --dark-border: #334155;
+            
+            /* Theme transition */
+            --transition-speed: 0.3s;
         }
         
         html {
@@ -32,6 +41,9 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            transition: background-color var(--transition-speed) ease, 
+                        color var(--transition-speed) ease,
+                        border-color var(--transition-speed) ease;
         }
 
         body {
@@ -39,6 +51,11 @@
             color: var(--text-dark);
             font-family: 'Inter', system-ui, sans-serif;
             line-height: 1.6;
+        }
+        
+        body.dark-mode {
+            background-color: var(--dark-bg);
+            color: var(--dark-text);
         }
         
         main {
@@ -54,6 +71,11 @@
             top: 0;
             width: 100%;
             z-index: 1000;
+        }
+        
+        body.dark-mode .header {
+            background: var(--dark-card);
+            border-bottom: 1px solid var(--dark-border);
         }
 
         .nav-container {
@@ -74,10 +96,7 @@
             align-items: center;
             gap: 8px;
         }
-        .logo svg {
-            width: 28px;
-            height: 28px;
-        }
+        .logo svg { width: 28px; height: 28px; }
         
         .main-nav ul {
             display: flex;
@@ -91,6 +110,9 @@
             padding: 0.5rem 0.25rem;
             position: relative;
             transition: color 0.2s;
+        }
+        body.dark-mode .main-nav ul a {
+            color: var(--dark-text);
         }
         .main-nav ul a::after {
             content: '';
@@ -112,17 +134,27 @@
             transform-origin: bottom left;
         }
         
-        #mobile-menu-btn {
+        #mobile-menu-btn, #theme-toggle {
             display: none;
             background: none;
             border: none;
             cursor: pointer;
             padding: 0.5rem;
         }
-        #mobile-menu-btn svg {
+        #mobile-menu-btn svg, #theme-toggle svg {
             width: 28px;
             height: 28px;
             color: var(--text-dark);
+        }
+        body.dark-mode #mobile-menu-btn svg, 
+        body.dark-mode #theme-toggle svg {
+            color: var(--dark-text);
+        }
+        
+        #theme-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         #mobile-menu {
@@ -134,6 +166,10 @@
             background: var(--light-card);
             box-shadow: var(--shadow);
             padding: 1rem 2rem 2rem;
+        }
+        body.dark-mode #mobile-menu {
+            background: var(--dark-card);
+            border-top: 1px solid var(--dark-border);
         }
         #mobile-menu ul {
             list-style: none;
@@ -147,9 +183,16 @@
             border-bottom: 1px solid var(--border-color);
             transition: background-color 0.2s;
         }
-         #mobile-menu ul a:hover {
-             background-color: var(--light-bg);
-         }
+        body.dark-mode #mobile-menu ul a {
+            color: var(--dark-text);
+            border-color: var(--dark-border);
+        }
+        #mobile-menu ul a:hover {
+            background-color: var(--light-bg);
+        }
+        body.dark-mode #mobile-menu ul a:hover {
+            background-color: rgba(30, 41, 59, 0.5);
+        }
 
 
         /* --- HERO SECTION --- */
@@ -206,6 +249,12 @@
             box-shadow: var(--shadow-lg);
             outline: none;
             transition: all 0.2s ease-in-out;
+            background: white;
+            color: var(--text-dark);
+        }
+        body.dark-mode #search-input {
+            background: #334155;
+            color: var(--dark-text);
         }
         #search-input:focus {
              box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
@@ -215,6 +264,9 @@
         .tools-section {
             padding: 3rem 0;
             border-bottom: 1px solid var(--border-color);
+        }
+        body.dark-mode .tools-section {
+            border-color: var(--dark-border);
         }
         
         .section-title {
@@ -249,6 +301,11 @@
             display: flex;
             flex-direction: column;
         }
+        body.dark-mode .calculator-card {
+            background: var(--dark-card);
+            color: var(--dark-text);
+            border: 1px solid var(--dark-border);
+        }
         .calculator-card:hover {
             transform: translateY(-5px);
             box-shadow: var(--shadow-lg);
@@ -276,6 +333,9 @@
             font-size: 1.2rem;
             grid-column: 1 / -1;
         }
+        body.dark-mode #no-results {
+            color: #94a3b8;
+        }
         .search-results-title {
             display: none;
         }
@@ -286,6 +346,9 @@
             color: var(--light-bg);
             padding: 4rem 2rem 2rem;
             margin-top: 3rem;
+        }
+        body.dark-mode .footer {
+            background: #0a101f;
         }
         .footer-container {
             max-width: 1400px;
@@ -341,6 +404,11 @@
             color: var(--text-light);
         }
         
+        /* Theme toggle button */
+        #theme-toggle {
+            margin-left: 1rem;
+        }
+        
         /* RESPONSIVE STYLES */
         @media (max-width: 768px) {
             main { margin-top: 68px; }
@@ -374,11 +442,21 @@
                     <li><a href="#other-tools">Other</a></li>
                 </ul>
             </nav>
-
-            <button id="mobile-menu-btn" aria-label="Open Menu">
-                <svg id="menu-icon-open" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
-                <svg id="menu-icon-close" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="display:none;"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
+            
+            <div style="display: flex; align-items: center;">
+                <button id="theme-toggle" aria-label="Toggle theme">
+                    <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                    </svg>
+                    <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="display: none;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                    </svg>
+                </button>
+                <button id="mobile-menu-btn" aria-label="Open Menu">
+                    <svg id="menu-icon-open" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+                    <svg id="menu-icon-close" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="display:none;"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
         </div>
         
         <div id="mobile-menu">
@@ -394,7 +472,8 @@
         <section class="hero">
             <div class="hero-content">
                 <h1>The Ultimate Calculator Suite</h1>
-                <p>161 powerful and easy-to-use tools for finance, math, and everyday life. Find your calculator instantly.</p>
+                <!-- Updated text from 161 to 160 -->
+                <p>160 powerful and easy-to-use tools for finance, math, and everyday life. Find your calculator instantly.</p>
                 <div class="search-container">
                      <div class="search-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
@@ -408,28 +487,28 @@
             <section class="tools-section" id="financial-tools">
                 <h2 class="section-title">Financial Tools</h2>
                 <div class="calculator-grid" id="financial-grid">
-                    <!-- Financial calculators inserted here -->
+                    <!-- Financial calculators will be inserted here -->
                 </div>
             </section>
             
             <section class="tools-section" id="math-tools">
                  <h2 class="section-title">Math & Science Tools</h2>
                 <div class="calculator-grid" id="math-grid">
-                    <!-- Math calculators inserted here -->
+                    <!-- Math calculators will be inserted here -->
                 </div>
             </section>
             
             <section class="tools-section" id="other-tools" style="border-bottom:none;">
                 <h2 class="section-title">Health & Lifestyle Tools</h2>
                 <div class="calculator-grid" id="other-grid">
-                     <!-- Other calculators inserted here -->
+                     <!-- Other calculators will be inserted here -->
                 </div>
             </section>
             
             <section id="search-results-section" style="display:none;">
                  <h2 class="section-title search-results-title">Search Results</h2>
                  <div class="calculator-grid" id="search-grid">
-                     <!-- Search results inserted here -->
+                     <!-- Search results will be inserted here -->
                  </div>
                  <div id="no-results">
                     <h3>No calculators found for your search.</h3>
@@ -482,82 +561,82 @@
         // --- DATA ---
         const calculators = [
             // Financial (72)
-            { name: '401K Calculator', category: 'Financial', link: 'https://www.blogger.com/blog/page/edit/9168198269388728505/5006297868831078375', tags: 'retirement savings investment' },
-            { name: 'Amortization Calculator', category: 'Financial', link: '#', tags: 'loan mortgage payment schedule' },
-            { name: 'Annuity Calculator', category: 'Financial', link: '#', tags: 'retirement investment' },
-            { name: 'Annuity Payout Calculator', category: 'Financial', link: '#', tags: 'retirement income' },
-            { name: 'APR Calculator', category: 'Financial', link: '#', tags: 'interest loan credit card' },
-            { name: 'Auto Lease Calculator', category: 'Financial', link: '#', tags: 'car vehicle leasing' },
-            { name: 'Auto Loan Calculator', category: 'Financial', link: '#', tags: 'car vehicle payment' },
-            { name: 'Average Return Calculator', category: 'Financial', link: '#', tags: 'investment stocks' },
-            { name: 'Boat Loan Calculator', category: 'Financial', link: '#', tags: 'loan payment' },
-            { name: 'Bond Calculator', category: 'Financial', link: '#', tags: 'investment fixed income' },
-            { name: 'Budget Calculator', category: 'Financial', link: '#', tags: 'personal finance spending' },
-            { name: 'Business Loan Calculator', category: 'Financial', link: '#', tags: 'corporate finance' },
-            { name: 'Canadian Mortgage Calculator', category: 'Financial', link: '#', tags: 'home loan canada' },
-            { name: 'Cash Back or Low Interest', category: 'Financial', link: '#', tags: 'rewards credit card apr' },
-            { name: 'CD Calculator', category: 'Financial', link: '#', tags: 'certificate of deposit savings' },
-            { name: 'College Cost Calculator', category: 'Financial', link: '#', tags: 'education savings tuition' },
-            { name: 'Commission Calculator', category: 'Financial', link: '#', tags: 'sales salary income' },
-            { name: 'Compound Interest Calculator', category: 'Financial', link: '#', tags: 'savings investment future value' },
-            { name: 'Credit Card Calculator', category: 'Financial', link: '#', tags: 'debt payment payoff' },
-            { name: 'Credit Cards Payoff Calculator', category: 'Financial', link: '#', tags: 'debt snowball avalanche' },
-            { name: 'Currency Calculator', category: 'Financial', link: '#', tags: 'exchange rate money conversion' },
-            { name: 'Debt Consolidation Calculator', category: 'Financial', link: '#', tags: 'loan payment interest' },
-            { name: 'Debt Payoff Calculator', category: 'Financial', link: '#', tags: 'credit card personal finance' },
-            { name: 'Debt-to-Income Ratio', category: 'Financial', link: '#', tags: 'dti mortgage lending' },
-            { name: 'Depreciation Calculator', category: 'Financial', link: '#', tags: 'asset value accounting' },
-            { name: 'Discount Calculator', category: 'Financial', link: '#', tags: 'sale savings percentage off' },
-            { name: 'Down Payment Calculator', category: 'Financial', link: '#', tags: 'mortgage home buying' },
-            { name: 'Estate Tax Calculator', category: 'Financial', link: '#', tags: 'inheritance wealth planning' },
-            { name: 'FHA Loan Calculator', category: 'Financial', link: '#', tags: 'mortgage home buying' },
-            { name: 'Finance Calculator', category: 'Financial', link: '#', tags: 'general purpose money' },
-            { name: 'Future Value Calculator', category: 'Financial', link: '#', tags: 'investment savings fv' },
-            { name: 'House Affordability', category: 'Financial', link: '#', tags: 'mortgage home buying income' },
-            { name: 'Income Tax Calculator', category: 'Financial', link: '#', tags: 'salary irs paycheck' },
-            { name: 'Inflation Calculator', category: 'Financial', link: '#', tags: 'purchasing power money value' },
-            { name: 'Interest Calculator', category: 'Financial', link: '#', tags: 'loan savings simple compound' },
-            { name: 'Interest Rate Calculator', category: 'Financial', link: '#', tags: 'loan savings apr' },
-            { name: 'Investment Calculator', category: 'Financial', link: '#', tags: 'roi stocks growth' },
-            { name: 'IRA Calculator', category: 'Financial', link: '#', tags: 'retirement savings investment' },
-            { name: 'IRR Calculator', category: 'Financial', link: '#', tags: 'internal rate return investment' },
-            { name: 'Lease Calculator', category: 'Financial', link: '#', tags: 'auto property payment' },
-            { name: 'Loan Calculator', category: 'Financial', link: '#', tags: 'payment interest apr' },
-            { name: 'Margin Calculator', category: 'Financial', link: '#', tags: 'profit business sales' },
-            { name: 'Marriage Tax Calculator', category: 'Financial', link: '#', tags: 'irs filing bonus penalty' },
-            { name: 'Mortgage Amortization', category: 'Financial', link: '#', tags: 'home loan payment schedule' },
-            { name: 'Mortgage Calculator', category: 'Financial', link: '#', tags: 'home loan payment pmi' },
-            { name: 'Mortgage Calculator UK', category: 'Financial', link: '#', tags: 'home loan united kingdom' },
-            { name: 'Mortgage Payoff Calculator', category: 'Financial', link: '#', tags: 'extra payments early payoff' },
-            { name: 'Payback Period Calculator', category: 'Financial', link: '#', tags: 'investment business project' },
-            { name: 'Payment Calculator', category: 'Financial', link: '#', tags: 'loan mortgage apr' },
-            { name: 'Pension Calculator', category: 'Financial', link: '#', tags: 'retirement income savings' },
-            { name: 'Percent Off Calculator', category: 'Financial', link: '#', tags: 'discount sale shopping' },
-            { name: 'Personal Loan Calculator', category: 'Financial', link: '#', tags: 'unsecured apr payment' },
-            { name: 'Present Value Calculator', category: 'Financial', link: '#', tags: 'investment savings pv' },
-            { name: 'Real Estate Calculator', category: 'Financial', link: '#', tags: 'property investment cap rate' },
-            { name: 'Refinance Calculator', category: 'Financial', link: '#', tags: 'mortgage loan savings' },
-            { name: 'Rent Calculator', category: 'Financial', link: '#', tags: 'lease apartment payment' },
-            { name: 'Rent vs. Buy Calculator', category: 'Financial', link: '#', tags: 'home ownership decision' },
-            { name: 'Rental Property Calculator', category: 'Financial', link: '#', tags: 'investment real estate landlord' },
-            { name: 'Repayment Calculator', category: 'Financial', link: '#', tags: 'loan debt schedule' },
-            { name: 'Retirement Calculator', category: 'Financial', link: '#', tags: 'savings investment 401k' },
-            { name: 'RMD Calculator', category: 'Financial', link: '#', tags: 'required minimum distribution ira' },
-            { name: 'ROI Calculator', category: 'Financial', link: '#', tags: 'return on investment profit' },
-            { name: 'Roth IRA Calculator', category: 'Financial', link: '#', tags: 'retirement savings tax' },
-            { name: 'Salary Calculator', category: 'Financial', link: '#', tags: 'income paycheck taxes' },
-            { name: 'Sales Tax Calculator', category: 'Financial', link: '#', tags: 'shopping vat purchase' },
-            { name: 'Savings Calculator', category: 'Financial', link: '#', tags: 'investment goal planning' },
-            { name: 'Simple Interest Calculator', category: 'Financial', link: '#', tags: 'loan savings principle' },
-            { name: 'Social Security Calculator', category: 'Financial', link: '#', tags: 'retirement benefits government' },
-            { name: 'Student Loan Calculator', category: 'Financial', link: '#',tags: 'education debt repayment' },
-            { name: 'Take-Home-Paycheck', category: 'Financial', link: '#', tags: 'salary net income taxes' },
-            { name: 'VA Mortgage Calculator', category: 'Financial', link: '#', tags: 'veteran home loan' },
-            { name: 'VAT Calculator', category: 'Financial', link: '#', tags: 'value added tax sales' },
+            { name: '401K Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.2.html', tags: 'retirement savings investment' },
+            { name: 'Amortization Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.2.html', tags: 'loan mortgage payment schedule' },
+            { name: 'Annuity Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.3.html', tags: 'retirement investment' },
+            { name: 'Annuity Payout Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.4.html', tags: 'retirement income' },
+            { name: 'APR Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.5.html', tags: 'interest loan credit card' },
+            { name: 'Auto Lease Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.6.html', tags: 'car vehicle leasing' },
+            { name: 'Auto Loan Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.7.html', tags: 'car vehicle payment' },
+            { name: 'Average Return Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.8.html', tags: 'investment stocks' },
+            { name: 'Boat Loan Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.9.html', tags: 'loan payment' },
+            { name: 'Bond Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.10.html', tags: 'investment fixed income' },
+            { name: 'Budget Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.11.html', tags: 'personal finance spending' },
+            { name: 'Business Loan Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.12.html', tags: 'corporate finance' },
+            { name: 'Canadian Mortgage Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.13.html', tags: 'home loan canada' },
+            { name: 'Cash Back or Low Interest', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.14.html', tags: 'rewards credit card apr' },
+            { name: 'CD Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.15.html', tags: 'certificate of deposit savings' },
+            { name: 'College Cost Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.16.html', tags: 'education savings tuition' },
+            { name: 'Commission Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.17.html', tags: 'sales salary income' },
+            { name: 'Compound Interest Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.18.html', tags: 'savings investment future value' },
+            { name: 'Credit Card Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.19.html', tags: 'debt payment payoff' },
+            { name: 'Credit Cards Payoff Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.20.html', tags: 'debt snowball avalanche' },
+            { name: 'Currency Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.21.html', tags: 'exchange rate money conversion' },
+            { name: 'Debt Consolidation Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.22.html', tags: 'loan payment interest' },
+            { name: 'Debt Payoff Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.23.html', tags: 'credit card personal finance' },
+            { name: 'Debt-to-Income Ratio', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.24.html', tags: 'dti mortgage lending' },
+            { name: 'Depreciation Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.25.html', tags: 'asset value accounting' },
+            { name: 'Discount Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.26.html', tags: 'sale savings percentage off' },
+            { name: 'Down Payment Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.27.html', tags: 'mortgage home buying' },
+            { name: 'Estate Tax Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.28.html', tags: 'inheritance wealth planning' },
+            { name: 'FHA Loan Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.29.html', tags: 'mortgage home buying' },
+            { name: 'Finance Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.30.html', tags: 'general purpose money' },
+            { name: 'Future Value Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.31.html', tags: 'investment savings fv' },
+            { name: 'House Affordability', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.32.html', tags: 'mortgage home buying income' },
+            { name: 'Income Tax Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.33.html', tags: 'salary irs paycheck' },
+            { name: 'Inflation Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.34.html', tags: 'purchasing power money value' },
+            { name: 'Interest Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.35.html', tags: 'loan savings simple compound' },
+            { name: 'Interest Rate Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.36.html', tags: 'loan savings apr' },
+            { name: 'Investment Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.37.html', tags: 'roi stocks growth' },
+            { name: 'IRA Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.38.html', tags: 'retirement savings investment' },
+            { name: 'IRR Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.39.html', tags: 'internal rate return investment' },
+            { name: 'Lease Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.40.html', tags: 'auto property payment' },
+            { name: 'Loan Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.41.html', tags: 'payment interest apr' },
+            { name: 'Margin Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.42.html', tags: 'profit business sales' },
+            { name: 'Marriage Tax Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.43.html', tags: 'irs filing bonus penalty' },
+            { name: 'Mortgage Amortization', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.44.html', tags: 'home loan payment schedule' },
+            { name: 'Mortgage Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.45.html', tags: 'home loan payment pmi' },
+            { name: 'Mortgage Calculator UK', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.46.html', tags: 'home loan united kingdom' },
+            { name: 'Mortgage Payoff Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.47.html', tags: 'extra payments early payoff' },
+            { name: 'Payback Period Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.48.html', tags: 'investment business project' },
+            { name: 'Payment Calculator', category: 'Financial', link: '#https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.49.html', tags: 'loan mortgage apr' },
+            { name: 'Pension Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.50.html', tags: 'retirement income savings' },
+            { name: 'Percent Off Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.51.html', tags: 'discount sale shopping' },
+            { name: 'Personal Loan Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.52.html', tags: 'unsecured apr payment' },
+            { name: 'Present Value Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.53.html', tags: 'investment savings pv' },
+            { name: 'Real Estate Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.54.html', tags: 'property investment cap rate' },
+            { name: 'Refinance Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.55.html', tags: 'mortgage loan savings' },
+            { name: 'Rent Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.56.html', tags: 'lease apartment payment' },
+            { name: 'Rent vs. Buy Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.57.html', tags: 'home ownership decision' },
+            { name: 'Rental Property Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.58.html', tags: 'investment real estate landlord' },
+            { name: 'Repayment Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.59.html', tags: 'loan debt schedule' },
+            { name: 'Retirement Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.60.html', tags: 'savings investment 401k' },
+            { name: 'RMD Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.61.html', tags: 'required minimum distribution ira' },
+            { name: 'ROI Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.62.html', tags: 'return on investment profit' },
+            { name: 'Roth IRA Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.63.html', tags: 'retirement savings tax' },
+            { name: 'Salary Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.64.html', tags: 'income paycheck taxes' },
+            { name: 'Sales Tax Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.65.html', tags: 'shopping vat purchase' },
+            { name: 'Savings Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.66.html', tags: 'investment goal planning' },
+            { name: 'Simple Interest Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.67.html', tags: 'loan savings principle' },
+            { name: 'Social Security Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.68.html', tags: 'retirement benefits government' },
+            { name: 'Student Loan Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.69.html',tags: 'education debt repayment' },
+            { name: 'Take-Home-Paycheck', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.70.html', tags: 'salary net income taxes' },
+            { name: 'VA Mortgage Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.71.html', tags: 'veteran home loan' },
+            { name: 'VAT Calculator', category: 'Financial', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/1.72.html', tags: 'value added tax sales' },
 
             // Math (37)
-            { name: 'Area Calculator', category: 'Math', link: '#', tags: 'geometry shape square circle' },
-            { name: 'Army Body Fat Calculator', category: 'Math', link: '#', tags: 'health fitness military' },
+            { name: 'Area Calculator', category: 'Math', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/2.1.html', tags: 'geometry shape square circle' },
+            { name: 'Army Body Fat Calculator', category: 'Math', link: 'https://github.com/basha1968/The-Ultimate-Free-Calculator-Suite/blob/main/2.2.htm', tags: 'health fitness military' },
             { name: 'Average Calculator', category: 'Math', link: '#', tags: 'mean statistics numbers' },
             { name: 'BAC Calculator', category: 'Math', link: '#', tags: 'blood alcohol content health' },
             { name: 'Basic Calculator', category: 'Math', link: '#', tags: 'add subtract multiply divide' },
@@ -652,7 +731,7 @@
         function getIcon(name) {
              const n = name.toLowerCase();
             // Financial Icons
-            if (n.includes('loan') || n.includes('mortgage') || n.includes('payment') || n.includes('debt') || n.includes('refinance')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V6.375c0-.621.504-1.125 1.125-1.125h.375m18 3.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75m0 0h.375c.621 0 1.125.504 1.125 1.125v.75c0 .621-.504 1.125-1.125 1.125h-.375m0 0a1.125 1.125 0 01-1.125 1.125H3.375a1.125 1.125 0 01-1.125-1.125m18 0v-7.5a1.125 1.125 0 00-1.125-1.125h-.375a1.125 1.125 0 00-1.125 1.125v7.5m0 0v-7.5a.75.75 0 00-.75-.75H3.75a.75.75 0 00-.75.75v7.5m18 0a.75.75 0 00.75.75h.75a.75.75 0 00.75-.75v-.75m0 0v-1.5A.75.75 0 0021 12h-.75a.75.75 0 00-.75.75v1.5m-3 0a.75.75 0 00.75.75h.75a.75.75 0 00.75-.75v-.75m0 0v-1.5a.75.75 0 00-.75-.75h-.75a.75.75 0 00-.75.75v1.5m-3 0A.75.75 0 0015 15h.75a.75.75 0 00.75-.75v-1.5a.75.75 0 00-.75-.75h-.75a.75.75 0 00-.75.75v1.5m-3 0A.75.75 0 0012 15h.75a.75.75 0 00.75-.75v-1.5a.75.75 0 00-.75-.75h-.75a.75.75 0 00-.75.75v1.5M9 15a.75.75 0 00.75.75h.75a.75.75 0 00.75-.75v-1.5A.75.75 0 0010.5 12h-.75a.75.75 0 00-.75.75v1.5m-3 0A.75.75 0 006 15h.75a.75.75 0 00.75-.75v-1.5A.75.75 0 006.75 12H6a.75.75 0 00-.75.75v1.5m-3 0A.75.75 0 003 15h.75a.75.75 0 00.75-.75v-1.5A.75.75 0 003.75 12H3a.75.75 0 00-.75.75v1.5" /></svg>`;
+            if (n.includes('loan') || n.includes('mortgage') || n.includes('payment') || n.includes('debt') || n.includes('refinance')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V6.375c0-.621.504-1.125 1.125-1.125h.375m18 3.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75m0 0h.375c.621 0 1.125.504 1.125 1.125v.75c0 .621-.504 1.125-1.125 1.125h-.375m0 0a1.125 1.125 0 01-1.125 1.125H3.375a1.125 1.125 0 01-1.125 1.125m18 0v-7.5a1.125 1.125 0 00-1.125-1.125h-.375a1.125 1.125 0 00-1.125 1.125v7.5m0 0v-7.5a.75.75 0 00-.75-.75H3.75a.75.75 0 00-.75.75v7.5m18 0a.75.75 0 00.75.75h.75a.75.75 0 00.75-.75v-.75m0 0v-1.5A.75.75 0 0021 12h-.75a.75.75 0 00-.75.75v1.5m-3 0a.75.75 0 00.75.75h.75a.75.75 0 00.75-.75v-.75m0 0v-1.5a.75.75 0 00-.75-.75h-.75a.75.75 0 00-.75.75v1.5m-3 0A.75.75 0 0015 15h.75a.75.75 0 00.75-.75v-1.5a.75.75 0 00-.75-.75h-.75a.75.75 0 00-.75.75v1.5m-3 0A.75.75 0 0012 15h.75a.75.75 0 00.75-.75v-1.5a.75.75 0 00-.75-.75h-.75a.75.75 0 00-.75.75v1.5M9 15a.75.75 0 00.75.75h.75a.75.75 0 00.75-.75v-1.5A.75.75 0 0010.5 12h-.75a.75.75 0 00-.75.75v1.5m-3 0A.75.75 0 006 15h.75a.75.75 0 00.75-.75v-1.5A.75.75 0 006.75 12H6a.75.75 0 00-.75.75v1.5m-3 0A.75.75 0 003 15h.75a.75.75 0 00.75-.75v-1.5A.75.75 0 003.75 12H3a.75.75 0 00-.75.75v1.5" /></svg>`;
             if (n.includes('tax') || n.includes('paycheck') || n.includes('gdp')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" /></svg>`;
             if (n.includes('investment') || n.includes('interest') || n.includes('401') || n.includes('ira') || n.includes('roi') || n.includes('savings')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
             if (n.includes('house') || n.includes('estate') || n.includes('rental') || n.includes('rent')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205l3 1m-3-1l-3-1m-9 1.636L2.25 9m5.026 15L9 18.502 11.25 21H9.002z" /></svg>`;
@@ -663,106 +742,160 @@
             if (n.includes('scientific') || n.includes('root') || n.includes('pythagorean') || n.includes('slope') || n.includes('half-life')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008Zm0 3h.008v.008H8.25v-.008Zm0 3h.008v.008H8.25v-.008Zm3.75 0h.008v.008h-.008v-.008Zm0-3h.008v.008h-.008v-.008Zm0-3h.008v.008h-.008v-.008Zm0-3h.008v.008h-.008v-.008Zm0-3h.008v.008h-.008v-.008Zm-3.75 0h.008v.008H8.25v-.008ZM8.25 9h5.25M15 9h.008v.008H15V9zM3.75 3.75v16.5a2.25 2.25 0 002.25 2.25h13.5a2.25 2.25 0 002.25-2.25V3.75a2.25 2.25 0 00-2.25-2.25H6a2.25 2.25 0 00-2.25 2.25z" /></svg>`;
             if (n.includes('percent')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 14.25l6-6m4.5-3.493V6.75l-3.75 3.75M9 14.25v-3.75h3.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
             if (n.includes('body') || n.includes('bmr') || n.includes('fat') || n.includes('calorie') || n.includes('weight') || n.includes('health') || n.includes('bmi')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>`;
-            if (n.includes('pregnancy') || n.includes('due date') || n.includes('ovulation') || n.includes('period')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0h18M9.75 14.25h.008v.008h-.008v-.008zM14.25 14.25h.008v.008h-.008v-.008z" /></svg>`;
-            if (n.includes('area') || n.includes('volume') || n.includes('circle') || n.includes('geometry')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" /></svg>`;
-            if (n.includes('time') || n.includes('date') || n.includes('age') || n.includes('hours') || n.includes('day') || n.includes('sleep')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
-            if (n.includes('speed') || n.includes('mileage') || n.includes('fuel')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l6.075 4.05a2.25 2.25 0 012.85 0L18 9M3 9l6.075-4.05a2.25 2.25 0 012.85 0L18 9v12M3 21h18M12 6.75h.008v.008H12V6.75z" /></svg>`;
-            if (n.includes('conversion') || n.includes('roman')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.667 0l3.182-3.182m0 0a8.25 8.25 0 00-11.667 0l-3.182 3.182M2.985 16.652L6.166 13.47m6.834-6.834L19.015 10.5" /></svg>`;
-            if (n.includes('ip subnet') || n.includes('binary') || n.includes('bandwidth')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>`;
-            if (n.includes('grade') || n.includes('gpa')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0l-2.176-1.096A48.547 48.547 0 0112 10.222a48.547 48.547 0 0110.187 4.148l-2.176 1.097" /></svg>`;
-            if (n.includes('concrete') || n.includes('gravel') || n.includes('mulch') || n.includes('tile') || n.includes('roofing') || n.includes('stair') || n.includes('square footage')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8.25V18a2.25 2.25 0 002.25 2.25h13.5A2.25 2.25 0 0021 18V8.25M3 8.25h18M3 8.25c0-1.036.84-1.875 1.875-1.875h14.25c1.036 0 1.875.84 1.875 1.875" /></svg>`;
-            if (n.includes('electricity') || n.includes('voltage') || n.includes("ohm's law") || n.includes('resistor')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>`;
-            if (n.includes('love')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>`;
-
-            return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>`;
+            if (n.includes('pregnancy') || n.includes('due date') || n.includes('ovulation') || n.includes('period')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z" /></svg>`;
+            if (n.includes('time') || n.includes('date') || n.includes('day') || n.includes('calendar')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>`;
+            if (n.includes('conversion') || n.includes('unit')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 3.75H6A2.25 2.25 0 003.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0120.25 6v1.5m0 9V18A2.25 2.25 0 0118 20.25h-1.5m-9 0H6A2.25 2.25 0 013.75 18v-1.5M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
+            if (n.includes('car') || n.includes('auto') || n.includes('vehicle') || n.includes('mileage')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" /></svg>`;
+            if (n.includes('construction') || n.includes('concrete') || n.includes('gravel') || n.includes('tile')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 7.125C2.25 6.504 2.754 6 3.375 6h6c.621 0 1.125.504 1.125 1.125v3.75c0 .621-.504 1.125-1.125 1.125h-6a1.125 1.125 0 01-1.125-1.125v-3.75zM14.25 8.625c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125v8.25c0 .621-.504 1.125-1.125 1.125h-5.25a1.125 1.125 0 01-1.125-1.125v-8.25zM3.75 16.125c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125v2.25c0 .621-.504 1.125-1.125 1.125h-5.25a1.125 1.125 0 01-1.125-1.125v-2.25z" /></svg>`;
+            if (n.includes('weather') || n.includes('temperature') || n.includes('humidity')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" /></svg>`;
+            if (n.includes('calculator')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008zm0 3h.008v.008H8.25v-.008zm0 3h.008v.008H8.25v-.008zm3.75 0h.008v.008h-.008v-.008zm0-3h.008v.008h-.008v-.008zm0-3h.008v.008h-.008v-.008zm0-3h.008v.008h-.008v-.008zm0-3h.008v.008h-.008v-.008zm-3.75 0h.008v.008H8.25v-.008zm0-3h.008v.008H8.25v-.008zM8.25 9h5.25M8.25 9h5.25M15 9h.008v.008H15V9z" /></svg>`;
+            
+            // Default icon
+            return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008zm0 3h.008v.008H8.25v-.008zm0 3h.008v.008H8.25v-.008zm3.75 0h.008v.008h-.008v-.008zm0-3h.008v.008h-.008v-.008zm0-3h.008v.008h-.008v-.008zm0-3h.008v.008h-.008v-.008zm0-3h.008v.008h-.008v-.008zm-3.75 0h.008v.008H8.25v-.008zm0-3h.008v.008H8.25v-.008zM8.25 9h5.25M8.25 9h5.25M15 9h.008v.008H15V9z" /></svg>`;
         }
-        
-        const financialGrid = document.getElementById('financial-grid');
-        const mathGrid = document.getElementById('math-grid');
-        const otherGrid = document.getElementById('other-grid');
-        const searchGrid = document.getElementById('search-grid');
-        
-        function createCard(calc) {
+
+        function createCalculatorCard(calc) {
             return `
-                <a href="${calc.link}" class="calculator-card" data-name="${calc.name.toLowerCase()}" data-tags="${calc.tags}">
-                    <div class="card-icon">${getIcon(calc.name)}</div>
-                    <div class="card-content"><h3 class="card-title">${calc.name}</h3></div>
-                </a>`;
+                <a href="${calc.link}" class="calculator-card">
+                    <div class="card-icon">
+                        ${getIcon(calc.name)}
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">${calc.name}</h3>
+                    </div>
+                </a>
+            `;
         }
 
-        calculators.forEach(calc => {
-            const cardHTML = createCard(calc);
-            if (calc.category === 'Financial') financialGrid.innerHTML += cardHTML;
-            else if (calc.category === 'Math') mathGrid.innerHTML += cardHTML;
-            else otherGrid.innerHTML += cardHTML;
-        });
-
-        const searchInput = document.getElementById('search-input');
-        const noResults = document.getElementById('no-results');
-        const categorySections = document.querySelectorAll('.tools-section');
-        const searchSection = document.getElementById('search-results-section');
-        const searchTitle = searchSection.querySelector('.search-results-title');
-
-        searchInput.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase().trim();
+        // Render calculators by category
+        function renderCalculators() {
+            const financialGrid = document.getElementById('financial-grid');
+            const mathGrid = document.getElementById('math-grid');
+            const otherGrid = document.getElementById('other-grid');
             
-            if (searchTerm === '') {
-                // Show category sections, hide search section
-                categorySections.forEach(sec => sec.style.display = 'block');
-                searchSection.style.display = 'none';
-                return;
-            }
-
-            // Hide category sections, show search section
-            categorySections.forEach(sec => sec.style.display = 'none');
-            searchSection.style.display = 'block';
-            
-            let resultsHTML = '';
-            let resultsFound = 0;
+            financialGrid.innerHTML = '';
+            mathGrid.innerHTML = '';
+            otherGrid.innerHTML = '';
             
             calculators.forEach(calc => {
-                const name = calc.name.toLowerCase();
-                const tags = calc.tags || '';
-                if (name.includes(searchTerm) || tags.includes(searchTerm)) {
-                    resultsHTML += createCard(calc);
-                    resultsFound++;
+                const card = createCalculatorCard(calc);
+                if (calc.category === 'Financial') {
+                    financialGrid.innerHTML += card;
+                } else if (calc.category === 'Math') {
+                    mathGrid.innerHTML += card;
+                } else {
+                    otherGrid.innerHTML += card;
                 }
             });
+        }
+        
+        // Search functionality
+        const searchInput = document.getElementById('search-input');
+        const searchResultsSection = document.getElementById('search-results-section');
+        const searchGrid = document.getElementById('search-grid');
+        const noResults = document.getElementById('no-results');
+        const resultsTitle = document.querySelector('.search-results-title');
+        const categorySections = document.querySelectorAll('.tools-section');
+        
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim().toLowerCase();
             
-            searchGrid.innerHTML = resultsHTML;
+            if (query === '') {
+                searchResultsSection.style.display = 'none';
+                categorySections.forEach(section => {
+                    section.style.display = 'block';
+                });
+                return;
+            }
             
-            if (resultsFound > 0) {
+            // Hide category sections
+            categorySections.forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Show search results section
+            searchResultsSection.style.display = 'block';
+            resultsTitle.style.display = 'block';
+            
+            // Filter calculators
+            const filteredCalcs = calculators.filter(calc => {
+                return calc.name.toLowerCase().includes(query) || 
+                       calc.tags.toLowerCase().includes(query);
+            });
+            
+            // Update search results
+            searchGrid.innerHTML = '';
+            
+            if (filteredCalcs.length > 0) {
                 noResults.style.display = 'none';
-                searchTitle.textContent = `${resultsFound} Result${resultsFound > 1 ? 's' : ''} Found`;
+                filteredCalcs.forEach(calc => {
+                    searchGrid.innerHTML += createCalculatorCard(calc);
+                });
             } else {
                 noResults.style.display = 'block';
-                searchTitle.textContent = 'Search Results';
             }
         });
         
+        // Theme toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        const moonIcon = document.getElementById('moon-icon');
+        const sunIcon = document.getElementById('sun-icon');
+        const body = document.body;
         
-        // --- MOBILE MENU TOGGLE ---
+        // Check for saved theme preference
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            body.classList.add('dark-mode');
+            moonIcon.style.display = 'none';
+            sunIcon.style.display = 'block';
+        }
+        
+        themeToggle.addEventListener('click', function() {
+            body.classList.toggle('dark-mode');
+            
+            if (body.classList.contains('dark-mode')) {
+                moonIcon.style.display = 'none';
+                sunIcon.style.display = 'block';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                moonIcon.style.display = 'block';
+                sunIcon.style.display = 'none';
+                localStorage.setItem('theme', 'light');
+            }
+        });
+        
+        // Mobile menu toggle
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenu = document.getElementById('mobile-menu');
-        const openIcon = document.getElementById('menu-icon-open');
-        const closeIcon = document.getElementById('menu-icon-close');
-
-        mobileMenuBtn.addEventListener('click', () => {
-            const isVisible = mobileMenu.style.display === 'block';
-            mobileMenu.style.display = isVisible ? 'none' : 'block';
-            openIcon.style.display = isVisible ? 'block' : 'none';
-            closeIcon.style.display = isVisible ? 'none' : 'block';
+        const menuOpenIcon = document.getElementById('menu-icon-open');
+        const menuCloseIcon = document.getElementById('menu-icon-close');
+        
+        mobileMenuBtn.addEventListener('click', function() {
+            const isOpen = mobileMenu.style.display === 'block';
+            
+            if (isOpen) {
+                mobileMenu.style.display = 'none';
+                menuOpenIcon.style.display = 'block';
+                menuCloseIcon.style.display = 'none';
+            } else {
+                mobileMenu.style.display = 'block';
+                menuOpenIcon.style.display = 'none';
+                menuCloseIcon.style.display = 'block';
+            }
         });
         
-        // Close menu when a link is clicked
-        mobileMenu.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', () => {
+        // Close mobile menu when clicking a link
+        const mobileLinks = mobileMenu.querySelectorAll('a');
+        mobileLinks.forEach(link => {
+            link.addEventListener('click', function() {
                 mobileMenu.style.display = 'none';
-                openIcon.style.display = 'block';
-                closeIcon.style.display = 'none';
+                menuOpenIcon.style.display = 'block';
+                menuCloseIcon.style.display = 'none';
             });
         });
-
+        
+        // Initialize the page
+        renderCalculators();
     });
     </script>
 </body>
