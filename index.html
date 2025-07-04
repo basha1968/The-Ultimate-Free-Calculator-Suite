@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator Pro | Your Complete Financial & Mathematical Toolkit</title>
+    <meta name="description" content="A comprehensive suite of 161+ free online calculators for finance, math, health, and more. Instant, accurate, and easy to use.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #3b82f6; /* Blue 500 */
+            --primary-dark: #2563eb; /* Blue 600 */
+            --secondary-color: #1e293b; /* Slate 800 */
+            --light-bg: #f1f5f9; /* Slate 100 */
+            --light-card: #ffffff;
+            --text-dark: #0f172a; /* Slate 900 */
+            --text-light: #94a3b8; /* Slate 400 */
+            --border-color: #e2e8f0; /* Slate 200 */
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--light-bg);
+            color: var(--text-dark);
+            font-family: 'Inter', system-ui, sans-serif;
+            line-height: 1.6;
+        }
+        
+        main {
+            margin-top: 69px; /* Space for the fixed header */
+        }
+
+        /* --- HEADER --- */
+        .header {
+            background: var(--light-card);
+            box-shadow: var(--shadow);
+            padding: 0 2rem;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 68px;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .logo svg {
+            width: 28px;
+            height: 28px;
+        }
+        
+        .main-nav ul {
+            display: flex;
+            gap: 1.5rem;
+            list-style: none;
+        }
+        .main-nav ul a {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 600;
+            padding: 0.5rem 0.25rem;
+            position: relative;
+            transition: color 0.2s;
+        }
+        .main-nav ul a::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            background-color: var(--primary-color);
+            transform: scaleX(0);
+            transform-origin: bottom right;
+            transition: transform 0.25s ease-out;
+        }
+        .main-nav ul a:hover {
+            color: var(--primary-color);
+        }
+        .main-nav ul a:hover::after {
+            transform: scaleX(1);
+            transform-origin: bottom left;
+        }
+        
+        #mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+        #mobile-menu-btn svg {
+            width: 28px;
+            height: 28px;
+            color: var(--text-dark);
+        }
+        
+        #mobile-menu {
+            display: none;
+            position: absolute;
+            top: 68px;
+            left: 0;
+            width: 100%;
+            background: var(--light-card);
+            box-shadow: var(--shadow);
+            padding: 1rem 2rem 2rem;
+        }
+        #mobile-menu ul {
+            list-style: none;
+        }
+        #mobile-menu ul a {
+            display: block;
+            padding: 1rem 0;
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.2s;
+        }
+         #mobile-menu ul a:hover {
+             background-color: var(--light-bg);
+         }
+
+
+        /* --- HERO SECTION --- */
+        .hero {
+            padding: 5rem 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            z-index: 1;
+        }
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        .hero h1 {
+            font-size: clamp(2.5rem, 5vw, 3.5rem);
+            margin-bottom: 1rem;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .hero p {
+            font-size: 1.125rem;
+            margin-bottom: 2.5rem;
+            opacity: 0.9;
+        }
+        .search-container {
+            position: relative;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .search-icon {
+            position: absolute; left: 1rem; top: 50%;
+            transform: translateY(-50%);
+            color: #64748b; /* slate 500 */
+            pointer-events: none;
+        }
+        #search-input {
+            width: 100%;
+            padding: 1rem 1rem 1rem 3rem;
+            font-size: 1rem;
+            border: none;
+            border-radius: 50px;
+            box-shadow: var(--shadow-lg);
+            outline: none;
+            transition: all 0.2s ease-in-out;
+        }
+        #search-input:focus {
+             box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
+        }
+        
+        /* --- CONTENT SECTIONS --- */
+        .tools-section {
+            padding: 3rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid var(--primary-color);
+            display: inline-block;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .calculator-card {
+            background: var(--light-card);
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--text-dark);
+            transition: all 0.2s ease-in-out;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .calculator-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+        .card-icon {
+            padding: 1.5rem;
+            text-align: center;
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .card-icon svg { width: 48px; height: 48px; }
+        .card-content {
+            padding: 1.25rem;
+            flex-grow: 1;
+        }
+        .card-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        #no-results {
+            display: none;
+            text-align: center;
+            padding: 4rem;
+            color: var(--text-light);
+            font-size: 1.2rem;
+            grid-column: 1 / -1;
+        }
+        .search-results-title {
+            display: none;
+        }
+
+        /* --- FOOTER --- */
+        .footer {
+            background: var(--secondary-color);
+            color: var(--light-bg);
+            padding: 4rem 2rem 2rem;
+            margin-top: 3rem;
+        }
+        .footer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+        }
+        .footer-about .logo { color: var(--light-card); }
+        .footer-about p { margin-top: 1rem; color: var(--text-light); max-width: 300px; }
+        
+        .footer-col h4 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: var(--light-card);
+        }
+        .footer-col ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .footer-col a {
+            text-decoration: none;
+            color: var(--text-light);
+            transition: color 0.2s, padding-left 0.2s;
+        }
+        .footer-col a:hover {
+            color: var(--primary-color);
+            padding-left: 5px;
+        }
+
+        .footer-socials {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .footer-socials a {
+            color: var(--text-light);
+            transition: color 0.2s, transform 0.2s;
+        }
+        .footer-socials a:hover {
+            color: var(--primary-color);
+            transform: scale(1.1);
+        }
+        .footer-socials svg { width: 24px; height: 24px; }
+        
+        .footer-bottom {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid #334155; /* Slate 700 */
+            text-align: center;
+            color: var(--text-light);
+        }
+        
+        /* RESPONSIVE STYLES */
+        @media (max-width: 768px) {
+            main { margin-top: 68px; }
+            .main-nav { display: none; }
+            #mobile-menu-btn { display: block; }
+            .hero h1 { font-size: 2rem; }
+            .hero p { font-size: 1rem; }
+            .calculator-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+            .footer-container { grid-template-columns: 1fr 1fr; }
+            .footer-about { grid-column: 1 / -1; }
+        }
+         @media (max-width: 480px) {
+            .container { padding: 0 1rem; }
+            .calculator-grid { grid-template-columns: 1fr; }
+            .footer-container { grid-template-columns: 1fr; }
+         }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="nav-container">
+            <a href="#" class="logo">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008Zm0 3h.008v.008H8.25v-.008Zm0 3h.008v.008H8.25v-.008Zm3.75 0h.008v.008h-.008v-.008Zm0-3h.008v.008h-.008v-.008Zm0-3h.008v.008h-.008v-.008Zm0-3h.008v.008h-.008v-.008Zm0-3h.008v.008h-.008v-.008Zm-3.75 0h.008v.008H8.25v-.008ZM8.25 9h5.25M8.25 9h5.25M15 9h.008v.008H15V9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.5v-7.5A2.25 2.25 0 0 1 5.25 3.75h13.5A2.25 2.25 0 0 1 21 6v10.5m-18 0a2.25 2.25 0 0 0 2.25 2.25h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/></svg>
+                <span>CalculatorPro</span>
+            </a>
+            
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="#financial-tools">Financial</a></li>
+                    <li><a href="#math-tools">Math</a></li>
+                    <li><a href="#other-tools">Other</a></li>
+                </ul>
+            </nav>
+
+            <button id="mobile-menu-btn" aria-label="Open Menu">
+                <svg id="menu-icon-open" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+                <svg id="menu-icon-close" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="display:none;"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+        
+        <div id="mobile-menu">
+            <ul>
+                 <li><a href="#financial-tools">Financial Tools</a></li>
+                 <li><a href="#math-tools">Math Tools</a></li>
+                 <li><a href="#other-tools">Other Tools</a></li>
+            </ul>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="hero-content">
+                <h1>The Ultimate Calculator Suite</h1>
+                <p>161 powerful and easy-to-use tools for finance, math, and everyday life. Find your calculator instantly.</p>
+                <div class="search-container">
+                     <div class="search-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
+                    </div>
+                    <input type="text" id="search-input" placeholder="e.g., Mortgage, Percentage, BMI...">
+                </div>
+            </div>
+        </section>
+
+        <div class="container">
+            <section class="tools-section" id="financial-tools">
+                <h2 class="section-title">Financial Tools</h2>
+                <div class="calculator-grid" id="financial-grid">
+                    <!-- Financial calculators inserted here -->
+                </div>
+            </section>
+            
+            <section class="tools-section" id="math-tools">
+                 <h2 class="section-title">Math & Science Tools</h2>
+                <div class="calculator-grid" id="math-grid">
+                    <!-- Math calculators inserted here -->
+                </div>
+            </section>
+            
+            <section class="tools-section" id="other-tools" style="border-bottom:none;">
+                <h2 class="section-title">Health & Lifestyle Tools</h2>
+                <div class="calculator-grid" id="other-grid">
+                     <!-- Other calculators inserted here -->
+                </div>
+            </section>
+            
+            <section id="search-results-section" style="display:none;">
+                 <h2 class="section-title search-results-title">Search Results</h2>
+                 <div class="calculator-grid" id="search-grid">
+                     <!-- Search results inserted here -->
+                 </div>
+                 <div id="no-results">
+                    <h3>No calculators found for your search.</h3>
+                    <p>Try a different term or browse the categories above.</p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-col footer-about">
+                 <a href="#" class="logo">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008Zm0 3h.008v.008H8.25v-.008Zm0 3h.008v.008H8.25v-.008Zm3.75 0h.008v.008h-.008v-.008Zm0-3h.008v.008h-.008v-.008Zm0-3h.008v.008h-.008v-.008Zm0-3h.008v.008h-.008v-.008Zm0-3h.008v.008h-.008v-.008Zm-3.75 0h.008v.008H8.25v-.008ZM8.25 9h5.25M8.25 9h5.25M15 9h.008v.008H15V9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.5v-7.5A2.25 2.25 0 0 1 5.25 3.75h13.5A2.25 2.25 0 0 1 21 6v10.5m-18 0a2.25 2.25 0 0 0 2.25 2.25h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/></svg>
+                    <span>CalculatorPro</span>
+                </a>
+                <p>Providing a comprehensive suite of accurate and free online tools to simplify your calculations.</p>
+                <div class="footer-socials">
+                    <a href="#" aria-label="Twitter"><svg fill="currentColor" viewBox="0 0 16 16"><path d="M5.026 15c6.038 0 9.341-5.003 9.341-9.334 0-.14 0-.282-.006-.422A6.685 6.685 0 0 0 16 3.542a6.658 6.658 0 0 1-1.889.518 3.301 3.301 0 0 0 1.447-1.817 6.533 6.533 0 0 1-2.087.793A3.286 3.286 0 0 0 7.875 6.03a9.325 9.325 0 0 1-6.767-3.429 3.289 3.289 0 0 0 1.018 4.382A3.323 3.323 0 0 1 .64 6.575v.045a3.288 3.288 0 0 0 2.632 3.218 3.203 3.203 0 0 1-.865.115 3.23 3.23 0 0 1-.614-.057 3.283 3.283 0 0 0 3.067 2.277A6.588 6.588 0 0 1 .78 13.58a6.32 6.32 0 0 1-.78-.045A9.344 9.344 0 0 0 5.026 15z"/></svg></a>
+                    <a href="#" aria-label="Github"><svg fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg></a>
+                    <a href="#" aria-label="LinkedIn"><svg fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4z"/></svg></a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h4>Categories</h4>
+                <ul>
+                    <li><a href="#financial-tools">Financial Tools</a></li>
+                    <li><a href="#math-tools">Math Tools</a></li>
+                    <li><a href="#other-tools">Lifestyle Tools</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Company</h4>
+                <ul>
+                    <li><a href="#">About Us</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            © 2025 CalculatorPro | All rights reserved.
+        </div>
+    </footer>
+    
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // --- DATA ---
+        const calculators = [
+            // Financial (72)
+            { name: '401K Calculator', category: 'Financial', link: 'https://www.blogger.com/blog/page/edit/9168198269388728505/5006297868831078375', tags: 'retirement savings investment' },
+            { name: 'Amortization Calculator', category: 'Financial', link: '#', tags: 'loan mortgage payment schedule' },
+            { name: 'Annuity Calculator', category: 'Financial', link: '#', tags: 'retirement investment' },
+            { name: 'Annuity Payout Calculator', category: 'Financial', link: '#', tags: 'retirement income' },
+            { name: 'APR Calculator', category: 'Financial', link: '#', tags: 'interest loan credit card' },
+            { name: 'Auto Lease Calculator', category: 'Financial', link: '#', tags: 'car vehicle leasing' },
+            { name: 'Auto Loan Calculator', category: 'Financial', link: '#', tags: 'car vehicle payment' },
+            { name: 'Average Return Calculator', category: 'Financial', link: '#', tags: 'investment stocks' },
+            { name: 'Boat Loan Calculator', category: 'Financial', link: '#', tags: 'loan payment' },
+            { name: 'Bond Calculator', category: 'Financial', link: '#', tags: 'investment fixed income' },
+            { name: 'Budget Calculator', category: 'Financial', link: '#', tags: 'personal finance spending' },
+            { name: 'Business Loan Calculator', category: 'Financial', link: '#', tags: 'corporate finance' },
+            { name: 'Canadian Mortgage Calculator', category: 'Financial', link: '#', tags: 'home loan canada' },
+            { name: 'Cash Back or Low Interest', category: 'Financial', link: '#', tags: 'rewards credit card apr' },
+            { name: 'CD Calculator', category: 'Financial', link: '#', tags: 'certificate of deposit savings' },
+            { name: 'College Cost Calculator', category: 'Financial', link: '#', tags: 'education savings tuition' },
+            { name: 'Commission Calculator', category: 'Financial', link: '#', tags: 'sales salary income' },
+            { name: 'Compound Interest Calculator', category: 'Financial', link: '#', tags: 'savings investment future value' },
+            { name: 'Credit Card Calculator', category: 'Financial', link: '#', tags: 'debt payment payoff' },
+            { name: 'Credit Cards Payoff Calculator', category: 'Financial', link: '#', tags: 'debt snowball avalanche' },
+            { name: 'Currency Calculator', category: 'Financial', link: '#', tags: 'exchange rate money conversion' },
+            { name: 'Debt Consolidation Calculator', category: 'Financial', link: '#', tags: 'loan payment interest' },
+            { name: 'Debt Payoff Calculator', category: 'Financial', link: '#', tags: 'credit card personal finance' },
+            { name: 'Debt-to-Income Ratio', category: 'Financial', link: '#', tags: 'dti mortgage lending' },
+            { name: 'Depreciation Calculator', category: 'Financial', link: '#', tags: 'asset value accounting' },
+            { name: 'Discount Calculator', category: 'Financial', link: '#', tags: 'sale savings percentage off' },
+            { name: 'Down Payment Calculator', category: 'Financial', link: '#', tags: 'mortgage home buying' },
+            { name: 'Estate Tax Calculator', category: 'Financial', link: '#', tags: 'inheritance wealth planning' },
+            { name: 'FHA Loan Calculator', category: 'Financial', link: '#', tags: 'mortgage home buying' },
+            { name: 'Finance Calculator', category: 'Financial', link: '#', tags: 'general purpose money' },
+            { name: 'Future Value Calculator', category: 'Financial', link: '#', tags: 'investment savings fv' },
+            { name: 'House Affordability', category: 'Financial', link: '#', tags: 'mortgage home buying income' },
+            { name: 'Income Tax Calculator', category: 'Financial', link: '#', tags: 'salary irs paycheck' },
+            { name: 'Inflation Calculator', category: 'Financial', link: '#', tags: 'purchasing power money value' },
+            { name: 'Interest Calculator', category: 'Financial', link: '#', tags: 'loan savings simple compound' },
+            { name: 'Interest Rate Calculator', category: 'Financial', link: '#', tags: 'loan savings apr' },
+            { name: 'Investment Calculator', category: 'Financial', link: '#', tags: 'roi stocks growth' },
+            { name: 'IRA Calculator', category: 'Financial', link: '#', tags: 'retirement savings investment' },
+            { name: 'IRR Calculator', category: 'Financial', link: '#', tags: 'internal rate return investment' },
+            { name: 'Lease Calculator', category: 'Financial', link: '#', tags: 'auto property payment' },
+            { name: 'Loan Calculator', category: 'Financial', link: '#', tags: 'payment interest apr' },
+            { name: 'Margin Calculator', category: 'Financial', link: '#', tags: 'profit business sales' },
+            { name: 'Marriage Tax Calculator', category: 'Financial', link: '#', tags: 'irs filing bonus penalty' },
+            { name: 'Mortgage Amortization', category: 'Financial', link: '#', tags: 'home loan payment schedule' },
+            { name: 'Mortgage Calculator', category: 'Financial', link: '#', tags: 'home loan payment pmi' },
+            { name: 'Mortgage Calculator UK', category: 'Financial', link: '#', tags: 'home loan united kingdom' },
+            { name: 'Mortgage Payoff Calculator', category: 'Financial', link: '#', tags: 'extra payments early payoff' },
+            { name: 'Payback Period Calculator', category: 'Financial', link: '#', tags: 'investment business project' },
+            { name: 'Payment Calculator', category: 'Financial', link: '#', tags: 'loan mortgage apr' },
+            { name: 'Pension Calculator', category: 'Financial', link: '#', tags: 'retirement income savings' },
+            { name: 'Percent Off Calculator', category: 'Financial', link: '#', tags: 'discount sale shopping' },
+            { name: 'Personal Loan Calculator', category: 'Financial', link: '#', tags: 'unsecured apr payment' },
+            { name: 'Present Value Calculator', category: 'Financial', link: '#', tags: 'investment savings pv' },
+            { name: 'Real Estate Calculator', category: 'Financial', link: '#', tags: 'property investment cap rate' },
+            { name: 'Refinance Calculator', category: 'Financial', link: '#', tags: 'mortgage loan savings' },
+            { name: 'Rent Calculator', category: 'Financial', link: '#', tags: 'lease apartment payment' },
+            { name: 'Rent vs. Buy Calculator', category: 'Financial', link: '#', tags: 'home ownership decision' },
+            { name: 'Rental Property Calculator', category: 'Financial', link: '#', tags: 'investment real estate landlord' },
+            { name: 'Repayment Calculator', category: 'Financial', link: '#', tags: 'loan debt schedule' },
+            { name: 'Retirement Calculator', category: 'Financial', link: '#', tags: 'savings investment 401k' },
+            { name: 'RMD Calculator', category: 'Financial', link: '#', tags: 'required minimum distribution ira' },
+            { name: 'ROI Calculator', category: 'Financial', link: '#', tags: 'return on investment profit' },
+            { name: 'Roth IRA Calculator', category: 'Financial', link: '#', tags: 'retirement savings tax' },
+            { name: 'Salary Calculator', category: 'Financial', link: '#', tags: 'income paycheck taxes' },
+            { name: 'Sales Tax Calculator', category: 'Financial', link: '#', tags: 'shopping vat purchase' },
+            { name: 'Savings Calculator', category: 'Financial', link: '#', tags: 'investment goal planning' },
+            { name: 'Simple Interest Calculator', category: 'Financial', link: '#', tags: 'loan savings principle' },
+            { name: 'Social Security Calculator', category: 'Financial', link: '#', tags: 'retirement benefits government' },
+            { name: 'Student Loan Calculator', category: 'Financial', link: '#',tags: 'education debt repayment' },
+            { name: 'Take-Home-Paycheck', category: 'Financial', link: '#', tags: 'salary net income taxes' },
+            { name: 'VA Mortgage Calculator', category: 'Financial', link: '#', tags: 'veteran home loan' },
+            { name: 'VAT Calculator', category: 'Financial', link: '#', tags: 'value added tax sales' },
+
+            // Math (37)
+            { name: 'Area Calculator', category: 'Math', link: '#', tags: 'geometry shape square circle' },
+            { name: 'Army Body Fat Calculator', category: 'Math', link: '#', tags: 'health fitness military' },
+            { name: 'Average Calculator', category: 'Math', link: '#', tags: 'mean statistics numbers' },
+            { name: 'BAC Calculator', category: 'Math', link: '#', tags: 'blood alcohol content health' },
+            { name: 'Basic Calculator', category: 'Math', link: '#', tags: 'add subtract multiply divide' },
+            { name: 'Binary Calculator', category: 'Math', link: '#', tags: 'computer science base2' },
+            { name: 'BMR Calculator', category: 'Math', link: '#', tags: 'basal metabolic rate calorie health' },
+            { name: 'Body Type Calculator', category: 'Math', link: '#', tags: 'health fitness somatotype' },
+            { name: 'Calorie Calculator', category: 'Math', link: '#', tags: 'diet nutrition weight health' },
+            { name: 'Calories Burned Calculator', category: 'Math', link: '#', tags: 'exercise fitness activity' },
+            { name: 'Circle Calculator', category: 'Math', link: '#', tags: 'geometry radius diameter area' },
+            { name: 'Due Date Calculator', category: 'Math', link: '#', tags: 'pregnancy baby health' },
+            { name: 'Fat Intake Calculator', category: 'Math', link: '#', tags: 'diet nutrition health' },
+            { name: 'Greatest Common Factor', category: 'Math', link: '#', tags: 'gcf gcd math numbers' },
+            { name: 'Half-Life Calculator', category: 'Math', link: '#', tags: 'chemistry physics decay' },
+            { name: 'Ideal Weight Calculator', category: 'Math', link: '#', tags: 'bmi health fitness' },
+            { name: 'Lean Body Mass Calculator', category: 'Math', link: '#', tags: 'fitness health body fat' },
+            { name: 'Mean Median Mode Range', category: 'Math', link: '#', tags: 'statistics average set' },
+            { name: 'Ovulation Calculator', category: 'Math', link: '#', tags: 'fertility period health' },
+            { name: 'Percent Error Calculator', category: 'Math', link: '#', tags: 'science experiment accuracy' },
+            { name: 'Percentage Calculator', category: 'Math', link: '#', tags: 'fraction proportion math' },
+            { name: 'Period Calculator', category: 'Math', link: '#', tags: 'menstrual cycle health' },
+            { name: 'Pregnancy Weight Gain', category: 'Math', link: '#', tags: 'health baby expectant' },
+            { name: 'Prime Factorization', category: 'Math', link: '#', tags: 'number theory factors' },
+            { name: 'Probability Calculator', category: 'Math', link: '#', tags: 'statistics chance odds' },
+            { name: 'Pythagorean Theorem', category: 'Math', link: '#', tags: 'geometry triangle hypotenuse' },
+            { name: 'Random Number Generator', category: 'Math', link: '#', tags: 'rng randomizer utility' },
+            { name: 'Ratio Calculator', category: 'Math', link: '#', tags: 'proportion math fractions' },
+            { name: 'Root Calculator', category: 'Math', link: '#', tags: 'square cube math algebra' },
+            { name: 'Rounding Calculator', category: 'Math', link: '#', tags: 'numbers decimal rounding' },
+            { name: 'Scientific Calculator', category: 'Math', link: '#', tags: 'trigonometry log exponent' },
+            { name: 'Scientific Notation', category: 'Math', link: '#', tags: 'exponent engineering' },
+            { name: 'Slope Calculator', category: 'Math', link: '#', tags: 'geometry algebra coordinates' },
+            { name: 'Target Heart Rate Calculator', category: 'Math', link: '#', tags: 'exercise fitness health' },
+            { name: 'Volume Calculator', category: 'Math', link: '#', tags: 'geometry cube sphere cylinder' },
+            { name: 'Weight Watcher Points', category: 'Math', link: '#', tags: 'diet health ww' },
+            { name: 'Z-score Calculator', category: 'Math', link: '#', tags: 'statistics standard deviation' },
+            
+            // Other (52)
+            { name: 'Age Calculator', category: 'Other', link: '#', tags: 'birthday date time' },
+            { name: 'Bandwidth Calculator', category: 'Other', link: '#', tags: 'internet speed network' },
+            { name: 'Bra Size Calculator', category: 'Other', link: '#', tags: 'apparel clothing health' },
+            { name: 'BTU Calculator', category: 'Other', link: '#', tags: 'hvac cooling heating' },
+            { name: 'Concrete Calculator', category: 'Other', link: '#', tags: 'construction materials diy' },
+            { name: 'Conversion Calculator', category: 'Other', link: '#', tags: 'units measurement imperial metric' },
+            { name: 'Date Calculator', category: 'Other', link: '#', tags: 'time calendar duration' },
+            { name: 'Day Counter', category: 'Other', link: '#', tags: 'time calendar duration' },
+            { name: 'Day of the Week', category: 'Other', link: '#', tags: 'calendar date whatday' },
+            { name: 'Density Calculator', category: 'Other', link: '#', tags: 'science physics chemistry' },
+            { name: 'Dew Point Calculator', category: 'Other', link: '#', tags: 'weather humidity temperature' },
+            { name: 'Dice Roller', category: 'Other', link: '#', tags: 'games random utility' },
+            { name: 'Electricity Calculator', category: 'Other', link: '#', tags: 'cost power energy' },
+            { name: 'Engine Horsepower', category: 'Other', link: '#', tags: 'car auto performance' },
+            { name: 'Fuel Cost Calculator', category: 'Other', link: '#', tags: 'travel car gas price' },
+            { name: 'Gas Mileage Calculator', category: 'Other', link: '#', tags: 'mpg car fuel efficiency' },
+            { name: 'GDP Calculator', category: 'Other', link: '#', tags: 'economics country finance' },
+            { name: 'Golf Handicap Calculator', category: 'Other', link: '#', tags: 'sports game score' },
+            { name: 'GPA Calculator', category: 'Other', link: '#', tags: 'education school grade' },
+            { name: 'Grade Calculator', category: 'Other', link: '#', tags: 'school student exam' },
+            { name: 'Gravel Calculator', category: 'Other', link: '#', tags: 'landscaping materials diy' },
+            { name: 'Heat Index Calculator', category: 'Other', link: '#', tags: 'weather temperature humidity' },
+            { name: 'Height Calculator', category: 'Other', link: '#', tags: 'prediction health child' },
+            { name: 'Horsepower Calculator', category: 'Other', link: '#', tags: 'engine car auto performance' },
+            { name: 'Hours Calculator', category: 'Other', link: '#', tags: 'time duration work' },
+            { name: 'IP Subnet Calculator', category: 'Other', link: '#', tags: 'network computer technology' },
+            { name: 'Love Calculator', category: 'Other', link: '#', tags: 'fun relationship compatibility' },
+            { name: 'Mass Calculator', category: 'Other', link: '#', tags: 'science physics conversion' },
+            { name: 'Mileage Calculator', category: 'Other', link: '#', tags: 'fuel cost travel driving' },
+            { name: 'Molarity Calculator', category: 'Other', link: '#', tags: 'chemistry solution concentration' },
+            { name: 'Molecular Weight', category: 'Other', link: '#', tags: 'chemistry science compound' },
+            { name: 'Mulch Calculator', category: 'Other', link: '#', tags: 'landscaping garden diy' },
+            { name: "Ohm's Law Calculator", category: 'Other', link: '#', tags: 'electronics electricity physics' },
+            { name: 'Password Generator', category: 'Other', link: '#', tags: 'security utility random' },
+            { name: 'Resistor Calculator', category: 'Other', link: '#', tags: 'electronics color code' },
+            { name: 'Roman Numeral Converter', category: 'Other', link: '#', tags: 'math history numbers' },
+            { name: 'Roofing Calculator', category: 'Other', link: '#', tags: 'construction diy materials' },
+            { name: 'Shoe Size Conversion', category: 'Other', link: '#', tags: 'apparel shopping' },
+            { name: 'Sleep Calculator', category: 'Other', link: '#', tags: 'health bedtime cycle' },
+            { name: 'Speed Calculator', category: 'Other', link: '#', tags: 'distance time physics' },
+            { name: 'Square Footage Calculator', category: 'Other', link: '#', tags: 'area construction real estate' },
+            { name: 'Stair Calculator', category: 'Other', link: '#', tags: 'construction diy measurement' },
+            { name: 'Tile Calculator', category: 'Other', link: '#', tags: 'construction flooring diy' },
+            { name: 'Time Calculator', category: 'Other', link: '#', tags: 'add subtract duration' },
+            { name: 'Time Card Calculator', category: 'Other', link: '#', tags: 'work salary payroll' },
+            { name: 'Time Duration Calculator', category: 'Other', link: '#', tags: 'time difference between dates' },
+            { name: 'Time Zone Calculator', category: 'Other', link: '#', tags: 'world clock travel' },
+            { name: 'Tip Calculator', category: 'Other', link: '#', tags: 'restaurant gratuity food' },
+            { name: 'Tire Size Calculator', category: 'Other', link: '#', tags: 'auto car vehicle' },
+            { name: 'Voltage Drop Calculator', category: 'Other', link: '#', tags: 'electricity electronics wiring' },
+            { name: 'Weight Calculator', category: 'Other', link: '#', tags: 'mass conversion health' },
+            { name: 'Wind Chill Calculator', category: 'Other', link: '#', tags: 'weather temperature' }
+        ];
+
+        function getIcon(name) {
+             const n = name.toLowerCase();
+            // Financial Icons
+            if (n.includes('loan') || n.includes('mortgage') || n.includes('payment') || n.includes('debt') || n.includes('refinance')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V6.375c0-.621.504-1.125 1.125-1.125h.375m18 3.75v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75m0 0h.375c.621 0 1.125.504 1.125 1.125v.75c0 .621-.504 1.125-1.125 1.125h-.375m0 0a1.125 1.125 0 01-1.125 1.125H3.375a1.125 1.125 0 01-1.125-1.125m18 0v-7.5a1.125 1.125 0 00-1.125-1.125h-.375a1.125 1.125 0 00-1.125 1.125v7.5m0 0v-7.5a.75.75 0 00-.75-.75H3.75a.75.75 0 00-.75.75v7.5m18 0a.75.75 0 00.75.75h.75a.75.75 0 00.75-.75v-.75m0 0v-1.5A.75.75 0 0021 12h-.75a.75.75 0 00-.75.75v1.5m-3 0a.75.75 0 00.75.75h.75a.75.75 0 00.75-.75v-.75m0 0v-1.5a.75.75 0 00-.75-.75h-.75a.75.75 0 00-.75.75v1.5m-3 0A.75.75 0 0015 15h.75a.75.75 0 00.75-.75v-1.5a.75.75 0 00-.75-.75h-.75a.75.75 0 00-.75.75v1.5m-3 0A.75.75 0 0012 15h.75a.75.75 0 00.75-.75v-1.5a.75.75 0 00-.75-.75h-.75a.75.75 0 00-.75.75v1.5M9 15a.75.75 0 00.75.75h.75a.75.75 0 00.75-.75v-1.5A.75.75 0 0010.5 12h-.75a.75.75 0 00-.75.75v1.5m-3 0A.75.75 0 006 15h.75a.75.75 0 00.75-.75v-1.5A.75.75 0 006.75 12H6a.75.75 0 00-.75.75v1.5m-3 0A.75.75 0 003 15h.75a.75.75 0 00.75-.75v-1.5A.75.75 0 003.75 12H3a.75.75 0 00-.75.75v1.5" /></svg>`;
+            if (n.includes('tax') || n.includes('paycheck') || n.includes('gdp')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" /></svg>`;
+            if (n.includes('investment') || n.includes('interest') || n.includes('401') || n.includes('ira') || n.includes('roi') || n.includes('savings')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+            if (n.includes('house') || n.includes('estate') || n.includes('rental') || n.includes('rent')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205l3 1m-3-1l-3-1m-9 1.636L2.25 9m5.026 15L9 18.502 11.25 21H9.002z" /></svg>`;
+            if (n.includes('currency') || n.includes('discount')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.667 0l3.182-3.182m0 0a8.25 8.25 0 00-11.667 0l-3.182 3.182M2.985 16.652L6.166 13.47m6.834-6.834L19.015 10.5" /></svg>`;
+            if (n.includes('credit card')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>`;
+            if (n.includes('budget')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 3a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 3V9" /></svg>`;
+            if (n.includes('math') || n.includes('basic') || n.includes('mean') || n.includes('average')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 7.5l3 4.5m0 0l3-4.5M12 12v5.25M15 12H9m6 3H9m12-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+            if (n.includes('scientific') || n.includes('root') || n.includes('pythagorean') || n.includes('slope') || n.includes('half-life')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008Zm0 3h.008v.008H8.25v-.008Zm0 3h.008v.008H8.25v-.008Zm3.75 0h.008v.008h-.008v-.008Zm0-3h.008v.008h-.008v-.008Zm0-3h.008v.008h-.008v-.008Zm0-3h.008v.008h-.008v-.008Zm0-3h.008v.008h-.008v-.008Zm-3.75 0h.008v.008H8.25v-.008ZM8.25 9h5.25M15 9h.008v.008H15V9zM3.75 3.75v16.5a2.25 2.25 0 002.25 2.25h13.5a2.25 2.25 0 002.25-2.25V3.75a2.25 2.25 0 00-2.25-2.25H6a2.25 2.25 0 00-2.25 2.25z" /></svg>`;
+            if (n.includes('percent')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 14.25l6-6m4.5-3.493V6.75l-3.75 3.75M9 14.25v-3.75h3.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+            if (n.includes('body') || n.includes('bmr') || n.includes('fat') || n.includes('calorie') || n.includes('weight') || n.includes('health') || n.includes('bmi')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>`;
+            if (n.includes('pregnancy') || n.includes('due date') || n.includes('ovulation') || n.includes('period')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0h18M9.75 14.25h.008v.008h-.008v-.008zM14.25 14.25h.008v.008h-.008v-.008z" /></svg>`;
+            if (n.includes('area') || n.includes('volume') || n.includes('circle') || n.includes('geometry')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" /></svg>`;
+            if (n.includes('time') || n.includes('date') || n.includes('age') || n.includes('hours') || n.includes('day') || n.includes('sleep')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+            if (n.includes('speed') || n.includes('mileage') || n.includes('fuel')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l6.075 4.05a2.25 2.25 0 012.85 0L18 9M3 9l6.075-4.05a2.25 2.25 0 012.85 0L18 9v12M3 21h18M12 6.75h.008v.008H12V6.75z" /></svg>`;
+            if (n.includes('conversion') || n.includes('roman')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.667 0l3.182-3.182m0 0a8.25 8.25 0 00-11.667 0l-3.182 3.182M2.985 16.652L6.166 13.47m6.834-6.834L19.015 10.5" /></svg>`;
+            if (n.includes('ip subnet') || n.includes('binary') || n.includes('bandwidth')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>`;
+            if (n.includes('grade') || n.includes('gpa')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0l-2.176-1.096A48.547 48.547 0 0112 10.222a48.547 48.547 0 0110.187 4.148l-2.176 1.097" /></svg>`;
+            if (n.includes('concrete') || n.includes('gravel') || n.includes('mulch') || n.includes('tile') || n.includes('roofing') || n.includes('stair') || n.includes('square footage')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8.25V18a2.25 2.25 0 002.25 2.25h13.5A2.25 2.25 0 0021 18V8.25M3 8.25h18M3 8.25c0-1.036.84-1.875 1.875-1.875h14.25c1.036 0 1.875.84 1.875 1.875" /></svg>`;
+            if (n.includes('electricity') || n.includes('voltage') || n.includes("ohm's law") || n.includes('resistor')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>`;
+            if (n.includes('love')) return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>`;
+
+            return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>`;
+        }
+        
+        const financialGrid = document.getElementById('financial-grid');
+        const mathGrid = document.getElementById('math-grid');
+        const otherGrid = document.getElementById('other-grid');
+        const searchGrid = document.getElementById('search-grid');
+        
+        function createCard(calc) {
+            return `
+                <a href="${calc.link}" class="calculator-card" data-name="${calc.name.toLowerCase()}" data-tags="${calc.tags}">
+                    <div class="card-icon">${getIcon(calc.name)}</div>
+                    <div class="card-content"><h3 class="card-title">${calc.name}</h3></div>
+                </a>`;
+        }
+
+        calculators.forEach(calc => {
+            const cardHTML = createCard(calc);
+            if (calc.category === 'Financial') financialGrid.innerHTML += cardHTML;
+            else if (calc.category === 'Math') mathGrid.innerHTML += cardHTML;
+            else otherGrid.innerHTML += cardHTML;
+        });
+
+        const searchInput = document.getElementById('search-input');
+        const noResults = document.getElementById('no-results');
+        const categorySections = document.querySelectorAll('.tools-section');
+        const searchSection = document.getElementById('search-results-section');
+        const searchTitle = searchSection.querySelector('.search-results-title');
+
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            
+            if (searchTerm === '') {
+                // Show category sections, hide search section
+                categorySections.forEach(sec => sec.style.display = 'block');
+                searchSection.style.display = 'none';
+                return;
+            }
+
+            // Hide category sections, show search section
+            categorySections.forEach(sec => sec.style.display = 'none');
+            searchSection.style.display = 'block';
+            
+            let resultsHTML = '';
+            let resultsFound = 0;
+            
+            calculators.forEach(calc => {
+                const name = calc.name.toLowerCase();
+                const tags = calc.tags || '';
+                if (name.includes(searchTerm) || tags.includes(searchTerm)) {
+                    resultsHTML += createCard(calc);
+                    resultsFound++;
+                }
+            });
+            
+            searchGrid.innerHTML = resultsHTML;
+            
+            if (resultsFound > 0) {
+                noResults.style.display = 'none';
+                searchTitle.textContent = `${resultsFound} Result${resultsFound > 1 ? 's' : ''} Found`;
+            } else {
+                noResults.style.display = 'block';
+                searchTitle.textContent = 'Search Results';
+            }
+        });
+        
+        
+        // --- MOBILE MENU TOGGLE ---
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const openIcon = document.getElementById('menu-icon-open');
+        const closeIcon = document.getElementById('menu-icon-close');
+
+        mobileMenuBtn.addEventListener('click', () => {
+            const isVisible = mobileMenu.style.display === 'block';
+            mobileMenu.style.display = isVisible ? 'none' : 'block';
+            openIcon.style.display = isVisible ? 'block' : 'none';
+            closeIcon.style.display = isVisible ? 'none' : 'block';
+        });
+        
+        // Close menu when a link is clicked
+        mobileMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.style.display = 'none';
+                openIcon.style.display = 'block';
+                closeIcon.style.display = 'none';
+            });
+        });
+
+    });
+    </script>
+</body>
+</html>
