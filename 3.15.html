@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Fuel Cost Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --accent: #e74c3c;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --light-bg: #f8f9fa;
+            --dark-bg: #1e2a38;
+            --text-light: #333;
+            --text-dark: #f0f0f0;
+            --card-light: #fff;
+            --card-dark: #253341;
+            --border-light: #e0e0e0;
+            --border-dark: #34495e;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: var(--dark-bg);
+            --text-color: var(--text-dark);
+            --card-bg: var(--card-dark);
+            --border-color: var(--border-dark);
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --input-bg: #2c3e50;
+            --input-text: #f0f0f0;
+            --history-bg: rgba(44, 62, 80, 0.5);
+        }
+
+        [data-theme="light"] {
+            --bg-color: var(--light-bg);
+            --text-color: var(--text-light);
+            --card-bg: var(--card-light);
+            --border-color: var(--border-light);
+            --shadow-color: var(--shadow);
+            --input-bg: #fff;
+            --input-text: #333;
+            --history-bg: rgba(241, 243, 245, 0.8);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding-bottom: 40px;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            background-attachment: fixed;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 25px 0;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: white;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        header h1 {
+            font-size: 2.4rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .calculator-wrapper {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+
+        @media (min-width: 992px) {
+            .calculator-wrapper {
+                grid-template-columns: 1fr 350px;
+            }
+        }
+
+        .calculator-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 5px 15px var(--shadow-color);
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--primary);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .input-row input, .input-row select {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--input-bg);
+            color: var(--input-text);
+            font-size: 1rem;
+        }
+
+        .input-row input:focus, .input-row select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .unit-label {
+            min-width: 50px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: linear-gradient(to bottom, var(--primary), #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+
+        .btn-success {
+            background: linear-gradient(to bottom, var(--success), #27ae60);
+        }
+
+        .btn-warning {
+            background: linear-gradient(to bottom, var(--warning), #e67e22);
+        }
+
+        .btn-accent {
+            background: linear-gradient(to bottom, var(--accent), #c0392b);
+        }
+
+        .result-container {
+            padding: 20px;
+            background-color: rgba(52, 152, 219, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+            margin: 20px 0;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(52, 152, 219, 0.2);
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            font-weight: 600;
+        }
+
+        .result-value {
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .actions-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .ad-container {
+            background-color: rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 25px 0;
+            border: 1px dashed var(--border-color);
+        }
+
+        .ad-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+
+        .ad-content {
+            height: 250px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(45deg, #f1f2f6, #dfe4ea);
+            border-radius: 8px;
+            color: #7f8c8d;
+            font-weight: 600;
+            padding: 15px;
+        }
+
+        .dark-mode-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            z-index: 100;
+        }
+
+        .formula-box {
+            background-color: rgba(52, 152, 219, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 3px solid var(--primary);
+            font-family: 'Courier New', monospace;
+        }
+
+        .share-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .share-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .share-btn:hover {
+            transform: translateY(-3px);
+        }
+
+        .facebook { background: #3b5998; }
+        .twitter { background: #1da1f2; }
+        .linkedin { background: #0077b5; }
+        .email { background: #dd4b39; }
+        .link { background: #6c757d; }
+
+        .export-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .export-btn {
+            padding: 10px 20px;
+            border-radius: 50px;
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            border: none;
+            font-size: 0.9rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 0 10px;
+            margin-top: 40px;
+            color: var(--text-color);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .error-message {
+            color: var(--accent);
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            margin-left: 8px;
+            color: var(--primary);
+            cursor: help;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 300px;
+            background-color: var(--secondary);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 15px;
+            position: absolute;
+            z-index: 10;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.9rem;
+            font-weight: normal;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .history-container {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: var(--history-bg);
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .history-item:hover {
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-date {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+        }
+
+        .history-value {
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .input-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .export-options {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        .unit-toggle {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+
+        .unit-btn {
+            padding: 8px 20px;
+            border-radius: 20px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .unit-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .app-icon {
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+
+        .app-icon i {
+            color: white;
+            font-size: 24px;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--success);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+        }
+        
+        .calculation-summary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body data-theme="light">
+    <div class="dark-mode-toggle" id="themeToggle">
+        <i class="fas fa-moon"></i>
+    </div>
+    
+    <div class="notification" id="notification">Link copied to clipboard!</div>
+
+    <div class="container">
+        <header>
+            <div class="app-icon">
+                <i class="fas fa-gas-pump"></i>
+            </div>
+            <h1>Professional Fuel Cost Calculator</h1>
+            <p>Calculate your trip fuel costs with precision</p>
+        </header>
+
+        <div class="ad-container">
+            <div class="ad-label">Advertisement</div>
+            <div class="ad-content">
+                <i class="fas fa-ad" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                <div>Adsterra Ad Space</div>
+                <div style="font-size: 0.8rem; margin-top: 10px;">Banner Ad - 728x90</div>
+            </div>
+        </div>
+
+        <div class="calculator-wrapper">
+            <div class="main-content">
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-calculator"></i> Calculate Fuel Cost</h2>
+                    
+                    <div class="unit-toggle">
+                        <button class="unit-btn active" id="imperialBtn" data-unit="imperial">Imperial (miles, MPG)</button>
+                        <button class="unit-btn" id="metricBtn" data-unit="metric">Metric (km, L/100km)</button>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="distance">Distance <span class="tooltip">?
+                            <span class="tooltip-text">Enter the distance you plan to travel</span>
+                        </span></label>
+                        <div class="input-row">
+                            <input type="number" id="distance" placeholder="Enter distance" value="250" min="0">
+                            <span class="unit-label" id="distanceUnit">miles</span>
+                        </div>
+                        <div class="error-message" id="distanceError">Please enter a valid positive number</div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="efficiency">Fuel Efficiency <span class="tooltip">?
+                            <span class="tooltip-text">Enter your vehicle's fuel efficiency</span>
+                        </span></label>
+                        <div class="input-row">
+                            <input type="number" id="efficiency" placeholder="Enter efficiency" value="30" min="0">
+                            <span class="unit-label" id="efficiencyUnit">MPG</span>
+                        </div>
+                        <div class="error-message" id="efficiencyError">Please enter a valid positive number</div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="price">Fuel Price <span class="tooltip">?
+                            <span class="tooltip-text">Enter current fuel price per unit</span>
+                        </span></label>
+                        <div class="input-row">
+                            <input type="number" id="price" placeholder="Enter price" value="3.50" step="0.01" min="0">
+                            <span class="unit-label" id="priceUnit">$/gallon</span>
+                        </div>
+                        <div class="error-message" id="priceError">Please enter a valid positive number</div>
+                    </div>
+                    
+                    <div class="formula-box">
+                        <p><strong>Calculation Formula:</strong></p>
+                        <p>Fuel Required = Distance / Efficiency</p>
+                        <p>Total Cost = Fuel Required * Price</p>
+                    </div>
+                    
+                    <button id="calculateBtn" class="btn btn-block">
+                        <i class="fas fa-bolt"></i> Calculate Fuel Cost
+                    </button>
+                    
+                    <div class="result-container">
+                        <h3><i class="fas fa-chart-bar"></i> Calculation Results</h3>
+                        <div class="result-item">
+                            <span class="result-label">Distance:</span>
+                            <span class="result-value" id="resultDistance">250 miles</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Fuel Efficiency:</span>
+                            <span class="result-value" id="resultEfficiency">30 MPG</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Fuel Price:</span>
+                            <span class="result-value" id="resultPrice">$3.50 per gallon</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Fuel Required:</span>
+                            <span class="result-value" id="resultFuel">8.33 gallons</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Total Cost:</span>
+                            <span class="result-value" id="resultCost">$29.17</span>
+                        </div>
+                    </div>
+                    
+                    <div class="calculation-summary">
+                        <h3><i class="fas fa-gas-pump"></i> Trip Summary</h3>
+                        <p>Your trip will require approximately <strong id="summaryFuel">8.33 gallons</strong> of fuel</p>
+                        <p>Total fuel cost: <strong id="summaryCost">$29.17</strong></p>
+                    </div>
+                    
+                    <div class="history-container" id="historyPanel">
+                        <h4><i class="fas fa-history"></i> Calculation History</h4>
+                        <div id="historyList">
+                            <!-- History items will be added here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-share-alt"></i> Export & Share</h2>
+                    
+                    <div class="export-options">
+                        <button class="export-btn" id="printBtn">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                        <button class="export-btn" id="pdfBtn">
+                            <i class="fas fa-file-pdf"></i> PDF
+                        </button>
+                        <button class="export-btn" id="csvBtn">
+                            <i class="fas fa-file-csv"></i> CSV
+                        </button>
+                        <button class="export-btn" id="txtBtn">
+                            <i class="fas fa-file-alt"></i> TXT
+                        </button>
+                    </div>
+                    
+                    <div class="share-container">
+                        <div class="share-btn facebook" title="Share on Facebook">
+                            <i class="fab fa-facebook-f"></i>
+                        </div>
+                        <div class="share-btn twitter" title="Share on Twitter">
+                            <i class="fab fa-twitter"></i>
+                        </div>
+                        <div class="share-btn linkedin" title="Share on LinkedIn">
+                            <i class="fab fa-linkedin-in"></i>
+                        </div>
+                        <div class="share-btn email" title="Share via Email">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="share-btn link" title="Copy Link">
+                            <i class="fas fa-link"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="ad-container">
+                    <div class="ad-label">Advertisement</div>
+                    <div class="ad-content">
+                        <i class="fas fa-ad" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        <div>Yllix Ad Space</div>
+                        <div style="font-size: 0.8rem; margin-top: 10px;">Sidebar Ad - 300x600</div>
+                    </div>
+                </div>
+                
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-info-circle"></i> About This Tool</h2>
+                    <p>This professional fuel cost calculator provides accurate trip cost estimations:</p>
+                    <ul style="margin: 15px 0 15px 20px;">
+                        <li>Supports both metric and imperial units</li>
+                        <li>Real-time calculation with error handling</li>
+                        <li>Historical data storage</li>
+                        <li>Multiple export formats</li>
+                        <li>Ad-supported but non-intrusive</li>
+                    </ul>
+                    <p>All calculations happen in your browser - no data is sent to any server.</p>
+                </div>
+                
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-lightbulb"></i> Fuel Efficiency Tips</h2>
+                    <ul style="margin: 15px 0 15px 20px;">
+                        <li>Maintain proper tire pressure</li>
+                        <li>Use cruise control on highways</li>
+                        <li>Avoid aggressive acceleration and braking</li>
+                        <li>Remove excess weight from your vehicle</li>
+                        <li>Combine trips to reduce driving</li>
+                        <li>Regular vehicle maintenance improves efficiency</li>
+                    </ul>
+                </div>
+                
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-exchange-alt"></i> Unit Conversion</h2>
+                    <p>1 mile = 1.60934 kilometers</p>
+                    <p>1 gallon = 3.78541 liters</p>
+                    <p>MPG to L/100km: 235.215 / MPG</p>
+                    <p>L/100km to MPG: 235.215 / L/100km</p>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Professional Fuel Cost Calculator &copy; 2023 | Secure and Ad-Supported</p>
+            <p>All calculations performed locally - no data leaves your device</p>
+        </footer>
+    </div>
+
+    <script>
+        // Initialize variables and DOM elements
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const themeToggle = document.getElementById('themeToggle');
+            const distanceInput = document.getElementById('distance');
+            const efficiencyInput = document.getElementById('efficiency');
+            const priceInput = document.getElementById('price');
+            const distanceUnit = document.getElementById('distanceUnit');
+            const efficiencyUnit = document.getElementById('efficiencyUnit');
+            const priceUnit = document.getElementById('priceUnit');
+            const resultDistance = document.getElementById('resultDistance');
+            const resultEfficiency = document.getElementById('resultEfficiency');
+            const resultPrice = document.getElementById('resultPrice');
+            const resultFuel = document.getElementById('resultFuel');
+            const resultCost = document.getElementById('resultCost');
+            const calculateBtn = document.getElementById('calculateBtn');
+            const imperialBtn = document.getElementById('imperialBtn');
+            const metricBtn = document.getElementById('metricBtn');
+            const body = document.body;
+            const historyList = document.getElementById('historyList');
+            const notification = document.getElementById('notification');
+            const summaryFuel = document.getElementById('summaryFuel');
+            const summaryCost = document.getElementById('summaryCost');
+            
+            // Initialize theme
+            let isDarkMode = localStorage.getItem('darkMode') === 'true';
+            setTheme(isDarkMode);
+            
+            // Initialize units
+            let isMetric = localStorage.getItem('isMetric') === 'true';
+            setUnits(isMetric);
+            
+            // Set initial button state
+            if (isMetric) {
+                imperialBtn.classList.remove('active');
+                metricBtn.classList.add('active');
+            } else {
+                metricBtn.classList.remove('active');
+                imperialBtn.classList.add('active');
+            }
+            
+            // Theme toggle functionality
+            themeToggle.addEventListener('click', () => {
+                isDarkMode = !isDarkMode;
+                setTheme(isDarkMode);
+                localStorage.setItem('darkMode', isDarkMode);
+            });
+            
+            // Unit toggle functionality
+            imperialBtn.addEventListener('click', () => {
+                isMetric = false;
+                setUnits(isMetric);
+                localStorage.setItem('isMetric', isMetric);
+                imperialBtn.classList.add('active');
+                metricBtn.classList.remove('active');
+            });
+            
+            metricBtn.addEventListener('click', () => {
+                isMetric = true;
+                setUnits(isMetric);
+                localStorage.setItem('isMetric', isMetric);
+                metricBtn.classList.add('active');
+                imperialBtn.classList.remove('active');
+            });
+            
+            // Calculate fuel cost
+            calculateBtn.addEventListener('click', calculateFuelCost);
+            
+            // Set theme function
+            function setTheme(isDark) {
+                body.setAttribute('data-theme', isDark ? 'dark' : 'light');
+                themeToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+            }
+            
+            // Set units function
+            function setUnits(isMetric) {
+                if (isMetric) {
+                    distanceUnit.textContent = 'km';
+                    efficiencyUnit.textContent = 'L/100km';
+                    priceUnit.textContent = '$/liter';
+                } else {
+                    distanceUnit.textContent = 'miles';
+                    efficiencyUnit.textContent = 'MPG';
+                    priceUnit.textContent = '$/gallon';
+                }
+            }
+            
+            // Calculate fuel cost
+            function calculateFuelCost() {
+                // Reset errors
+                document.querySelectorAll('.error-message').forEach(el => {
+                    el.style.display = 'none';
+                });
+                
+                // Get values
+                const distance = parseFloat(distanceInput.value);
+                const efficiency = parseFloat(efficiencyInput.value);
+                const price = parseFloat(priceInput.value);
+                
+                // Validate inputs
+                let isValid = true;
+                
+                if (isNaN(distance) || distance <= 0) {
+                    document.getElementById('distanceError').textContent = 'Distance must be greater than 0';
+                    document.getElementById('distanceError').style.display = 'block';
+                    isValid = false;
+                }
+                
+                if (isNaN(efficiency) || efficiency <= 0) {
+                    document.getElementById('efficiencyError').textContent = 'Efficiency must be greater than 0';
+                    document.getElementById('efficiencyError').style.display = 'block';
+                    isValid = false;
+                }
+                
+                if (isNaN(price) || price <= 0) {
+                    document.getElementById('priceError').textContent = 'Price must be greater than 0';
+                    document.getElementById('priceError').style.display = 'block';
+                    isValid = false;
+                }
+                
+                if (!isValid) return;
+                
+                // Calculate based on units
+                let fuelRequired, totalCost;
+                
+                if (isMetric) {
+                    // Metric: L/100km
+                    fuelRequired = (distance * efficiency) / 100;
+                    totalCost = fuelRequired * price;
+                    
+                    // Update results
+                    resultDistance.textContent = `${distance.toFixed(2)} km`;
+                    resultEfficiency.textContent = `${efficiency.toFixed(2)} L/100km`;
+                    resultPrice.textContent = `$${price.toFixed(2)} per liter`;
+                    resultFuel.textContent = `${fuelRequired.toFixed(2)} liters`;
+                    resultCost.textContent = `$${totalCost.toFixed(2)}`;
+                    
+                    // Update summary
+                    summaryFuel.textContent = `${fuelRequired.toFixed(2)} liters`;
+                    summaryCost.textContent = `$${totalCost.toFixed(2)}`;
+                } else {
+                    // Imperial: MPG
+                    fuelRequired = distance / efficiency;
+                    totalCost = fuelRequired * price;
+                    
+                    // Update results
+                    resultDistance.textContent = `${distance.toFixed(2)} miles`;
+                    resultEfficiency.textContent = `${efficiency.toFixed(2)} MPG`;
+                    resultPrice.textContent = `$${price.toFixed(2)} per gallon`;
+                    resultFuel.textContent = `${fuelRequired.toFixed(2)} gallons`;
+                    resultCost.textContent = `$${totalCost.toFixed(2)}`;
+                    
+                    // Update summary
+                    summaryFuel.textContent = `${fuelRequired.toFixed(2)} gallons`;
+                    summaryCost.textContent = `$${totalCost.toFixed(2)}`;
+                }
+                
+                // Save to history
+                saveToHistory(distance, efficiency, price, fuelRequired, totalCost);
+            }
+            
+            // Save calculation to history
+            function saveToHistory(distance, efficiency, price, fuel, cost) {
+                const historyItem = {
+                    date: new Date().toLocaleString(),
+                    distance: distance,
+                    efficiency: efficiency,
+                    price: price,
+                    fuel: fuel,
+                    cost: cost,
+                    isMetric: isMetric
+                };
+                
+                // Get existing history
+                let history = JSON.parse(localStorage.getItem('fuelHistory')) || [];
+                
+                // Add new item to beginning
+                history.unshift(historyItem);
+                
+                // Keep only last 10 items
+                if (history.length > 10) {
+                    history = history.slice(0, 10);
+                }
+                
+                // Save to localStorage
+                localStorage.setItem('fuelHistory', JSON.stringify(history));
+                
+                // Update UI
+                updateHistoryUI(history);
+            }
+            
+            // Update history UI
+            function updateHistoryUI(history) {
+                historyList.innerHTML = '';
+                
+                history.forEach(item => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    
+                    const distanceUnit = item.isMetric ? 'km' : 'miles';
+                    const fuelUnit = item.isMetric ? 'L' : 'gal';
+                    
+                    historyItem.innerHTML = `
+                        <div>
+                            <div>${item.distance.toFixed(2)} ${distanceUnit}</div>
+                            <div class="history-date">${item.date}</div>
+                        </div>
+                        <div class="history-value">$${item.cost.toFixed(2)}</div>
+                    `;
+                    
+                    historyItem.addEventListener('click', () => {
+                        distanceInput.value = item.distance;
+                        efficiencyInput.value = item.efficiency;
+                        priceInput.value = item.price;
+                        isMetric = item.isMetric;
+                        setUnits(isMetric);
+                        
+                        // Update button states
+                        if (isMetric) {
+                            imperialBtn.classList.remove('active');
+                            metricBtn.classList.add('active');
+                        } else {
+                            metricBtn.classList.remove('active');
+                            imperialBtn.classList.add('active');
+                        }
+                        
+                        calculateFuelCost();
+                    });
+                    
+                    historyList.appendChild(historyItem);
+                });
+            }
+            
+            // Load history on page load
+            const savedHistory = JSON.parse(localStorage.getItem('fuelHistory')) || [];
+            updateHistoryUI(savedHistory);
+            
+            // Export to PDF
+            document.getElementById('pdfBtn').addEventListener('click', function() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                doc.setFontSize(18);
+                doc.text('Fuel Cost Calculation', 10, 10);
+                
+                doc.setFontSize(12);
+                doc.text(`Distance: ${resultDistance.textContent}`, 10, 20);
+                doc.text(`Efficiency: ${resultEfficiency.textContent}`, 10, 30);
+                doc.text(`Price: ${resultPrice.textContent}`, 10, 40);
+                doc.text(`Fuel Required: ${resultFuel.textContent}`, 10, 50);
+                doc.text(`Total Cost: ${resultCost.textContent}`, 10, 60);
+                
+                doc.save('fuel-cost-calculation.pdf');
+            });
+            
+            // Export to CSV
+            document.getElementById('csvBtn').addEventListener('click', function() {
+                let content = 'Parameter,Value\n';
+                content += `Distance,${resultDistance.textContent}\n`;
+                content += `Efficiency,${resultEfficiency.textContent}\n`;
+                content += `Price,${resultPrice.textContent}\n`;
+                content += `Fuel Required,${resultFuel.textContent}\n`;
+                content += `Total Cost,${resultCost.textContent}\n`;
+                
+                const blob = new Blob([content], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'fuel-cost-calculation.csv';
+                a.click();
+            });
+            
+            // Export to TXT
+            document.getElementById('txtBtn').addEventListener('click', function() {
+                let content = 'Fuel Cost Calculation\n====================\n\n';
+                content += `Distance: ${resultDistance.textContent}\n`;
+                content += `Efficiency: ${resultEfficiency.textContent}\n`;
+                content += `Price: ${resultPrice.textContent}\n`;
+                content += `Fuel Required: ${resultFuel.textContent}\n`;
+                content += `Total Cost: ${resultCost.textContent}\n`;
+                
+                const blob = new Blob([content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'fuel-cost-calculation.txt';
+                a.click();
+            });
+            
+            // Print functionality
+            document.getElementById('printBtn').addEventListener('click', function() {
+                // Hide ads for printing
+                document.querySelectorAll('.ad-container').forEach(ad => {
+                    ad.style.display = 'none';
+                });
+                
+                // Hide theme toggle
+                themeToggle.style.display = 'none';
+                
+                window.print();
+                
+                // Show ads again after printing
+                setTimeout(() => {
+                    document.querySelectorAll('.ad-container').forEach(ad => {
+                        ad.style.display = 'block';
+                    });
+                    themeToggle.style.display = 'flex';
+                }, 500);
+            });
+            
+            // Social sharing
+            document.querySelector('.facebook').addEventListener('click', function() {
+                const url = encodeURIComponent(window.location.href);
+                const text = encodeURIComponent('Check out my fuel cost calculation!');
+                window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`, '_blank');
+            });
+            
+            document.querySelector('.twitter').addEventListener('click', function() {
+                const text = encodeURIComponent('Professional Fuel Cost Calculation');
+                const url = encodeURIComponent(window.location.href);
+                window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+            });
+            
+            document.querySelector('.linkedin').addEventListener('click', function() {
+                const url = encodeURIComponent(window.location.href);
+                const title = encodeURIComponent('Fuel Cost Calculation');
+                const summary = encodeURIComponent('Check out my fuel cost calculation');
+                window.open(`https://www.linkedin.com/shareArticle?mini=true&url=${url}&title=${title}&summary=${summary}`, '_blank');
+            });
+            
+            document.querySelector('.email').addEventListener('click', function() {
+                let body = `Check out my fuel cost calculation:\n\n`;
+                body += `Distance: ${resultDistance.textContent}\n`;
+                body += `Efficiency: ${resultEfficiency.textContent}\n`;
+                body += `Price: ${resultPrice.textContent}\n`;
+                body += `Fuel Required: ${resultFuel.textContent}\n`;
+                body += `Total Cost: ${resultCost.textContent}\n\n`;
+                body += `Calculated with: ${window.location.href}`;
+                
+                const subject = 'Fuel Cost Calculation Results';
+                window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            });
+            
+            document.querySelector('.link').addEventListener('click', function() {
+                navigator.clipboard.writeText(window.location.href);
+                
+                // Show notification
+                notification.style.display = 'block';
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 2000);
+            });
+            
+            // Initialize with sample calculation
+            calculateFuelCost();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mathematics Time Zone Calculator</title>
+
+    <!-- Dependencies for PDF Export & Advanced Date/Time Logic -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/3.4.4/luxon.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --text-color: #3d3d3d;
+            --primary-color: #1890ff;
+            --secondary-color: #595959;
+            --border-color: #d9d9d9;
+            --card-bg: #ffffff;
+            --input-bg: #ffffff;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --error-color: #f5222d;
+            --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #141414;
+            --text-color: #d9d9d9;
+            --primary-color: #177ddc;
+            --secondary-color: #a6a6a6;
+            --border-color: #434343;
+            --card-bg: #1f1f1f;
+            --input-bg: #262626;
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            --error-color: #ff4d4f;
+        }
+        
+        /* General & Layout */
+        *, *::before, *::after { box-sizing: border-box; }
+        body { margin: 0; font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-color); line-height: 1.6; transition: background-color 0.3s, color 0.3s; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        h1, h2 { color: var(--primary-color); }
+        h1 { margin:0 0 20px 0; padding-bottom:10px; border-bottom:1px solid var(--border-color);}
+        .card { background-color: var(--card-bg); border-radius: 8px; padding: 25px; box-shadow: var(--shadow); border: 1px solid var(--border-color); margin-bottom: 25px;}
+
+        /* App Layout with Ads */
+        .app-header, .app-footer { text-align: center; margin-bottom: 20px; }
+        .app-main { display: grid; grid-template-columns: 1fr 320px; gap: 25px; }
+        
+        /* Ad Placeholders */
+        .ad-placeholder { min-height: 90px; width: 100%; background-color: var(--card-bg); border: 2px dashed var(--border-color); display: flex; align-items: center; justify-content: center; text-align: center; padding: 10px; color: var(--secondary-color); font-weight: bold; border-radius: 8px; }
+        .ad-placeholder.sidebar { min-height: 250px; }
+
+        /* Forms & Inputs */
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9em; }
+        input, select { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; background-color: var(--input-bg); color: var(--text-color); font-size: 1rem; }
+        
+        /* Time Converter UI */
+        .converter-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 15px; align-items: end; }
+        #conversion-result { margin-top: 15px; padding: 15px; background: var(--bg-color); border-radius: 6px; text-align: center; }
+        #conversion-result .date { font-size: 1.8em; font-weight: bold; color: var(--primary-color); }
+        #conversion-result .info { font-size: 0.9em; color: var(--secondary-color); }
+
+        /* World Clock */
+        #world-clock-list { display: flex; flex-direction: column; gap: 10px; }
+        .world-clock-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 15px; padding: 10px; background-color: var(--bg-color); border-radius: 6px; }
+        .world-clock-time { font-size: 1.5em; font-weight: 500; }
+        .world-clock-date { font-size: 0.9em; opacity: 0.8; }
+        .delete-clock-btn { background: var(--error-color); color: white; border: none; border-radius: 4px; cursor: pointer; padding: 2px 8px; }
+
+        /* Sidebar Actions */
+        .action-card .btn { margin-bottom: 10px; }
+        .btn { display: inline-block; width:100%; text-align:center; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; text-decoration:none; }
+        .btn-primary { background-color: var(--primary-color); color: white; border:1px solid var(--primary-color);}
+        .btn-secondary { background-color: transparent; color: var(--primary-color); border:1px solid var(--primary-color); }
+        
+        /* Dark/Light Toggle */
+        .header-controls { display:flex; justify-content:space-between; align-items:center; }
+        .theme-switch input { display:none; } .theme-switch { cursor:pointer; font-size: 1.5em; }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .app-main { grid-template-columns: 1fr; }
+            .sidebar { margin-top: 25px; }
+        }
+
+        /* Print Styles */
+        @media print {
+            body { background: #fff; color: #000; }
+            .sidebar, .app-header, .app-footer, .action-card, .btn, h1, .theme-switch { display: none; }
+            .card { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="app-header">
+            <div class="header-controls">
+                <h1>Mathematics Time Zone Calculator</h1>
+                <label class="theme-switch" for="theme-checkbox" title="Toggle Dark/Light Mode">
+                    <input type="checkbox" id="theme-checkbox">
+                    <span id="theme-icon">🌓</span>
+                </label>
+            </div>
+            <div class="ad-placeholder header-ad">
+                <!-- =============================== -->
+                <!-- ADSTERRA / YLLIX HEADER AD SLOT -->
+                <!-- Replace with 728x90 ad code   -->
+                <!-- =============================== -->
+                <p>Header Ad Space (e.g., 728x90)</p>
+            </div>
+        </header>
+
+        <main class="app-main">
+            <div class="main-content">
+                <section class="card" id="converter-section">
+                    <h2>Time Zone Converter & Difference</h2>
+                    <div class="converter-grid">
+                        <div class="form-group">
+                            <label for="sourceDateTime">Source Date & Time</label>
+                            <input type="datetime-local" id="sourceDateTime">
+                        </div>
+                        <div class="form-group">
+                            <label for="sourceTimezone">Source Timezone</label>
+                            <select id="sourceTimezone"></select>
+                        </div>
+                    </div>
+                    <div id="conversion-result">
+                        <p>Results will appear here.</p>
+                    </div>
+                </section>
+                
+                <section class="card" id="world-clock-section">
+                     <h2>World Clock</h2>
+                     <div id="world-clock-list"></div>
+                     <div class="form-group" style="display:flex; gap:10px; margin-top: 15px;">
+                         <select id="addClockTimezone" style="flex-grow:1;"></select>
+                         <button id="addClockBtn" class="btn btn-primary" style="width:auto; padding:0 20px;">Add Clock</button>
+                     </div>
+                </section>
+            </div>
+            
+            <aside class="sidebar">
+                <div class="card action-card">
+                     <h2>Actions</h2>
+                     <button id="printBtn" class="btn btn-secondary">Print</button>
+                     <button id="savePdfBtn" class="btn btn-secondary">Save as PDF</button>
+                     <button id="saveCsvBtn" class="btn btn-secondary">Save as CSV</button>
+                     <button id="shareLinkBtn" class="btn btn-primary">Copy Shareable Link</button>
+                </div>
+                 <div class="ad-placeholder sidebar">
+                    <!-- =============================== -->
+                    <!-- ADSTERRA / YLLIX SIDEBAR AD     -->
+                    <!-- Replace with 300x250 ad code  -->
+                    <!-- =============================== -->
+                    <p>Sidebar Ad Space (e.g., 300x250)</p>
+                </div>
+            </aside>
+        </main>
+        
+        <footer class="app-footer">
+             <div class="ad-placeholder footer-ad">
+                <!-- =============================== -->
+                <!-- ADSTERRA / YLLIX FOOTER AD SLOT -->
+                <!-- Replace with 728x90 ad code   -->
+                <!-- =============================== -->
+                <p>Footer Ad Space (e.g., 728x90)</p>
+            </div>
+        </footer>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const DateTime = luxon.DateTime;
+    const els = {
+        // Theme
+        themeCheckbox: document.getElementById('theme-checkbox'),
+        themeIcon: document.getElementById('theme-icon'),
+        // Converter
+        sourceDateTime: document.getElementById('sourceDateTime'),
+        sourceTimezone: document.getElementById('sourceTimezone'),
+        conversionResult: document.getElementById('conversion-result'),
+        // World Clock
+        worldClockList: document.getElementById('world-clock-list'),
+        addClockTimezone: document.getElementById('addClockTimezone'),
+        addClockBtn: document.getElementById('addClockBtn'),
+        // Actions
+        printBtn: document.getElementById('printBtn'),
+        savePdfBtn: document.getElementById('savePdfBtn'),
+        saveCsvBtn: document.getElementById('saveCsvBtn'),
+        shareLinkBtn: document.getElementById('shareLinkBtn'),
+    };
+    
+    // --- State ---
+    let timezones = [
+        'Local', 'UTC', 'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
+        'Europe/London', 'Europe/Paris', 'Europe/Moscow', 'Asia/Tokyo', 'Asia/Dubai',
+        'Asia/Kolkata', 'Australia/Sydney', 'Pacific/Auckland'
+    ];
+    let worldClocks = [];
+    let lastResult = null;
+    let clockInterval;
+    
+    // --- Core Logic: Converter & Difference ---
+    const runConversion = () => {
+        try {
+            const sourceVal = els.sourceDateTime.value;
+            let sourceZone = els.sourceTimezone.value;
+            if (!sourceVal) return;
+            if (sourceZone === 'Local') sourceZone = DateTime.local().zoneName;
+            
+            const sourceDT = DateTime.fromISO(sourceVal, { zone: sourceZone });
+            if (!sourceDT.isValid) throw new Error(sourceDT.invalidReason);
+
+            const localDT = sourceDT.toLocal(); // Convert to user's browser time
+            const diff = localDT.diff(DateTime.local(), ['hours', 'minutes']).toObject();
+
+            lastResult = {
+                source: sourceDT,
+                local: localDT,
+                diff: diff
+            };
+
+            const resultHTML = `
+                <div class="date">${localDT.toFormat('hh:mm:ss a')}</div>
+                <div class="info">
+                    ${localDT.toFormat('DDDD')}
+                    <br>
+                    <strong>Time difference:</strong> 
+                    ${Math.abs(Math.floor(diff.hours))}h ${Math.abs(Math.floor(diff.minutes))}m
+                    (${diff.hours < 0 ? 'ahead of' : 'behind'} your local time)
+                </div>
+            `;
+            els.conversionResult.innerHTML = resultHTML;
+
+        } catch(e) {
+            els.conversionResult.innerHTML = `<p style="color:var(--error-color);">Error: ${e.message}</p>`;
+        }
+    };
+    
+    // --- Core Logic: World Clock ---
+    const addClock = (zone) => {
+        if (!zone || worldClocks.includes(zone) || zone === 'Local') return;
+        worldClocks.push(zone);
+        saveWorldClocks();
+        renderWorldClocks();
+    };
+
+    const removeClock = (zone) => {
+        worldClocks = worldClocks.filter(z => z !== zone);
+        saveWorldClocks();
+        renderWorldClocks();
+    };
+    
+    const renderWorldClocks = () => {
+        els.worldClockList.innerHTML = '';
+        worldClocks.forEach(zone => {
+            const nowInZone = DateTime.now().setZone(zone);
+            const row = document.createElement('div');
+            row.className = 'world-clock-row';
+            row.setAttribute('data-zone', zone);
+            row.innerHTML = `
+                <div>
+                    <strong>${zone.replace(/_/g, ' ')}</strong>
+                    <div class="world-clock-date">${nowInZone.toFormat('DDDD')}</div>
+                </div>
+                <div class="world-clock-time">${nowInZone.toFormat('hh:mm:ss a')}</div>
+                <button class="delete-clock-btn" data-zone="${zone}">×</button>
+            `;
+            els.worldClockList.appendChild(row);
+        });
+        
+        // Add delete listeners
+        els.worldClockList.querySelectorAll('.delete-clock-btn').forEach(btn => {
+            btn.onclick = () => removeClock(btn.dataset.zone);
+        });
+    };
+
+    const updateClocks = () => {
+        els.worldClockList.querySelectorAll('.world-clock-row').forEach(row => {
+            const zone = row.dataset.zone;
+            const nowInZone = DateTime.now().setZone(zone);
+            row.querySelector('.world-clock-time').textContent = nowInZone.toFormat('hh:mm:ss a');
+            row.querySelector('.world-clock-date').textContent = nowInZone.toFormat('DDDD');
+        });
+    };
+
+    const saveWorldClocks = () => localStorage.setItem('timeZoneClocks', JSON.stringify(worldClocks));
+    const loadWorldClocks = () => {
+        const saved = localStorage.getItem('timeZoneClocks');
+        worldClocks = saved ? JSON.parse(saved) : ['America/New_York', 'Europe/London', 'Asia/Tokyo'];
+    };
+    
+    // --- Export & Sharing ---
+    const generateExportContent = (format) => {
+        if (!lastResult) return '';
+        const { source, local, diff } = lastResult;
+        
+        const header = "Time Zone Calculation Report";
+        const sourceLine = `Source: ${source.toFormat("yyyy-MM-dd HH:mm:ss ZZZZ")}`;
+        const localLine = `Local Equivalent: ${local.toFormat("yyyy-MM-dd HH:mm:ss ZZZZ")}`;
+        const diffLine = `Difference to Local: ${Math.floor(diff.hours)}h ${Math.floor(diff.minutes)}m`;
+
+        if (format === 'txt') {
+            return `${header}\n=================\n${sourceLine}\n${localLine}\n${diffLine}`;
+        }
+        if (format === 'csv') {
+            return `Parameter,Value\n"Source Time","${source.toISO()}"\n"Local Time","${local.toISO()}"\n"Difference (H)","${diff.hours}"\n`;
+        }
+    };
+
+    const generateShareLink = () => {
+        const sourceVal = els.sourceDateTime.value;
+        const sourceZone = els.sourceTimezone.value;
+        if (!sourceVal) return;
+
+        const params = new URLSearchParams({ dt: sourceVal, tz: sourceZone });
+        const encodedParams = btoa(params.toString()); // Obfuscate slightly
+        return `${location.origin}${location.pathname}?data=${encodedParams}`;
+    };
+
+    // --- Init & Event Listeners ---
+    const init = () => {
+        // Theme
+        const savedTheme = localStorage.getItem('timeZoneTheme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        els.themeCheckbox.checked = savedTheme === 'dark';
+        els.themeIcon.textContent = savedTheme === 'dark' ? '☀️' : '🌓';
+
+        // Timezones
+        timezones.forEach(tz => {
+            [els.sourceTimezone, els.addClockTimezone].forEach(sel => sel.add(new Option(tz.replace(/_/g, ' '), tz)));
+        });
+
+        // Load saved state or URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('data')) {
+            try {
+                const decodedParams = new URLSearchParams(atob(urlParams.get('data')));
+                els.sourceDateTime.value = decodedParams.get('dt');
+                els.sourceTimezone.value = decodedParams.get('tz');
+            } catch (e) { console.error('Failed to parse share link.'); }
+        } else {
+             els.sourceDateTime.value = DateTime.local().toFormat("yyyy-MM-dd'T'HH:mm");
+        }
+        
+        loadWorldClocks();
+        renderWorldClocks();
+        runConversion();
+        clockInterval = setInterval(updateClocks, 1000);
+    };
+
+    // Listeners
+    [els.sourceDateTime, els.sourceTimezone].forEach(el => el.addEventListener('input', runConversion));
+    els.addClockBtn.addEventListener('click', () => addClock(els.addClockTimezone.value));
+    
+    els.themeCheckbox.addEventListener('change', () => {
+        const theme = els.themeCheckbox.checked ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('timeZoneTheme', theme);
+        els.themeIcon.textContent = theme === 'dark' ? '☀️' : '🌓';
+    });
+
+    els.printBtn.onclick = () => window.print();
+    els.savePdfBtn.onclick = () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        html2canvas(document.getElementById('converter-section')).then(canvas => {
+            doc.addImage(canvas.toDataURL('image/png'), 'PNG', 15, 15, 180, 0);
+            doc.save('timezone-report.pdf');
+        });
+    };
+    els.saveCsvBtn.onclick = () => {
+        const content = generateExportContent('csv');
+        const link = document.createElement('a');
+        link.href = 'data:text/csv;charset=utf-8,' + encodeURI(content);
+        link.download = 'timezone-report.csv';
+        link.click();
+    };
+     els.shareLinkBtn.onclick = () => {
+         const url = generateShareLink();
+         if (!url) return;
+         navigator.clipboard.writeText(url).then(() => {
+             const originalText = els.shareLinkBtn.textContent;
+             els.shareLinkBtn.textContent = 'Copied!';
+             setTimeout(() => { els.shareLinkBtn.textContent = originalText }, 2000);
+         });
+     };
+
+    init();
+});
+</script>
+
+</body>
+</html>

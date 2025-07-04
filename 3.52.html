@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Weight & Health Calculator</title>
+    <!-- Privacy Headers -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    
+    <!-- Dependencies for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --text-color: #334155;
+            --primary-color: #4f46e5; /* Indigo */
+            --secondary-color: #64748b;
+            --accent-color: #10b981; /* Emerald */
+            --border-color: #e2e8f0;
+            --card-bg: #ffffff;
+            --input-bg: #f1f5f9;
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+            --font-family: 'Inter', sans-serif;
+        }
+        [data-theme="dark"] {
+            --bg-color: #1e293b;
+            --text-color: #cbd5e1;
+            --primary-color: #818cf8; /* Lighter Indigo */
+            --secondary-color: #94a3b8;
+            --accent-color: #34d399; /* Lighter Emerald */
+            --border-color: #334155;
+            --card-bg: #334155;
+            --input-bg: #475569;
+            --shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+        }
+
+        /* General & Layout */
+        *, *::before, *::after { box-sizing: border-box; }
+        body { margin: 0; font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-color); transition: background-color 0.2s, color 0.2s; }
+        .container { max-width: 1400px; margin: 2rem auto; padding: 1rem; display: grid; grid-template-columns: 380px 1fr; gap: 2rem; }
+        h1, h2 { color: var(--primary-color); }
+        .card { background-color: var(--card-bg); border-radius: 12px; padding: 2rem; box-shadow: var(--shadow); }
+
+        /* --- Left Column: Inputs & Ads --- */
+        .sidebar { display:flex; flex-direction:column; gap:2rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+        .unit-toggle { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+        .unit-toggle button { flex-grow: 1; padding: 0.5rem; border: 1px solid var(--border-color); background: transparent; cursor: pointer; border-radius: 6px; }
+        .unit-toggle button.active { background: var(--primary-color); color: white; border-color: var(--primary-color);}
+        .input-group { display: flex; gap: 1rem; }
+        .input-group input { width: 100%; }
+        input, select { padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--input-bg); color: var(--text-color); }
+        .tooltip { cursor: help; font-weight: bold; color: var(--secondary-color); }
+
+        /* --- Right Column: Results & Ads --- */
+        .main-content { display: flex; flex-direction: column; gap: 2rem; }
+        .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+        .result-card { padding: 1.5rem; background: var(--card-bg); border-left: 5px solid var(--accent-color); border-radius: 8px; box-shadow: var(--shadow); }
+        .result-card .value { font-size: 2.5rem; font-weight: 700; color: var(--primary-color); }
+        .result-card .label { font-size: 1.2rem; margin-bottom: 0.5rem; }
+        #bmi-chart { width: 100%; height: 10px; background: linear-gradient(to right, #60a5fa, #34d399, #facc15, #f87171, #ef4444); border-radius: 5px; position: relative; margin-top:1rem; }
+        #bmi-indicator { position: absolute; width: 4px; height: 16px; background: var(--text-color); border-radius: 2px; top: -3px; transform: translateX(-2px); }
+        .action-buttons { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 2rem; }
+        .btn { padding: 0.8rem 1.5rem; font-weight: 600; border-radius: 6px; border: 2px solid var(--primary-color); cursor: pointer; background:transparent; color: var(--primary-color);}
+        
+        /* Ad Placeholders */
+        .ad-placeholder { min-height: 250px; border: 2px dashed var(--border-color); display: flex; align-items: center; justify-content: center; text-align:center; padding: 1rem; color: var(--secondary-color); border-radius: 12px; }
+        
+        /* Responsive */
+        @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
+    
+        /* Print Styles */
+        @media print {
+            body { background: #fff !important; color: #000 !important; font-size: 12pt; }
+            .sidebar, .ad-placeholder, .action-buttons, h1, #theme-toggle { display: none; }
+            .container, .main-content { all: unset; display: block; }
+            #printable-results { display: block !important; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <aside class="sidebar">
+         <div class="card">
+             <h1>Health Metrics Calculator</h1>
+             <p style="margin-top:-0.5rem; opacity:0.8;">Enter your details to calculate your BMI, ideal weight, and daily caloric needs.</p>
+         </div>
+        <div class="card">
+            <div class="unit-toggle" id="metric-system-toggle">
+                <button class="unit-btn active" data-system="metric">Metric (kg, cm)</button>
+                <button class="unit-btn" data-system="imperial">Imperial (lbs, ft, in)</button>
+            </div>
+            
+            <form id="health-form">
+                <div class="form-group"><label for="weight">Weight</label><input type="number" id="weight" required></div>
+                <div class="form-group"><label for="height">Height</label>
+                    <div id="metric-height" class="input-group"><input type="number" id="height_cm" required></div>
+                    <div id="imperial-height" class="input-group" style="display:none;">
+                        <input type="number" id="height_ft" placeholder="ft" required><input type="number" id="height_in" placeholder="in" required>
+                    </div>
+                </div>
+                 <div class="form-group"><label for="age">Age</label><input type="number" id="age" min="1" required></div>
+                 <div class="form-group"><label for="gender">Gender</label><select id="gender"><option value="male">Male</option><option value="female">Female</option></select></div>
+                 <div class="form-group">
+                     <label for="activity">Activity Level <span class="tooltip" title="BMR x 1.2: Sedentary (little exercise)
+BMR x 1.375: Lightly active (1-3 days/wk)
+BMR x 1.55: Moderately active (3-5 days/wk)
+BMR x 1.725: Active (6-7 days/wk)
+BMR x 1.9: Very active (hard daily exercise)">?</span></label>
+                     <select id="activity">
+                        <option value="1.2">Sedentary</option><option value="1.375">Lightly Active</option><option value="1.55" selected>Moderately Active</option><option value="1.725">Active</option><option value="1.9">Very Active</option>
+                     </select>
+                 </div>
+            </form>
+             <button id="theme-toggle" style="margin-top:2rem;">Toggle Theme</button>
+        </div>
+        <div class="ad-placeholder">
+            <!-- YLLIX AD SLOT -->
+            <p>Yllix Ad Space</p>
+        </div>
+    </aside>
+
+    <main class="main-content" id="printable-results">
+        <div class="results-grid">
+            <div class="result-card">
+                <h2 class="label">Body Mass Index (BMI)</h2>
+                <div class="value" id="bmi-value">0.0</div>
+                <div id="bmi-classification" style="font-weight:bold;"></div>
+                <div id="bmi-chart"><div id="bmi-indicator"></div></div>
+            </div>
+             <div class="result-card">
+                <h2 class="label">Ideal Weight</h2>
+                <div class="value" id="ideal-weight-value">0.0</div>
+                <div>Based on the Robinson formula.</div>
+            </div>
+             <div class="result-card">
+                <h2 class="label">Daily Calories</h2>
+                <div class="value" id="calories-value">0</div>
+                <div>To maintain your current weight.</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Actions & Export</h2>
+            <div class="action-buttons">
+                <button id="printBtn" class="btn">Print</button>
+                <button id="savePdfBtn" class="btn">Save as PDF</button>
+                <button id="saveCsvBtn" class="btn">Save as CSV</button>
+                <button id="shareBtn" class="btn">Share Results</button>
+            </div>
+        </div>
+         <div class="ad-placeholder">
+            <!-- ADSTERRA AD SLOT -->
+            <p>Adsterra Ad Space</p>
+        </div>
+    </main>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- Elements ---
+    const D = document;
+    const els = {
+        form: D.getElementById('health-form'),
+        unitToggle: D.getElementById('metric-system-toggle'),
+        metricHeight: D.getElementById('metric-height'), imperialHeight: D.getElementById('imperial-height'),
+        // Results
+        bmiValue: D.getElementById('bmi-value'), bmiClassification: D.getElementById('bmi-classification'),
+        bmiIndicator: D.getElementById('bmi-indicator'), idealWeightValue: D.getElementById('ideal-weight-value'),
+        caloriesValue: D.getElementById('calories-value'),
+        // Theme
+        themeToggle: D.getElementById('theme-toggle'),
+    };
+    
+    // --- State & Constants ---
+    let currentSystem = 'metric';
+    let lastResults = {};
+
+    // --- Calculation Engine ---
+    const calculate = () => {
+        try {
+            // Get raw inputs
+            let weight = parseFloat(D.getElementById('weight').value);
+            let height_cm, height_ft, height_in;
+            const age = parseInt(D.getElementById('age').value);
+            const gender = D.getElementById('gender').value;
+            const activityFactor = parseFloat(D.getElementById('activity').value);
+            
+            // Convert to a base unit system (Metric)
+            let weight_kg, height_m;
+            if (currentSystem === 'imperial') {
+                weight_kg = weight * 0.453592;
+                height_ft = parseInt(D.getElementById('height_ft').value) || 0;
+                height_in = parseInt(D.getElementById('height_in').value) || 0;
+                height_m = ((height_ft * 12) + height_in) * 0.0254;
+                height_cm = height_m * 100;
+            } else {
+                weight_kg = weight;
+                height_cm = parseFloat(D.getElementById('height_cm').value);
+                height_m = height_cm / 100;
+            }
+
+            // Input Validation
+            if (!weight_kg || !height_m || !age || weight_kg <= 0 || height_m <= 0 || age <= 0) {
+                 clearResults(); return;
+            }
+
+            // 1. BMI Calculation
+            const bmi = weight_kg / (height_m * height_m);
+            const bmiClass = getBmiClassification(bmi);
+
+            // 2. Ideal Weight (Robinson formula, 1983)
+            let idealWeight_kg = gender === 'male' 
+                ? 52 + (1.9 * ((height_cm - 152.4) / 2.54))
+                : 49 + (1.7 * ((height_cm - 152.4) / 2.54));
+            
+            // 3. Caloric Needs (Mifflin-St Jeor Equation for BMR)
+            const bmr = (10 * weight_kg) + (6.25 * height_cm) - (5 * age) + (gender === 'male' ? 5 : -161);
+            const dailyCalories = bmr * activityFactor;
+            
+            lastResults = { weight_kg, height_cm, age, gender, activityFactor, bmi, bmiClass, idealWeight_kg, dailyCalories, currentSystem };
+            updateUI();
+
+        } catch (e) {
+            console.error("Calculation Error:", e);
+            clearResults();
+        }
+    };
+
+    const getBmiClassification = (bmi) => {
+        if (bmi < 18.5) return { text: "Underweight", color: "#60a5fa" };
+        if (bmi < 25) return { text: "Normal weight", color: "#34d399" };
+        if (bmi < 30) return { text: "Overweight", color: "#facc15" };
+        if (bmi < 35) return { text: "Obesity Class I", color: "#f87171" };
+        return { text: "Obesity Class II+", color: "#ef4444" };
+    };
+
+    const updateUI = () => {
+        // BMI
+        els.bmiValue.textContent = lastResults.bmi.toFixed(1);
+        els.bmiClassification.textContent = lastResults.bmiClass.text;
+        els.bmiClassification.style.color = lastResults.bmiClass.color;
+        // Move BMI indicator on the chart (15-40 range mapping)
+        const bmiPercent = Math.min(100, Math.max(0, ((lastResults.bmi - 15) / (40 - 15)) * 100));
+        els.bmiIndicator.style.left = `${bmiPercent}%`;
+        
+        // Ideal Weight (convert back to display units)
+        const idealWeightDisplay = currentSystem === 'imperial' ? (lastResults.idealWeight_kg * 2.20462).toFixed(1) + ' lbs' : lastResults.idealWeight_kg.toFixed(1) + ' kg';
+        els.idealWeightValue.textContent = idealWeightDisplay;
+        
+        // Calories
+        els.caloriesValue.textContent = Math.round(lastResults.dailyCalories).toLocaleString();
+    };
+    
+    const clearResults = () => {
+         els.bmiValue.textContent = '0.0';
+         els.bmiClassification.textContent = '';
+         els.idealWeightValue.textContent = '0.0';
+         els.caloriesValue.textContent = '0';
+         els.bmiIndicator.style.left = '0%';
+         lastResults = {};
+    }
+    
+    // --- Event Handlers & Init ---
+    els.form.addEventListener('input', calculate);
+    
+    els.unitToggle.addEventListener('click', (e) => {
+        if (!e.target.matches('.unit-btn')) return;
+        currentSystem = e.target.dataset.system;
+        
+        D.querySelectorAll('.unit-btn').forEach(btn => btn.classList.remove('active'));
+        e.target.classList.add('active');
+
+        els.metricHeight.style.display = currentSystem === 'metric' ? 'flex' : 'none';
+        els.imperialHeight.style.display = currentSystem === 'imperial' ? 'flex' : 'none';
+        
+        // Convert existing values
+        const weightInput = D.getElementById('weight');
+        let currentWeight = parseFloat(weightInput.value);
+        if(currentSystem === 'imperial' && currentWeight) weightInput.value = (currentWeight * 2.20462).toFixed(1);
+        else if (currentSystem === 'metric' && currentWeight) weightInput.value = (currentWeight / 2.20462).toFixed(1);
+        
+        calculate();
+    });
+
+    els.themeToggle.onclick = () => {
+        const theme = D.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        D.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('healthCalcTheme', theme);
+    };
+
+    // --- Actions ---
+    const generateSummary = (format = 'txt') => {
+        if(!lastResults.bmi) return "No results calculated.";
+        const nl = format === 'csv' ? ',' : (format === 'html' ? '<br>' : '\n');
+        
+        const idealWeightDisplay = currentSystem === 'imperial' ? lastResults.idealWeight_kg * 2.20462 : lastResults.idealWeight_kg;
+        const unitLabel = currentSystem === 'imperial' ? 'lbs' : 'kg';
+        
+        const data = {'BMI': `${lastResults.bmi.toFixed(1)} (${lastResults.bmiClass.text})`,'Ideal Weight': `${idealWeightDisplay.toFixed(1)} ${unitLabel}`,
+            'Daily Caloric Needs': `${Math.round(lastResults.dailyCalories).toLocaleString()} kcal` };
+            
+        if (format === 'csv') return "Metric,Value\n" + Object.entries(data).map(([k,v]) => `"${k}","${v}"`).join("\n");
+        return "Health Summary:\n" + Object.entries(data).map(([k,v])=>`${k}: ${v}`).join(nl);
+    };
+
+    D.getElementById('printBtn').onclick = () => window.print();
+    D.getElementById('savePdfBtn').onclick = () => {
+        const { jsPDF } = window.jspdf;
+        html2canvas(D.getElementById('printable-results')).then(canvas => {
+            const doc = new jsPDF();
+            doc.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, 190, 0);
+            doc.save('health-report.pdf');
+        });
+    };
+     D.getElementById('saveCsvBtn').onclick = () => {
+        const blob = new Blob([generateSummary('csv')], { type: 'text/csv;charset=utf-8' });
+        const a=D.createElement('a'); a.href=URL.createObjectURL(blob); a.download='health-report.csv'; a.click();
+    };
+    D.getElementById('shareBtn').onclick = async () => {
+         const text = generateSummary('txt');
+         const shareData = { title: 'My Health Report', text: text, url: window.location.href };
+         try {
+             await (navigator.share ? navigator.share(shareData) : navigator.clipboard.writeText(text).then(() => alert('Results copied!')));
+         } catch(e) { alert('Share failed.');}
+    };
+
+    function init() {
+        // Load theme
+        const theme = localStorage.getItem('healthCalcTheme') || 'light';
+        D.documentElement.setAttribute('data-theme', theme);
+
+        // Pre-fill some data for demo
+        D.getElementById('weight').value = 70; D.getElementById('height_cm').value = 175;
+        D.getElementById('age').value = 30;
+
+        calculate();
+    }
+    
+    init();
+});
+</script>
+</body>
+</html>

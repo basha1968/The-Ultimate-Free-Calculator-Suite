@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Height Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            /* Light theme variables */
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --accent: #f39c12;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --bg: linear-gradient(135deg, #f1f2f6 0%, #dfe4ea 100%);
+            --card-bg: #ffffff;
+            --text: #333333;
+            --text-secondary: #6c757d;
+            --border: #dee2e6;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --result-gradient: linear-gradient(135deg, #2c3e50 0%, #1a2530 100%);
+        }
+
+        .dark-mode {
+            /* Dark theme variables */
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --accent: #f39c12;
+            --light: #212529;
+            --dark: #f8f9fa;
+            --bg: linear-gradient(135deg, #121212 0%, #1e1e1e 100%);
+            --card-bg: #2d3436;
+            --text: #f8f9fa;
+            --text-secondary: #adb5bd;
+            --border: #495057;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            --result-gradient: linear-gradient(135deg, #1a2a3a 0%, #0d1824 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--accent);
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            background: var(--primary);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: white;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--text);
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .calculator-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .calculator-wrapper {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .calculator-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            padding: 30px;
+            transition: transform 0.3s ease;
+        }
+
+        .calculator-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .card-header i {
+            font-size: 1.8rem;
+            color: var(--primary);
+        }
+
+        .card-header h2 {
+            color: var(--text);
+            font-size: 1.8rem;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 14px 15px;
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 16px;
+            color: var(--text);
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .input-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: transparent;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: var(--text-secondary);
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .conversion-container {
+            display: none;
+        }
+
+        .conversion-container.active {
+            display: block;
+        }
+
+        .btn-calculate {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 16px 30px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-calculate:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(52, 152, 219, 0.4);
+        }
+        
+        .result-card {
+            background: var(--result-gradient);
+            color: white;
+            border-radius: 15px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .result-header {
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .result-header i {
+            font-size: 1.8rem;
+            color: var(--accent);
+        }
+
+        .result-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-label {
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .result-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .comparison-chart h3 {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-bar {
+            height: 24px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            margin: 10px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .chart-fill {
+            height: 100%;
+            background: var(--secondary);
+            border-radius: 12px;
+            transition: width 0.8s ease-out;
+        }
+
+        .chart-label {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-weight: 600;
+            z-index: 2;
+        }
+        
+        .comparison-value {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-weight: 600;
+            z-index: 2;
+        }
+        
+        .export-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .export-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .export-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 40px;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 250px;
+            background-color: var(--dark);
+            color: var(--light);
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -125px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .dark-mode .tooltip .tooltiptext {
+            background-color: var(--light);
+            color: var(--dark);
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translate(-50%, 150%);
+            padding: 15px 25px;
+            background-color: var(--secondary);
+            color: white;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            transition: transform 0.4s ease-in-out;
+            z-index: 1000;
+            text-align: center;
+        }
+        
+        .notification.show {
+            transform: translate(-50%, 0);
+        }
+        .notification.error {
+            background-color: #e74c3c;
+        }
+        
+        .input-error {
+            border-color: #e74c3c !important;
+            animation: shake 0.5s;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <button class="theme-toggle" id="theme-toggle">
+                <i class="fas fa-moon"></i>
+            </button>
+            <div class="logo">
+                <div class="logo-icon"><i class="fas fa-ruler-vertical"></i></div>
+                <h1>Professional Height Calculator</h1>
+                <p class="subtitle">Accurately convert between height units, visualize measurements, and export your results with ease.</p>
+            </div>
+        </header>
+        
+        <div class="calculator-wrapper" id="calculator-wrapper">
+            <div class="calculator-card">
+                <div class="card-header">
+                    <i class="fas fa-sliders-h"></i>
+                    <h2>Height Input</h2>
+                </div>
+                
+                <div class="input-tabs">
+                    <button class="tab-btn active" data-tab="imperial">Imperial (ft, in)</button>
+                    <button class="tab-btn" data-tab="metric">Metric (cm, m)</button>
+                </div>
+                
+                <div class="conversion-container active" id="imperial-input">
+                    <div class="input-group">
+                        <label for="feet">Feet <span class="tooltip"><i class="fas fa-info-circle"></i><span class="tooltiptext">Enter the feet component of your height.</span></span></label>
+                        <input type="number" id="feet" placeholder="e.g., 5" min="0" max="10" step="1" value="5">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="inches">Inches <span class="tooltip"><i class="fas fa-info-circle"></i><span class="tooltiptext">Enter the inches component (0-11.9).</span></span></label>
+                        <input type="number" id="inches" placeholder="e.g., 9" min="0" max="11.9" step="0.1" value="9">
+                    </div>
+                </div>
+                
+                <div class="conversion-container" id="metric-input">
+                    <div class="input-group">
+                        <label for="centimeters">Centimeters <span class="tooltip"><i class="fas fa-info-circle"></i><span class="tooltiptext">Enter your total height in centimeters.</span></span></label>
+                        <input type="number" id="centimeters" placeholder="e.g., 175" min="0" max="300" step="0.1">
+                    </div>
+                </div>
+                
+                <button id="calculate-btn" class="btn-calculate"><i class="fas fa-calculator"></i> Calculate Height</button>
+            </div>
+            
+            <div class="result-card">
+                <div class="result-header">
+                    <i class="fas fa-chart-line"></i>
+                    <h2>Height Results</h2>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">Imperial (Feet & Inches)</div>
+                    <div class="result-value" id="result-imperial">-</div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">Centimeters</div>
+                    <div class="result-value" id="result-centimeters">-</div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">Meters</div>
+                    <div class="result-value" id="result-meters">-</div>
+                </div>
+                
+                <div class="comparison-chart">
+                    <h3><i class="fas fa-chart-bar"></i> Height Comparison</h3>
+                    <div class="chart-container">
+                        <div class="chart-bar"><div class="chart-fill" id="your-height-bar"></div><div class="chart-label">Your Height</div><div class="comparison-value" id="your-height-value">-</div></div>
+                        <div class="chart-bar"><div class="chart-fill" id="male-bar"></div><div class="chart-label">Average Male</div><div class="comparison-value">175.3 cm</div></div>
+                        <div class="chart-bar"><div class="chart-fill" id="female-bar"></div><div class="chart-label">Average Female</div><div class="comparison-value">161.5 cm</div></div>
+                    </div>
+                </div>
+                
+                <div class="export-options">
+                    <button class="export-btn" id="export-pdf"><i class="fas fa-file-pdf"></i> PDF</button>
+                    <button class="export-btn" id="export-image"><i class="fas fa-image"></i> Image</button>
+                    <button class="export-btn" id="export-text"><i class="fas fa-file-alt"></i> Text</button>
+                    <button class="export-btn" id="export-copy"><i class="fas fa-copy"></i> Copy</button>
+                </div>
+            </div>
+        </div>
+
+        <footer><p>© 2024 Professional Height Calculator. All rights reserved.</p></footer>
+    </div>
+    
+    <div class="notification" id="notification"></div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // DOM Elements
+        const themeToggle = document.getElementById('theme-toggle');
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const conversionContainers = document.querySelectorAll('.conversion-container');
+        const calculateBtn = document.getElementById('calculate-btn');
+        const exportPdfBtn = document.getElementById('export-pdf');
+        const exportImageBtn = document.getElementById('export-image');
+        const exportTextBtn = document.getElementById('export-text');
+        const exportCopyBtn = document.getElementById('export-copy');
+        const notification = document.getElementById('notification');
+        const wrapperToExport = document.getElementById('calculator-wrapper');
+
+        // Input Elements
+        const feetInput = document.getElementById('feet');
+        const inchesInput = document.getElementById('inches');
+        const cmInput = document.getElementById('centimeters');
+
+        // Result Elements
+        const resultImperial = document.getElementById('result-imperial');
+        const resultCentimeters = document.getElementById('result-centimeters');
+        const resultMeters = document.getElementById('result-meters');
+        const yourHeightBar = document.getElementById('your-height-bar');
+        const yourHeightValue = document.getElementById('your-height-value');
+        const maleBar = document.getElementById('male-bar');
+        const femaleBar = document.getElementById('female-bar');
+        
+        let lastResult = null; // Store last calculation for exports
+
+        // --- Event Listeners ---
+        
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            themeToggle.innerHTML = isDarkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        });
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                switchTab(button.dataset.tab);
+            });
+        });
+
+        calculateBtn.addEventListener('click', handleCalculation);
+        exportPdfBtn.addEventListener('click', exportAsPdf);
+        exportImageBtn.addEventListener('click', exportAsImage);
+        exportTextBtn.addEventListener('click', exportAsText);
+        exportCopyBtn.addEventListener('click', copyToClipboard);
+
+        // --- Core Functions ---
+
+        function switchTab(tab) {
+             tabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+             conversionContainers.forEach(container => {
+                container.classList.toggle('active', container.id === `${tab}-input`);
+            });
+            clearInputs(tab === 'imperial' ? 'metric' : 'imperial');
+        }
+
+        function clearInputs(tabToClear) {
+            if(tabToClear === 'imperial') {
+                feetInput.value = '';
+                inchesInput.value = '';
+            } else {
+                cmInput.value = '';
+            }
+        }
+
+        function handleCalculation() {
+            if (!validateInputs()) {
+                showNotification("Please enter a valid height.", "error");
+                return;
+            }
+
+            const imperialActive = document.querySelector('.tab-btn[data-tab="imperial"]').classList.contains('active');
+            let cm = 0;
+            if (imperialActive) {
+                const feet = parseFloat(feetInput.value) || 0;
+                const inches = parseFloat(inchesInput.value) || 0;
+                cm = (feet * 12 + inches) * 2.54;
+            } else {
+                cm = parseFloat(cmInput.value) || 0;
+            }
+            
+            const totalInches = cm / 2.54;
+            const feet = Math.floor(totalInches / 12);
+            const inches = totalInches % 12;
+
+            lastResult = {
+                imperial: `${feet}' ${inches.toFixed(1)}"`,
+                cm: `${cm.toFixed(1)} cm`,
+                meters: `${(cm / 100).toFixed(2)} m`
+            };
+
+            updateResultsUI(lastResult);
+            updateComparisonChart(cm);
+        }
+
+        function validateInputs() {
+            const imperialActive = document.querySelector('.tab-btn[data-tab="imperial"]').classList.contains('active');
+            let isValid = true;
+            [feetInput, inchesInput, cmInput].forEach(input => input.classList.remove('input-error'));
+
+            if (imperialActive) {
+                const feet = feetInput.value;
+                const inches = inchesInput.value;
+                if (feet.trim() === '' || isNaN(feet) || feet < 0) {
+                    feetInput.classList.add('input-error');
+                    isValid = false;
+                }
+                if (inches.trim() === '' || isNaN(inches) || inches < 0 || inches >= 12) {
+                    inchesInput.classList.add('input-error');
+                    isValid = false;
+                }
+            } else {
+                const cm = cmInput.value;
+                 if (cm.trim() === '' || isNaN(cm) || cm <= 0) {
+                    cmInput.classList.add('input-error');
+                    isValid = false;
+                }
+            }
+            return isValid;
+        }
+
+        function updateResultsUI(results) {
+            resultImperial.textContent = results.imperial;
+            resultCentimeters.textContent = results.cm;
+            resultMeters.textContent = results.meters;
+        }
+        
+        function updateComparisonChart(userHeightCm) {
+            const avgMaleHeight = 175.3;
+            const avgFemaleHeight = 161.5;
+            
+            const maxHeight = Math.max(userHeightCm, avgMaleHeight, avgFemaleHeight) * 1.1;
+            
+            yourHeightBar.style.width = `${(userHeightCm / maxHeight) * 100}%`;
+            maleBar.style.width = `${(avgMaleHeight / maxHeight) * 100}%`;
+            femaleBar.style.width = `${(avgFemaleHeight / maxHeight) * 100}%`;
+            
+            yourHeightValue.textContent = `${userHeightCm.toFixed(1)} cm`;
+        }
+
+        function showNotification(message, type = "success") {
+            notification.textContent = message;
+            notification.className = 'notification show'; // Reset classes
+            if (type === 'error') {
+                notification.classList.add('error');
+            }
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // --- Export Functions ---
+        
+        async function exportWithCanvas(callback, errorMsg) {
+            if (!lastResult) {
+                showNotification("Please calculate a height first.", "error");
+                return;
+            }
+            try {
+                const canvas = await html2canvas(wrapperToExport, {
+                     backgroundColor: getComputedStyle(document.body).getPropertyValue('--card-bg').trim()
+                });
+                callback(canvas);
+            } catch (error) {
+                console.error(errorMsg, error);
+                showNotification("Failed to generate file. Please try again.", "error");
+            }
+        }
+        
+        function exportAsPdf() {
+            exportWithCanvas(canvas => {
+                const { jsPDF } = window.jspdf;
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                pdf.save('height-calculation.pdf');
+                showNotification("PDF downloaded successfully!");
+            }, "Error exporting to PDF:");
+        }
+
+        function exportAsImage() {
+            exportWithCanvas(canvas => {
+                const link = document.createElement('a');
+                link.download = 'height-calculation.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                showNotification("Image downloaded successfully!");
+            }, "Error exporting to Image:");
+        }
+
+        function generateTextContent() {
+            if (!lastResult) return null;
+            return `Height Calculation Results:\n- Imperial: ${lastResult.imperial}\n- Centimeters: ${lastResult.cm}\n- Meters: ${lastResult.meters}\n\nGenerated by Professional Height Calculator`;
+        }
+
+        function exportAsText() {
+            const text = generateTextContent();
+            if (!text) {
+                 showNotification("Please calculate a height first.", "error"); return;
+            }
+            const blob = new Blob([text], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.download = 'height-calculation.txt';
+            link.href = URL.createObjectURL(blob);
+            link.click();
+        }
+
+        function copyToClipboard() {
+             const text = generateTextContent();
+            if (!text) {
+                 showNotification("Please calculate a height first.", "error"); return;
+            }
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification("Results copied to clipboard!");
+            }).catch(err => {
+                showNotification("Failed to copy. Please try again.", "error");
+            });
+        }
+        
+        // Initial state
+        handleCalculation();
+    });
+    </script>
+</body>
+</html>

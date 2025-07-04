@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Stair Calculator</title>
+    
+    <!-- Dependencies for PDF/PNG Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        /* CSS Variables for Theming (Light/Dark Mode) */
+        :root {
+            --bg-color: #f8f9fa;
+            --text-color: #212529;
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --border-color: #dee2e6;
+            --card-bg: #ffffff;
+            --input-bg: #ffffff;
+            --input-border: #ced4da;
+            --shadow: 0 4px 8px rgba(0,0,0,0.05);
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #f8f9fa;
+            --primary-color: #0d6efd;
+            --secondary-color: #adb5bd;
+            --border-color: #495057;
+            --card-bg: #2c2c2c;
+            --input-bg: #343a40;
+            --input-border: #495057;
+            --shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        /* General Styles & Accessibility */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            transition: background-color 0.3s, color 0.3s;
+            font-size: 16px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 350px 1fr 250px;
+            gap: 25px;
+        }
+
+        h1, h2 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        /* Card-like Sections for clean UI */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        /* Left Column: Controls */
+        #controls-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        /* Middle Column: Results & Visualization */
+        #results-column {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        /* Right Column: Monetization & Actions */
+        #actions-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        /* Header & Theme Toggle */
+        header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .theme-switch-wrapper {
+            display: flex;
+            align-items: center;
+        }
+        .theme-switch {
+            display: inline-block;
+            height: 24px;
+            position: relative;
+            width: 50px;
+        }
+        .theme-switch input { display: none; }
+        .slider {
+            background-color: var(--secondary-color);
+            bottom: 0;
+            cursor: pointer;
+            left: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            background-color: #fff;
+            bottom: 4px;
+            content: "";
+            height: 16px;
+            left: 4px;
+            position: absolute;
+            transition: .4s;
+            width: 16px;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--primary-color); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .input-group {
+            display: flex;
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-size: 1rem;
+        }
+        .input-group input { border-radius: 4px 0 0 4px; }
+        .input-group-text {
+            background-color: var(--border-color);
+            padding: 10px;
+            border-radius: 0 4px 4px 0;
+            font-weight: bold;
+        }
+
+        .tooltip-icon {
+            cursor: help;
+            margin-left: 8px;
+            color: var(--secondary-color);
+            border: 1px solid var(--secondary-color);
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        /* Results Display */
+        #results-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        #results-display div {
+            padding: 10px;
+            background-color: var(--bg-color);
+            border-radius: 4px;
+        }
+        #results-display strong {
+            display: block;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+
+        /* Visualization SVG */
+        #visualization-container svg {
+            width: 100%;
+            height: auto;
+            border: 1px dashed var(--border-color);
+            border-radius: 4px;
+        }
+
+        /* Actions & Sharing Buttons */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            text-align: center;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-secondary { background-color: var(--secondary-color); color: white; }
+        .btn-primary:hover { background-color: #0056b3; }
+        .btn-secondary:hover { background-color: #5a6268; }
+
+        #share-link {
+            width: 100%;
+            padding: 8px;
+            margin-top: 10px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border-radius: 4px;
+            font-size: 0.9em;
+            word-wrap: break-word;
+        }
+
+        /* --- MONETIZATION PLACEHOLDERS --- */
+        .ad-placeholder {
+            min-height: 250px;
+            width: 100%;
+            background-color: var(--border-color);
+            border: 2px dashed var(--secondary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 10px;
+            color: var(--secondary-color);
+            font-weight: bold;
+            border-radius: 8px;
+        }
+        .ad-placeholder p { margin: 0; }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 320px 1fr;
+            }
+            #actions-column {
+                grid-column: 1 / -1;
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            #actions-column > .card {
+                flex-grow: 1;
+            }
+        }
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            body { font-size: 14px; }
+            .btn { padding: 15px; }
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                background-color: #fff;
+                color: #000;
+            }
+            #controls-column, #actions-column, header, .ad-placeholder, .btn {
+                display: none;
+            }
+            .container {
+                display: block;
+                margin: 0;
+                padding: 0;
+            }
+            .card {
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
+            h1, h2 { color: #000; }
+            #results-display strong { color: #000; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Stair Calculator Pro</h1>
+            <div class="theme-switch-wrapper">
+                <span>Light</span> 
+                <label class="theme-switch" for="theme-checkbox">
+                    <input type="checkbox" id="theme-checkbox" />
+                    <div class="slider"></div>
+                </label>
+                 <span>Dark</span>
+            </div>
+        </header>
+
+        <!-- Column 1: Controls -->
+        <div id="controls-column">
+            <div class="card">
+                <h2>1. Parameters</h2>
+                <form id="stair-form">
+                    <div class="form-group">
+                        <label for="units">Measurement Unit</label>
+                        <select id="units">
+                            <option value="inches" selected>Inches (in)</option>
+                            <option value="feet">Feet (ft)</option>
+                            <option value="meters">Meters (m)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="totalRise">Total Rise (A)</label>
+                        <div class="input-group">
+                            <input type="number" id="totalRise" value="108" step="0.1" required>
+                            <span class="input-group-text" id="rise-unit">in</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="idealRise">Ideal Riser Height (B)</label>
+                        <div class="input-group">
+                            <input type="number" id="idealRise" value="7" step="0.1">
+                             <span class="input-group-text" id="ideal-rise-unit">in</span>
+                             <span class="tooltip-icon" title="Typical range is 7 to 7.75 inches. This helps determine the number of steps.">?</span>
+                        </div>
+                    </div>
+                     <div class="form-group">
+                        <label for="treadDepth">Tread Depth (C)</label>
+                        <div class="input-group">
+                            <input type="number" id="treadDepth" value="10" step="0.1">
+                             <span class="input-group-text" id="tread-depth-unit">in</span>
+                             <span class="tooltip-icon" title="The depth of a single step. Minimum is typically 10 inches.">?</span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Column 2: Results and Visualization -->
+        <div id="results-column">
+            <div class="card">
+                <h2>2. Calculated Results</h2>
+                <div id="results-display" aria-live="polite">
+                    <!-- Results will be injected here by JavaScript -->
+                </div>
+            </div>
+             <div class="card" id="printable-area">
+                <h2>3. Visualization</h2>
+                <div id="visualization-container">
+                    <svg id="stair-visualization" viewbox="0 0 800 600" preserveAspectRatio="xMidYMid meet"></svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Column 3: Actions & Monetization -->
+        <div id="actions-column">
+             <div class="card">
+                <h2>Actions</h2>
+                <button id="printBtn" class="btn btn-secondary" style="margin-bottom: 10px;">Print Results</button>
+                <button id="savePngBtn" class="btn btn-secondary" style="margin-bottom: 10px;">Save as PNG</button>
+                <button id="savePdfBtn" class="btn btn-secondary" style="margin-bottom: 10px;">Save as PDF</button>
+                <button id="saveCsvBtn" class="btn btn-secondary">Save as CSV</button>
+            </div>
+
+            <div class="card">
+                <h2>Share</h2>
+                <button id="shareLinkBtn" class="btn btn-primary">Copy Shareable Link</button>
+                <input type="text" id="share-link" readonly>
+            </div>
+            
+            <div class="ad-placeholder">
+                <!-- =============================== -->
+                <!-- YLLIX AD CODE SLOT              -->
+                <!-- Replace this div with your Yllix ad script -->
+                <!-- =============================== -->
+                <p>Yllix Ad Space<br>(e.g., 300x250)</p>
+            </div>
+
+            <div class="ad-placeholder">
+                <!-- =============================== -->
+                <!-- ADSTERRA AD CODE SLOT           -->
+                <!-- Replace this div with your Adsterra ad script -->
+                <!-- =============================== -->
+                <p>Adsterra Ad Space<br>(e.g., 300x250)</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // --- DOM Elements ---
+        const form = document.getElementById('stair-form');
+        const unitsSelect = document.getElementById('units');
+        const totalRiseInput = document.getElementById('totalRise');
+        const idealRiseInput = document.getElementById('idealRise');
+        const treadDepthInput = document.getElementById('treadDepth');
+        const resultsDisplay = document.getElementById('results-display');
+        const svg = document.getElementById('stair-visualization');
+        const printBtn = document.getElementById('printBtn');
+        const savePngBtn = document.getElementById('savePngBtn');
+        const savePdfBtn = document.getElementById('savePdfBtn');
+        const saveCsvBtn = document.getElementById('saveCsvBtn');
+        const shareLinkBtn = document.getElementById('shareLinkBtn');
+        const shareLinkInput = document.getElementById('share-link');
+        const themeCheckbox = document.getElementById('theme-checkbox');
+
+        // --- Conversion Factors ---
+        const CONVERSIONS = {
+            in: { to_in: 1, to_ft: 1/12, to_m: 0.0254 },
+            ft: { to_in: 12, to_ft: 1, to_m: 0.3048 },
+            m:  { to_in: 39.3701, to_ft: 3.28084, to_m: 1 }
+        };
+        const UNIT_ABBREVIATIONS = {
+            inches: 'in', feet: 'ft', meters: 'm'
+        };
+
+        // --- Application State ---
+        let currentUnit = 'inches';
+        let calculatedResults = {};
+
+        // --- Core Calculation Logic ---
+        function calculateAndDisplay() {
+            // 1. Get all values and convert to a base unit (inches) for calculation
+            const baseUnit = 'inches';
+            const totalRiseBase = parseFloat(totalRiseInput.value) * CONVERSIONS[UNIT_ABBREVIATIONS[currentUnit]].to_in;
+            const idealRiseBase = parseFloat(idealRiseInput.value) * CONVERSIONS[UNIT_ABBREVIATIONS[currentUnit]].to_in;
+            const treadDepthBase = parseFloat(treadDepthInput.value) * CONVERSIONS[UNIT_ABBREVIATIONS[currentUnit]].to_in;
+            
+            if (isNaN(totalRiseBase) || totalRiseBase <= 0 || isNaN(idealRiseBase) || isNaN(treadDepthBase)) {
+                resultsDisplay.innerHTML = `<p>Please enter valid numbers in all fields.</p>`;
+                svg.innerHTML = '';
+                return;
+            }
+
+            // 2. Perform stair calculations
+            const numRisers = Math.round(totalRiseBase / idealRiseBase);
+            const actualRiserHeight = totalRiseBase / numRisers;
+            const numTreads = numRisers - 1;
+            const totalRun = numTreads * treadDepthBase;
+            const stringerLength = Math.sqrt(Math.pow(totalRiseBase, 2) + Math.pow(totalRun, 2));
+            const stairAngle = Math.atan(totalRiseBase / totalRun) * (180 / Math.PI);
+            
+            // Check for building code rules (optional but good practice)
+            // Rule: Riser Height + Tread Depth should be between 17 and 18 inches
+            const riserTreadSum = actualRiserHeight + treadDepthBase;
+            
+            // 3. Store results (in base unit)
+            calculatedResults = {
+                numRisers,
+                actualRiserHeight,
+                numTreads,
+                treadDepth: treadDepthBase,
+                totalRise: totalRiseBase,
+                totalRun,
+                stringerLength,
+                stairAngle,
+                riserTreadSum
+            };
+
+            // 4. Update UI
+            updateUI();
+            drawStairs();
+            generateShareLink();
+        }
+        
+        // --- UI Update Functions ---
+        function updateUI() {
+            const displayUnit = unitsSelect.value;
+            const convFactor = CONVERSIONS[base_unit_abbr(displayUnit)].to_in;
+            
+            const format = (val) => isNaN(val) ? 'N/A' : val.toFixed(2);
+            
+            const displayData = {
+                'Number of Risers': calculatedResults.numRisers.toFixed(0),
+                'Actual Riser Height': `${format(calculatedResults.actualRiserHeight / convFactor)} ${base_unit_abbr(displayUnit)}`,
+                'Number of Treads': calculatedResults.numTreads.toFixed(0),
+                'Tread Depth': `${format(calculatedResults.treadDepth / convFactor)} ${base_unit_abbr(displayUnit)}`,
+                'Total Run': `${format(calculatedResults.totalRun / convFactor)} ${base_unit_abbr(displayUnit)}`,
+                'Stringer Length': `${format(calculatedResults.stringerLength / convFactor)} ${base_unit_abbr(displayUnit)}`,
+                'Stair Angle': `${format(calculatedResults.stairAngle)}°`,
+                'Riser + Tread Sum': `${format(calculatedResults.riserTreadSum / CONVERSIONS[base_unit_abbr('inches')].to_in)} in`,
+            };
+
+            resultsDisplay.innerHTML = Object.entries(displayData).map(([key, value]) => `
+                <div>${key} <strong>${value}</strong></div>
+            `).join('');
+        }
+        
+        function drawStairs() {
+            const { numRisers, actualRiserHeight, treadDepth, totalRise, totalRun } = calculatedResults;
+            
+            svg.innerHTML = ''; // Clear previous drawing
+
+            if (!numRisers || numRisers <= 0) return;
+
+            const PADDING = 50;
+            const svgWidth = 800;
+            const svgHeight = 600;
+
+            const contentWidth = totalRun;
+            const contentHeight = totalRise;
+
+            // Calculate scale to fit drawing in SVG
+            const scaleX = (svgWidth - 2 * PADDING) / contentWidth;
+            const scaleY = (svgHeight - 2 * PADDING) / contentHeight;
+            const scale = Math.min(scaleX, scaleY);
+            
+            const scaledRiserHeight = actualRiserHeight * scale;
+            const scaledTreadDepth = treadDepth * scale;
+
+            let pathData = `M ${PADDING}, ${svgHeight - PADDING}`;
+            for (let i = 0; i < numRisers; i++) {
+                pathData += ` v ${-scaledRiserHeight}`; // Move up
+                if (i < numRisers - 1) {
+                    pathData += ` h ${scaledTreadDepth}`; // Move right
+                }
+            }
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', pathData);
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke', getComputedStyle(document.body).getPropertyValue('--primary-color'));
+            path.setAttribute('stroke-width', '3');
+            svg.appendChild(path);
+
+            // Add dimension lines
+            const totalRunY = svgHeight - PADDING + 20;
+            const totalRiseX = PADDING - 20;
+
+            // Total Run Dimension
+            const runLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            runLine.setAttribute('d', `M ${PADDING},${totalRunY} L ${PADDING + totalRun * scale},${totalRunY}`);
+            runLine.setAttribute('stroke', '#ff6347');
+            runLine.setAttribute('stroke-width', '1');
+            svg.appendChild(runLine);
+            addTextToSVG(`Total Run: ${formatForDisplay(totalRun)}`, PADDING + (totalRun*scale/2), totalRunY + 15, 'middle', '#ff6347');
+
+            // Total Rise Dimension
+            const riseLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            riseLine.setAttribute('d', `M ${totalRiseX},${svgHeight - PADDING} L ${totalRiseX},${svgHeight - PADDING - totalRise * scale}`);
+            riseLine.setAttribute('stroke', '#4682b4');
+            riseLine.setAttribute('stroke-width', '1');
+            svg.appendChild(riseLine);
+            addTextToSVG(`Total Rise: ${formatForDisplay(totalRise)}`, totalRiseX - 10, svgHeight - PADDING - (totalRise*scale/2), 'end', '#4682b4', `rotate(-90, ${totalRiseX - 10}, ${svgHeight - PADDING - (totalRise*scale/2)})`);
+
+        }
+        
+        function addTextToSVG(content, x, y, anchor, fill, transform = '') {
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', x);
+            text.setAttribute('y', y);
+            text.setAttribute('text-anchor', anchor);
+            text.setAttribute('fill', fill || getComputedStyle(document.body).getPropertyValue('--text-color'));
+            text.setAttribute('font-size', '14');
+            text.setAttribute('font-family', 'var(--font-family)');
+            text.setAttribute('transform', transform);
+            text.textContent = content;
+            svg.appendChild(text);
+        }
+        
+        function formatForDisplay(baseValue) {
+            const displayUnit = unitsSelect.value;
+            const convFactor = CONVERSIONS[base_unit_abbr(displayUnit)].to_in;
+            return `${(baseValue / convFactor).toFixed(2)} ${base_unit_abbr(displayUnit)}`;
+        }
+
+        // --- Event Handlers ---
+        form.addEventListener('input', calculateAndDisplay);
+        
+        unitsSelect.addEventListener('change', (e) => {
+            const newUnit = e.target.value;
+            const oldUnit = currentUnit;
+
+            // Convert input values to maintain physical dimensions
+            const convFactor = CONVERSIONS[base_unit_abbr(oldUnit)][`to_${base_unit_abbr(newUnit)}`];
+            
+            totalRiseInput.value = (parseFloat(totalRiseInput.value) * convFactor).toFixed(3);
+            idealRiseInput.value = (parseFloat(idealRiseInput.value) * convFactor).toFixed(3);
+            treadDepthInput.value = (parseFloat(treadDepthInput.value) * convFactor).toFixed(3);
+            
+            currentUnit = newUnit;
+            updateUnitLabels();
+            calculateAndDisplay();
+        });
+
+        themeCheckbox.addEventListener('change', () => {
+            if (themeCheckbox.checked) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+            }
+             // Redraw with new theme colors
+            calculateAndDisplay();
+        });
+
+        printBtn.addEventListener('click', () => window.print());
+
+        savePngBtn.addEventListener('click', () => {
+             html2canvas(document.getElementById('printable-area'), {
+                backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--card-bg')
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'stair-calculation.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        });
+        
+        savePdfBtn.addEventListener('click', () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            
+            html2canvas(document.getElementById('printable-area'), { 
+                backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--card-bg'),
+                scale: 2 // Higher scale for better PDF quality
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const imgProps= doc.getImageProperties(imgData);
+                const pdfWidth = doc.internal.pageSize.getWidth();
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                
+                doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                doc.save('stair-calculation.pdf');
+            });
+        });
+        
+        saveCsvBtn.addEventListener('click', () => {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Parameter,Value,Unit\n";
+
+            const displayUnit = unitsSelect.value;
+            const convFactor = CONVERSIONS[base_unit_abbr(displayUnit)].to_in;
+
+            const csvData = [
+                ['Number of Risers', calculatedResults.numRisers.toFixed(0), ''],
+                ['Actual Riser Height', (calculatedResults.actualRiserHeight / convFactor).toFixed(3), base_unit_abbr(displayUnit)],
+                ['Number of Treads', calculatedResults.numTreads.toFixed(0), ''],
+                ['Tread Depth', (calculatedResults.treadDepth / convFactor).toFixed(3), base_unit_abbr(displayUnit)],
+                ['Total Run', (calculatedResults.totalRun / convFactor).toFixed(3), base_unit_abbr(displayUnit)],
+                ['Stringer Length', (calculatedResults.stringerLength / convFactor).toFixed(3), base_unit_abbr(displayUnit)],
+                ['Stair Angle', calculatedResults.stairAngle.toFixed(2), 'degrees'],
+            ];
+
+            csvData.forEach(rowArray => {
+                let row = rowArray.join(",");
+                csvContent += row + "\r\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "stair-calculation.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+        
+        shareLinkBtn.addEventListener('click', () => {
+            shareLinkInput.select();
+            shareLinkInput.setSelectionRange(0, 99999); // For mobile
+            try {
+                navigator.clipboard.writeText(shareLinkInput.value);
+                shareLinkBtn.textContent = 'Copied!';
+                setTimeout(() => shareLinkBtn.textContent = 'Copy Shareable Link', 2000);
+            } catch(err) {
+                alert('Failed to copy link.');
+            }
+        });
+
+        // --- Helper & Initialization Functions ---
+        function updateUnitLabels() {
+            const unitAbbr = base_unit_abbr(currentUnit);
+            document.getElementById('rise-unit').textContent = unitAbbr;
+            document.getElementById('ideal-rise-unit').textContent = unitAbbr;
+            document.getElementById('tread-depth-unit').textContent = unitAbbr;
+        }
+
+        function base_unit_abbr(unit) {
+            return UNIT_ABBREVIATIONS[unit] || 'in';
+        }
+        
+        function generateShareLink() {
+            const params = new URLSearchParams({
+                unit: currentUnit,
+                totalRise: totalRiseInput.value,
+                idealRise: idealRiseInput.value,
+                treadDepth: treadDepthInput.value,
+            });
+            shareLinkInput.value = `${window.location.href.split('?')[0]}?${params.toString()}`;
+        }
+        
+        function loadStateFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('unit')) {
+                const unit = params.get('unit');
+                if (Object.keys(UNIT_ABBREVIATIONS).includes(unit)) {
+                   unitsSelect.value = unit;
+                   currentUnit = unit;
+                }
+            }
+            if(params.has('totalRise')) totalRiseInput.value = params.get('totalRise');
+            if(params.has('idealRise')) idealRiseInput.value = params.get('idealRise');
+            if(params.has('treadDepth')) treadDepthInput.value = params.get('treadDepth');
+        }
+
+        // --- Initial Load ---
+        function init() {
+            // Check for saved theme
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                themeCheckbox.checked = true;
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                 document.documentElement.setAttribute('data-theme', 'light');
+            }
+            
+            loadStateFromURL();
+            updateUnitLabels();
+            calculateAndDisplay();
+        }
+
+        init();
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Slope Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #7209b7;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --danger: #f44336;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --border: #dee2e6;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+            --bg: #f5f7fa;
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            --card-bg: #ffffff;
+            --text: #212529;
+            --text-secondary: #6c757d;
+            --explanation-bg: #f0f7ff;
+            --ad-bg: #f0f0f0;
+        }
+
+        .dark-mode {
+            --bg: #121826;
+            --bg-gradient: linear-gradient(135deg, #0d1117 0%, #1a1f29 100%);
+            --card-bg: #1e293b;
+            --text: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            --explanation-bg: #1e3a8a;
+            --ad-bg: #1f2937;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        /* Theme toggle */
+        .theme-toggle {
+            position: absolute;
+            top: 25px;
+            right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            width: 60px;
+            height: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 0 5px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .toggle-circle {
+            width: 22px;
+            height: 22px;
+            background: var(--primary);
+            border-radius: 50%;
+            position: absolute;
+            left: 4px;
+            transition: transform 0.3s;
+        }
+
+        .dark-mode .toggle-circle {
+            transform: translateX(30px);
+        }
+
+        .theme-toggle i {
+            font-size: 14px;
+            position: absolute;
+        }
+
+        .theme-toggle .fa-sun {
+            color: #ff9800;
+            left: 8px;
+        }
+
+        .theme-toggle .fa-moon {
+            color: #e2e8f0;
+            right: 8px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            position: relative;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .logo i {
+            font-size: 2.5rem;
+            color: var(--primary);
+        }
+
+        .logo h1 {
+            font-size: 2.2rem;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .tagline {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .ad-banner {
+            background-color: var(--ad-bg);
+            border: 1px dashed var(--border);
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .calculator-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+
+        @media (min-width: 768px) {
+            .calculator-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            background: var(--card-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .input-group > div {
+            flex: 1;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-block {
+            display: block;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-success:hover {
+            background: #43a047;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+        }
+
+        .result-container {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 25px;
+            margin-top: 20px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .result-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 15px 0;
+            word-break: break-all;
+        }
+
+        .explanation {
+            margin-top: 25px;
+            padding: 20px;
+            background: var(--explanation-bg);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .explanation h3 {
+            margin-bottom: 12px;
+            color: var(--primary);
+        }
+
+        .explanation p {
+            margin-bottom: 10px;
+        }
+
+        .output-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 25px;
+            justify-content: center;
+        }
+
+        .output-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .output-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .ad-inline {
+            background-color: var(--ad-bg);
+            border: 1px dashed var(--border);
+            height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 30px 0;
+            border-radius: 8px;
+            color: var(--text-secondary);
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 25px 0;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        .ad-footer {
+            background-color: var(--ad-bg);
+            border: 1px dashed var(--border);
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 30px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+        }
+
+        .security-badge {
+            display: inline-block;
+            background: var(--success);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+
+        .error-message {
+            color: var(--danger);
+            margin-top: 5px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .coordinate-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .point-label {
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+
+        .graph-container {
+            margin-top: 20px;
+            height: 300px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        @media (max-width: 768px) {
+            .logo h1 {
+                font-size: 1.8rem;
+            }
+            
+            .card-header {
+                font-size: 1rem;
+                padding: 12px 15px;
+            }
+            
+            .card-body {
+                padding: 15px;
+            }
+            
+            .theme-toggle {
+                position: relative;
+                top: 0;
+                right: 0;
+                margin: 10px auto;
+            }
+            
+            .calculator-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-chart-line"></i>
+                <h1>Professional Slope Calculator <span class="security-badge">Secure</span></h1>
+            </div>
+            <p class="tagline">Calculate slope between two points with step-by-step solutions</p>
+            
+            <div class="theme-toggle" id="theme-toggle">
+                <div class="toggle-circle"></div>
+                <i class="fas fa-sun"></i>
+                <i class="fas fa-moon"></i>
+            </div>
+        </header>
+        
+        <div class="ad-banner">
+            [Adsterra Ad Banner - 728x90]
+        </div>
+        
+        <div class="calculator-container">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-calculator"></i> Calculate Slope
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Point 1 (x₁, y₁)</label>
+                        <div class="input-group">
+                            <div>
+                                <input type="number" id="x1" placeholder="x coordinate" value="2">
+                            </div>
+                            <div>
+                                <input type="number" id="y1" placeholder="y coordinate" value="4">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Point 2 (x₂, y₂)</label>
+                        <div class="input-group">
+                            <div>
+                                <input type="number" id="x2" placeholder="x coordinate" value="5">
+                            </div>
+                            <div>
+                                <input type="number" id="y2" placeholder="y coordinate" value="9">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button id="calculate-btn" class="btn btn-block">
+                        <i class="fas fa-calculator"></i> Calculate Slope
+                    </button>
+                    
+                    <div class="result-container">
+                        <div>Slope (m) =</div>
+                        <div id="slope-result" class="result-value">1.000</div>
+                        <div id="slope-fraction">1/1</div>
+                    </div>
+                    
+                    <div class="explanation">
+                        <h3><i class="fas fa-lightbulb"></i> Step-by-Step Solution</h3>
+                        <p id="step1">Slope (m) = (y₂ - y₁) / (x₂ - x₁)</p>
+                        <p id="step2">m = (9 - 4) / (5 - 2)</p>
+                        <p id="step3">m = 5 / 3</p>
+                        <p id="step4">m = 1.6667</p>
+                    </div>
+                    
+                    <div class="graph-container" id="graph-container">
+                        <!-- Graph will be drawn here -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-history"></i> Recent Calculations
+                </div>
+                <div class="card-body">
+                    <div class="history-container">
+                        <div class="history-item">
+                            <div><strong>Points: (2,4) and (5,9)</strong></div>
+                            <div>Slope: 1.6667</div>
+                            <div style="font-size:0.8rem;color:var(--text-secondary);">Just now</div>
+                        </div>
+                        <div class="history-item">
+                            <div><strong>Points: (1,3) and (4,7)</strong></div>
+                            <div>Slope: 1.3333</div>
+                            <div style="font-size:0.8rem;color:var(--text-secondary);">5 minutes ago</div>
+                        </div>
+                        <div class="history-item">
+                            <div><strong>Points: (0,0) and (3,6)</strong></div>
+                            <div>Slope: 2.0000</div>
+                            <div style="font-size:0.8rem;color:var(--text-secondary);">12 minutes ago</div>
+                        </div>
+                    </div>
+                    
+                    <div class="ad-inline">
+                        [Yllix Inline Ad - 300x250]
+                    </div>
+                    
+                    <div class="output-options">
+                        <button class="output-btn" id="print-btn">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                        <button class="output-btn" id="save-pdf-btn">
+                            <i class="fas fa-file-pdf"></i> Save as PDF
+                        </button>
+                        <button class="output-btn" id="save-txt-btn">
+                            <i class="fas fa-file-alt"></i> Save as TXT
+                        </button>
+                        <button class="output-btn" id="save-png-btn">
+                            <i class="fas fa-image"></i> Save as PNG
+                        </button>
+                        <button class="output-btn" id="share-btn">
+                            <i class="fas fa-share-alt"></i> Share
+                        </button>
+                    </div>
+                    
+                    <div class="card" style="margin-top: 25px;">
+                        <div class="card-header">
+                            <i class="fas fa-shield-alt"></i> Security Status
+                        </div>
+                        <div class="card-body">
+                            <div style="margin-bottom: 15px;">
+                                <i class="fas fa-lock" style="color: var(--success);"></i> 
+                                <span>Client-Side Processing: <strong>Active</strong></span>
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <i class="fas fa-user-shield" style="color: var(--success);"></i> 
+                                <span>Input Validation: <strong>Enabled</strong></span>
+                            </div>
+                            <div>
+                                <i class="fas fa-bolt" style="color: var(--success);"></i> 
+                                <span>Performance: <strong>Optimized</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 Professional Slope Calculator | All Rights Reserved</p>
+            <div class="footer-links">
+                <a href="#"><i class="fas fa-book"></i> Documentation</a>
+                <a href="#"><i class="fas fa-shield-alt"></i> Privacy Policy</a>
+                <a href="#"><i class="fas fa-file-contract"></i> Terms of Service</a>
+                <a href="#"><i class="fas fa-envelope"></i> Contact Us</a>
+            </div>
+            <div class="ad-footer">
+                [Adsterra Footer Ad - 728x90]
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const x1Input = document.getElementById('x1');
+        const y1Input = document.getElementById('y1');
+        const x2Input = document.getElementById('x2');
+        const y2Input = document.getElementById('y2');
+        const calculateBtn = document.getElementById('calculate-btn');
+        const slopeResult = document.getElementById('slope-result');
+        const slopeFraction = document.getElementById('slope-fraction');
+        const step1 = document.getElementById('step1');
+        const step2 = document.getElementById('step2');
+        const step3 = document.getElementById('step3');
+        const step4 = document.getElementById('step4');
+        const graphContainer = document.getElementById('graph-container');
+        const themeToggle = document.getElementById('theme-toggle');
+        const body = document.body;
+        
+        // Initialize calculator
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Set theme based on preference
+            if (localStorage.getItem('theme') === 'dark') {
+                body.classList.add('dark-mode');
+            } else if (localStorage.getItem('theme') === 'light') {
+                body.classList.remove('dark-mode');
+            } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark');
+            }
+            
+            // Calculate initial example
+            calculateSlope();
+        });
+        
+        // Set up all event listeners
+        function setupEventListeners() {
+            // Theme toggle
+            themeToggle.addEventListener('click', toggleTheme);
+            
+            // Calculator button
+            calculateBtn.addEventListener('click', calculateSlope);
+            
+            // Output buttons
+            document.getElementById('print-btn').addEventListener('click', printResult);
+            document.getElementById('save-pdf-btn').addEventListener('click', saveAsPdf);
+            document.getElementById('save-txt-btn').addEventListener('click', saveAsTxt);
+            document.getElementById('save-png-btn').addEventListener('click', saveAsPng);
+            document.getElementById('share-btn').addEventListener('click', shareResult);
+        }
+        
+        // Toggle theme
+        function toggleTheme() {
+            body.classList.toggle('dark-mode');
+            const isDark = body.classList.contains('dark-mode');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+        
+        // Calculate slope
+        function calculateSlope() {
+            // Get input values
+            const x1 = parseFloat(x1Input.value);
+            const y1 = parseFloat(y1Input.value);
+            const x2 = parseFloat(x2Input.value);
+            const y2 = parseFloat(y2Input.value);
+            
+            // Validate inputs
+            if (isNaN(x1) || isNaN(y1) || isNaN(x2) || isNaN(y2)) {
+                alert("Please enter valid numbers for all coordinates");
+                return;
+            }
+            
+            // Check for division by zero
+            if (x1 === x2) {
+                slopeResult.textContent = "Undefined";
+                slopeFraction.textContent = "(vertical line)";
+                step1.textContent = "Slope (m) = (y₂ - y₁) / (x₂ - x₁)";
+                step2.textContent = `m = (${y2} - ${y1}) / (${x2} - ${x1})`;
+                step3.textContent = `m = ${y2 - y1} / 0`;
+                step4.textContent = "Division by zero - undefined slope";
+                drawGraph(x1, y1, x2, y2);
+                return;
+            }
+            
+            // Calculate slope
+            const slope = (y2 - y1) / (x2 - x1);
+            
+            // Display results
+            slopeResult.textContent = slope.toFixed(4);
+            
+            // Display fraction if applicable
+            const numerator = y2 - y1;
+            const denominator = x2 - x1;
+            slopeFraction.textContent = `${numerator}/${denominator}`;
+            
+            // Update step-by-step solution
+            step1.textContent = "Slope (m) = (y₂ - y₁) / (x₂ - x₁)";
+            step2.textContent = `m = (${y2} - ${y1}) / (${x2} - ${x1})`;
+            step3.textContent = `m = ${numerator} / ${denominator}`;
+            step4.textContent = `m = ${slope.toFixed(4)}`;
+            
+            // Draw graph
+            drawGraph(x1, y1, x2, y2);
+        }
+        
+        // Draw coordinate graph
+        function drawGraph(x1, y1, x2, y2) {
+            // Clear previous graph
+            graphContainer.innerHTML = '';
+            
+            // Create canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = graphContainer.clientWidth;
+            canvas.height = graphContainer.clientHeight;
+            graphContainer.appendChild(canvas);
+            
+            const ctx = canvas.getContext('2d');
+            
+            // Set background
+            ctx.fillStyle = body.classList.contains('dark-mode') ? '#1e293b' : '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Calculate bounds
+            const allX = [x1, x2, 0];
+            const allY = [y1, y2, 0];
+            const minX = Math.min(...allX);
+            const maxX = Math.max(...allX);
+            const minY = Math.min(...allY);
+            const maxY = Math.max(...allY);
+            
+            // Add some padding
+            const padding = 0.5;
+            const xRange = maxX - minX || 10;
+            const yRange = maxY - minY || 10;
+            
+            // Calculate scale
+            const xScale = (canvas.width - 40) / (xRange + padding * 2);
+            const yScale = (canvas.height - 40) / (yRange + padding * 2);
+            const scale = Math.min(xScale, yScale);
+            
+            // Calculate origin position
+            const originX = 20 + Math.abs(minX - padding) * scale;
+            const originY = canvas.height - 20 - Math.abs(minY - padding) * scale;
+            
+            // Draw axes
+            ctx.beginPath();
+            ctx.strokeStyle = body.classList.contains('dark-mode') ? '#94a3b8' : '#6c757d';
+            ctx.lineWidth = 1;
+            
+            // X axis
+            ctx.moveTo(0, originY);
+            ctx.lineTo(canvas.width, originY);
+            
+            // Y axis
+            ctx.moveTo(originX, canvas.height);
+            ctx.lineTo(originX, 0);
+            
+            ctx.stroke();
+            
+            // Draw grid lines
+            ctx.strokeStyle = body.classList.contains('dark-mode') ? '#334155' : '#e9ecef';
+            ctx.lineWidth = 0.5;
+            
+            // Vertical grid lines
+            for (let x = minX - padding; x <= maxX + padding; x++) {
+                if (x === 0) continue;
+                const xPos = originX + x * scale;
+                ctx.beginPath();
+                ctx.moveTo(xPos, 0);
+                ctx.lineTo(xPos, canvas.height);
+                ctx.stroke();
+            }
+            
+            // Horizontal grid lines
+            for (let y = minY - padding; y <= maxY + padding; y++) {
+                if (y === 0) continue;
+                const yPos = originY - y * scale;
+                ctx.beginPath();
+                ctx.moveTo(0, yPos);
+                ctx.lineTo(canvas.width, yPos);
+                ctx.stroke();
+            }
+            
+            // Draw points
+            const drawPoint = (x, y, color) => {
+                const xPos = originX + x * scale;
+                const yPos = originY - y * scale;
+                
+                ctx.beginPath();
+                ctx.fillStyle = color;
+                ctx.arc(xPos, yPos, 6, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Point label
+                ctx.fillStyle = body.classList.contains('dark-mode') ? '#e2e8f0' : '#212529';
+                ctx.font = '12px Arial';
+                ctx.fillText(`(${x},${y})`, xPos + 8, yPos - 8);
+            };
+            
+            // Draw line
+            ctx.beginPath();
+            ctx.strokeStyle = '#4361ee';
+            ctx.lineWidth = 2;
+            ctx.moveTo(originX + x1 * scale, originY - y1 * scale);
+            ctx.lineTo(originX + x2 * scale, originY - y2 * scale);
+            ctx.stroke();
+            
+            // Draw points
+            drawPoint(x1, y1, '#f44336');
+            drawPoint(x2, y2, '#4caf50');
+            
+            // Draw origin if visible
+            if (minX <= 0 && maxX >= 0 && minY <= 0 && maxY >= 0) {
+                ctx.beginPath();
+                ctx.fillStyle = '#ff9800';
+                ctx.arc(originX, originY, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // Output functions
+        function printResult() {
+            window.print();
+        }
+        
+        function saveAsPdf() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(18);
+            doc.text('Slope Calculation Result', 20, 20);
+            
+            doc.setFontSize(12);
+            doc.text(`Point 1: (${x1Input.value}, ${y1Input.value})`, 20, 35);
+            doc.text(`Point 2: (${x2Input.value}, ${y2Input.value})`, 20, 45);
+            doc.text(`Slope: ${slopeResult.textContent}`, 20, 55);
+            
+            if (slopeResult.textContent !== "Undefined") {
+                doc.text(`Fraction: ${slopeFraction.textContent}`, 20, 65);
+            }
+            
+            doc.text('Generated by Professional Slope Calculator', 20, 90);
+            
+            doc.save('slope-calculation.pdf');
+        }
+        
+        function saveAsTxt() {
+            let content = `Slope Calculation Result\n\n`;
+            content += `Point 1: (${x1Input.value}, ${y1Input.value})\n`;
+            content += `Point 2: (${x2Input.value}, ${y2Input.value})\n`;
+            content += `Slope: ${slopeResult.textContent}\n`;
+            
+            if (slopeResult.textContent !== "Undefined") {
+                content += `Fraction: ${slopeFraction.textContent}\n`;
+            }
+            
+            content += `\nGenerated by Professional Slope Calculator`;
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'slope-calculation.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        function saveAsPng() {
+            html2canvas(document.querySelector('.card-body')).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.href = imgData;
+                link.download = 'slope-calculation.png';
+                link.click();
+            });
+        }
+        
+        function shareResult() {
+            const calculationData = {
+                title: 'Slope Calculation',
+                text: `I calculated a slope of ${slopeResult.textContent} between points (${x1Input.value},${y1Input.value}) and (${x2Input.value},${y2Input.value})`,
+                url: window.location.href
+            };
+            
+            if (navigator.share) {
+                navigator.share(calculationData)
+                    .catch(error => console.log('Sharing failed:', error));
+            } else {
+                // Fallback for browsers without Web Share API
+                const el = document.createElement('textarea');
+                el.value = `${calculationData.text}\n\n${calculationData.url}`;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                alert('Calculation details copied to clipboard!');
+            }
+        }
+    </script>
+</body>
+</html>

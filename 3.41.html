@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Square Footage Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary: #007bff;
+            --secondary: #6c757d;
+            --accent: #17a2b8;
+            --success: #28a745;
+            --danger: #dc3545;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --border-color: #dee2e6;
+            --card-bg: #ffffff;
+            --body-bg: #f0f2f5;
+            --text-color: #212529;
+            --text-muted: #6c757d;
+            --shadow: 0 4px 12px rgba(0,0,0,0.1);
+            --border-radius: 12px;
+            --transition: all 0.3s ease-in-out;
+        }
+
+        .dark-mode {
+            --primary: #4da6ff;
+            --secondary: #a7b0b7;
+            --accent: #34d1e8;
+            --light: #343a40;
+            --dark: #f8f9fa;
+            --border-color: #495057;
+            --card-bg: #212529;
+            --body-bg: #121212;
+            --text-color: #f8f9fa;
+            --text-muted: #adb5bd;
+            --shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--body-bg);
+            color: var(--text-color);
+            line-height: 1.6;
+            transition: var(--transition);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .logo { font-size: 1.8rem; font-weight: 700; color: var(--primary); }
+        .logo i { margin-right: 10px; }
+
+        .theme-toggle {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            font-size: 1.2rem;
+        }
+
+        .calculator-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 1024px) {
+            .calculator-layout { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 25px;
+            margin-bottom: 30px;
+            transition: var(--transition);
+            border: 1px solid var(--border-color);
+        }
+
+        .card-header {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--primary);
+        }
+
+        .unit-toggle {
+            display: flex;
+            background-color: var(--body-bg);
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            padding: 5px;
+            border: 1px solid var(--border-color);
+        }
+
+        .unit-toggle button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: var(--transition);
+        }
+        .unit-toggle button.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media(max-width: 500px) {
+            .input-grid { grid-template-columns: 1fr; }
+        }
+        
+        .input-group { position: relative; }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .input-wrapper { display: flex; }
+        
+        .input-wrapper input {
+            flex: 1;
+            padding: 12px;
+            font-size: 1rem;
+            border: 1px solid var(--border-color);
+            border-right: none;
+            border-radius: var(--border-radius) 0 0 var(--border-radius);
+            background: var(--body-bg);
+            color: var(--text-color);
+            outline: none;
+        }
+        
+        .input-wrapper .unit-display {
+            padding: 12px 15px;
+            background: var(--light);
+            border: 1px solid var(--border-color);
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+            font-weight: 600;
+        }
+        .dark-mode .input-wrapper .unit-display { background: var(--dark); color: var(--light); }
+
+        .error-message {
+            color: var(--danger);
+            font-size: 0.85rem;
+            position: absolute;
+            bottom: -20px;
+        }
+
+        .result-container {
+            margin-top: 25px;
+            padding: 25px;
+            background-color: rgba(0, 123, 255, 0.05);
+            border: 1px dashed var(--primary);
+            border-radius: var(--border-radius);
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        .result-container.show { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .primary-result { text-align: center; }
+        .primary-result .label { color: var(--text-muted); font-size: 1.1rem; }
+        .primary-result .value {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 10px 0;
+        }
+
+        .result-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .result-box {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .result-box .label { color: var(--text-muted); font-size: 0.9rem; }
+        .result-box .value { font-size: 1.3rem; font-weight: 600; }
+
+        #totalCostDisplay { color: var(--success); font-weight: 700; }
+        
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        
+        .action-btn {
+            background-color: var(--body-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+        }
+        .action-btn:hover { background-color: var(--primary); color: white; border-color: var(--primary); }
+        .action-btn i { font-size: 1.5rem; }
+
+        .ad-container {
+            background: var(--body-bg);
+            border: 1px dashed var(--border-color);
+            height: 280px;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; color: var(--text-muted);
+            border-radius: var(--border-radius);
+            padding: 20px;
+        }
+        
+        /* Print-Only Styles (hidden on screen) */
+        .print-only {
+            display: none;
+        }
+
+        footer { text-align: center; margin-top: 2rem; color: var(--text-muted); }
+
+        /* --- PRINT STYLES --- */
+        @media print {
+            body {
+                background: #fff;
+                color: #000;
+                padding: 1in;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block;
+                text-align: center;
+                margin-bottom: 2rem;
+                font-size: 1.5rem;
+                color: #000;
+            }
+            .print-card {
+                visibility: visible;
+                display: block;
+                box-shadow: none;
+                border: 1px solid #ccc;
+                width: 100%;
+                margin-bottom: 2rem;
+            }
+             /* This complex selector ensures all children of print-cards are visible */
+            .print-card, .print-card * {
+                visibility: visible;
+            }
+            /* Hides everything in the body that isn't a print element */
+            body > *:not(.print-card):not(.print-only) {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Print-only Title -->
+    <h1 class="print-only">Square Footage Calculation Report</h1>
+
+    <div class="container">
+        <!-- Add 'no-print' class to hide elements during printing -->
+        <header class="no-print">
+            <div class="logo"><i class="fas fa-ruler-combined"></i> Square Footage Pro</div>
+            <button class="theme-toggle" id="themeToggle"><i class="fas fa-moon"></i></button>
+        </header>
+
+        <div class="calculator-layout">
+             <!-- Add 'print-card' class to elements you want to print -->
+            <main class="main-content">
+                <div class="card print-card" id="mainCalculatorCard">
+                    <div class="card-header"><i class="fas fa-calculator"></i> Area Calculator</div>
+                    <div class="unit-toggle no-print">
+                        <button id="imperialBtn" class="active">Imperial (feet)</button>
+                        <button id="metricBtn">Metric (meters)</button>
+                    </div>
+
+                    <div class="input-grid">
+                        <div class="input-group">
+                            <label for="length">Length</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="length" placeholder="e.g., 20" min="0" step="any">
+                                <span class="unit-display" id="lengthUnit">ft</span>
+                            </div>
+                            <div class="error-message" id="lengthError"></div>
+                        </div>
+                        <div class="input-group">
+                            <label for="width">Width</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="width" placeholder="e.g., 15" min="0" step="any">
+                                <span class="unit-display" id="widthUnit">ft</span>
+                            </div>
+                            <div class="error-message" id="widthError"></div>
+                        </div>
+                    </div>
+
+                    <div class="result-container" id="resultContainer">
+                        <div class="primary-result">
+                            <div class="label">Total Area</div>
+                            <div class="value" id="primaryResult">0 ft²</div>
+                        </div>
+                        <div class="result-breakdown">
+                            <div class="result-box"><div class="label">Square Feet</div><div class="value" id="resultSqFt">0</div></div>
+                            <div class="result-box"><div class="label">Square Meters</div><div class="value" id="resultSqM">0</div></div>
+                            <div class="result-box"><div class="label">Square Yards</div><div class="value" id="resultSqYd">0</div></div>
+                            <div class="result-box"><div class="label">Acres</div><div class="value" id="resultAcres">0</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card cost-card print-card">
+                    <div class="card-header"><i class="fas fa-dollar-sign"></i> Total Cost Calculator</div>
+                    <div class="input-grid">
+                        <div class="input-group">
+                            <label for="costPerUnit">Cost per <span id="costUnitLabel">square foot</span></label>
+                            <input type="number" id="costPerUnit" placeholder="e.g., 2.50" min="0" step="any">
+                        </div>
+                        <div class="input-group">
+                            <label>Estimated Total Cost</label>
+                            <div id="totalCostDisplay" style="font-size: 2rem; padding: 10px 0;">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card actions-card no-print">
+                    <div class="card-header"><i class="fas fa-share-alt"></i> Export & Share</div>
+                    <div class="actions-grid">
+                        <button class="action-btn" id="printBtn"><i class="fas fa-print"></i><span>Print</span></button>
+                        <button class="action-btn" id="pdfBtn"><i class="fas fa-file-pdf"></i><span>PDF</span></button>
+                        <button class="action-btn" id="pngBtn"><i class="fas fa-file-image"></i><span>PNG</span></button>
+                        <button class="action-btn" id="csvBtn"><i class="fas fa-file-csv"></i><span>CSV</span></button>
+                        <button class="action-btn" id="txtBtn"><i class="fas fa-file-alt"></i><span>TXT</span></button>
+                        <button class="action-btn" id="emailBtn"><i class="fas fa-envelope"></i><span>Email</span></button>
+                    </div>
+                </div>
+            </main>
+
+            <aside class="sidebar no-print">
+                <div class="card">
+                    <div class="card-header"><i class="fas fa-ad"></i> Ad by Adsterra</div>
+                    <div class="ad-container" id="adsterra-container">
+                        <div>Adsterra 300x250 Ad Space</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><i class="fas fa-ad"></i> Ad by Yllix</div>
+                    <div class="ad-container" id="yllix-container">
+                        <div>Yllix 300x250 Ad Space</div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <footer class="no-print">
+            © 2023 Square Footage Pro. All calculations are performed client-side for your privacy and security.
+        </footer>
+    </div>
+
+    <script>
+       const DOMElements = {
+            themeToggle: document.getElementById('themeToggle'),
+            imperialBtn: document.getElementById('imperialBtn'),
+            metricBtn: document.getElementById('metricBtn'),
+            lengthInput: document.getElementById('length'),
+            widthInput: document.getElementById('width'),
+            costInput: document.getElementById('costPerUnit'),
+            lengthUnit: document.getElementById('lengthUnit'),
+            widthUnit: document.getElementById('widthUnit'),
+            lengthError: document.getElementById('lengthError'),
+            widthError: document.getElementById('widthError'),
+            resultContainer: document.getElementById('resultContainer'),
+            primaryResult: document.getElementById('primaryResult'),
+            resultSqFt: document.getElementById('resultSqFt'),
+            resultSqM: document.getElementById('resultSqM'),
+            resultSqYd: document.getElementById('resultSqYd'),
+            resultAcres: document.getElementById('resultAcres'),
+            costUnitLabel: document.getElementById('costUnitLabel'),
+            totalCostDisplay: document.getElementById('totalCostDisplay'),
+            mainCalculatorCard: document.getElementById('mainCalculatorCard'),
+            printBtn: document.getElementById('printBtn'),
+            pdfBtn: document.getElementById('pdfBtn'),
+            pngBtn: document.getElementById('pngBtn'),
+            csvBtn: document.getElementById('csvBtn'),
+            txtBtn: document.getElementById('txtBtn'),
+            emailBtn: document.getElementById('emailBtn'),
+        };
+
+        const METER_TO_FEET = 3.28084;
+        let currentUnitSystem = 'imperial';
+        let lastValidArea = { ft: 0, m: 0 };
+
+        document.addEventListener('DOMContentLoaded', initialize);
+        DOMElements.themeToggle.addEventListener('click', toggleTheme);
+        DOMElements.imperialBtn.addEventListener('click', () => setUnitSystem('imperial'));
+        DOMElements.metricBtn.addEventListener('click', () => setUnitSystem('metric'));
+        [DOMElements.lengthInput, DOMElements.widthInput, DOMElements.costInput].forEach(el => el.addEventListener('input', handleInput));
+        
+        DOMElements.printBtn.addEventListener('click', () => window.print());
+        DOMElements.pdfBtn.addEventListener('click', () => exportResult('pdf'));
+        DOMElements.pngBtn.addEventListener('click', () => exportResult('png'));
+        DOMElements.csvBtn.addEventListener('click', () => exportResult('csv'));
+        DOMElements.txtBtn.addEventListener('click', () => exportResult('txt'));
+        DOMElements.emailBtn.addEventListener('click', shareViaEmail);
+
+        function initialize() {
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.classList.add('dark-mode');
+            }
+            updateThemeIcon();
+            calculate();
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+            updateThemeIcon();
+        }
+
+        function updateThemeIcon() {
+            const icon = DOMElements.themeToggle.querySelector('i');
+            icon.classList.toggle('fa-moon', !document.body.classList.contains('dark-mode'));
+            icon.classList.toggle('fa-sun', document.body.classList.contains('dark-mode'));
+        }
+
+        function setUnitSystem(system) {
+            currentUnitSystem = system;
+            const isImperial = system === 'imperial';
+            
+            DOMElements.imperialBtn.classList.toggle('active', isImperial);
+            DOMElements.metricBtn.classList.toggle('active', !isImperial);
+
+            const unit = isImperial ? 'ft' : 'm';
+            DOMElements.lengthUnit.textContent = unit;
+            DOMElements.widthUnit.textContent = unit;
+            DOMElements.costUnitLabel.textContent = isImperial ? 'square foot' : 'square meter';
+
+            calculate();
+        }
+        
+        function handleInput() { calculate(); }
+        function validateInput(inputEl, errorEl) {
+            const val = parseFloat(inputEl.value);
+            if (inputEl.value.trim() !== '' && (isNaN(val) || val < 0)) {
+                errorEl.textContent = 'Invalid number'; return false;
+            }
+            errorEl.textContent = ''; return true;
+        }
+
+        function calculate() {
+            if (!validateInput(DOMElements.lengthInput, DOMElements.lengthError) || !validateInput(DOMElements.widthInput, DOMElements.widthError)) {
+                DOMElements.resultContainer.classList.remove('show');
+                calculateCost();
+                return;
+            }
+            const length = parseFloat(DOMElements.lengthInput.value) || 0;
+            const width = parseFloat(DOMElements.widthInput.value) || 0;
+            const areaSqFt = (currentUnitSystem === 'imperial') ? (length * width) : ((length * METER_TO_FEET) * (width * METER_TO_FEET));
+            
+            lastValidArea = { ft: areaSqFt, m: areaSqFt / (METER_TO_FEET * METER_TO_FEET) };
+            updateResultDisplay(areaSqFt);
+            calculateCost();
+        }
+
+        function updateResultDisplay(areaSqFt) {
+            if (areaSqFt > 0) {
+                const primaryVal = (currentUnitSystem === 'imperial') ? areaSqFt : lastValidArea.m;
+                const primaryUnit = (currentUnitSystem === 'imperial') ? 'ft²' : 'm²';
+
+                DOMElements.primaryResult.innerHTML = `${primaryVal.toLocaleString(undefined, {maximumFractionDigits: 2})} ${primaryUnit}`;
+                DOMElements.resultSqFt.textContent = areaSqFt.toLocaleString(undefined, {maximumFractionDigits: 2});
+                DOMElements.resultSqM.textContent = lastValidArea.m.toLocaleString(undefined, {maximumFractionDigits: 2});
+                DOMElements.resultSqYd.textContent = (areaSqFt / 9).toLocaleString(undefined, {maximumFractionDigits: 2});
+                DOMElements.resultAcres.textContent = (areaSqFt / 43560).toLocaleString(undefined, {maximumFractionDigits: 6});
+                DOMElements.resultContainer.classList.add('show');
+            } else {
+                DOMElements.resultContainer.classList.remove('show');
+            }
+        }
+
+        function calculateCost() {
+            const cost = parseFloat(DOMElements.costInput.value);
+            if (isNaN(cost) || cost <= 0) {
+                DOMElements.totalCostDisplay.textContent = '-'; return;
+            }
+            const areaForCost = (currentUnitSystem === 'imperial') ? lastValidArea.ft : lastValidArea.m;
+            DOMElements.totalCostDisplay.textContent = (areaForCost * cost).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+        }
+
+        function getReportData() { return { length: DOMElements.lengthInput.value||0, width: DOMElements.widthInput.value||0, unit: currentUnitSystem==='imperial'?'feet':'meters', sqft: lastValidArea.ft.toFixed(2), sqm: lastValidArea.m.toFixed(2)}; }
+        
+        async function exportResult(format) {
+            const data = getReportData();
+            if (data.sqft <= 0) { alert('Please enter dimensions to generate a report.'); return; }
+
+            const cardsToExport = [document.getElementById('mainCalculatorCard'), document.querySelector('.cost-card')];
+            if (format === 'png' || format === 'pdf') {
+                const combinedCanvas = document.createElement('canvas');
+                const ctx = combinedCanvas.getContext('2d');
+                let totalHeight = 0;
+                const canvases = [];
+
+                for (const card of cardsToExport) {
+                    const canvas = await html2canvas(card, { backgroundColor: getComputedStyle(document.body).getPropertyValue('--card-bg') });
+                    canvases.push(canvas);
+                    totalHeight += canvas.height + 20; // Add 20px margin
+                }
+
+                combinedCanvas.width = canvases[0].width;
+                combinedCanvas.height = totalHeight - 20;
+
+                let y = 0;
+                for (const canvas of canvases) {
+                    ctx.drawImage(canvas, 0, y);
+                    y += canvas.height + 20;
+                }
+                const imgData = combinedCanvas.toDataURL('image/png');
+                
+                if (format === 'png') { downloadLink(imgData, 'sqft-report.png'); } 
+                else {
+                    const { jsPDF } = window.jspdf; const pdf = new jsPDF('p', 'mm', 'a4');
+                    const imgProps = pdf.getImageProperties(imgData);
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                    pdf.save('sqft-report.pdf');
+                }
+            } else if (format === 'txt' || format === 'csv') {
+                let content, filename, mimeType;
+                if (format === 'txt') { content = `Square Footage Calculation Report\n=================\nInput Length: ${data.length} ${data.unit}\nInput Width: ${data.width} ${data.unit}\n\nTotal Square Feet: ${data.sqft}\nTotal Square Meters: ${data.sqm}`; filename = 'report.txt'; mimeType = 'text/plain'; } 
+                else { content = `Parameter,Value,Unit\nLength,${data.length},${data.unit}\nWidth,${data.width},${data.unit}\nArea (sq ft),${data.sqft},ft²\nArea (sq m),${data.sqm},m²`; filename = 'report.csv'; mimeType = 'text/csv'; }
+                const blob = new Blob([content], { type: mimeType }); downloadLink(URL.createObjectURL(blob), filename);
+            }
+        }
+
+        function downloadLink(href, filename) { const a = document.createElement('a'); a.href = href; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); if (href.startsWith('blob:')) URL.revokeObjectURL(href); }
+        
+        function shareViaEmail() {
+            const data = getReportData();
+            if (data.sqft <= 0) { alert('Please calculate an area first.'); return; }
+            const subject = 'Square Footage Calculation';
+            const body = `Results:\nInput: ${data.length}x${data.width} ${data.unit}\nArea: ${data.sqft} sq ft (${data.sqm} sq m)`;
+            window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        }
+    </script>
+</body>
+</html>

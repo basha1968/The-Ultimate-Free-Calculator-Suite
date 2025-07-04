@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Tile Calculator</title>
+
+    <!-- Dependencies for PDF/Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        /* CSS Variables for Theming (Light/Dark Mode) */
+        :root {
+            --bg-color: #f4f7f6;
+            --text-color: #333;
+            --primary-color: #00796b;
+            --secondary-color: #5f7470;
+            --border-color: #d1d9d8;
+            --card-bg: #ffffff;
+            --input-bg: #ffffff;
+            --input-border: #ccc;
+            --shadow: 0 4px 12px rgba(0,0,0,0.08);
+            --font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --error-color: #d32f2f;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --primary-color: #4db6ac;
+            --secondary-color: #80cbc4;
+            --border-color: #424242;
+            --card-bg: #1e1e1e;
+            --input-bg: #2c2c2c;
+            --input-border: #555;
+            --shadow: 0 4px 12px rgba(0,0,0,0.3);
+            --error-color: #ef5350;
+        }
+
+        /* General & Layout */
+        *, *::before, *::after { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            margin: 0;
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            transition: background-color 0.3s, color 0.3s;
+            font-size: 16px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 380px 1fr 300px;
+            gap: 25px;
+        }
+
+        h1, h2 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+        
+        /* Card UI */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        /* Column Structure */
+        #controls-column, #results-column, #actions-column {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        /* Header & Theme Toggle */
+        header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .theme-switch-wrapper { display: flex; align-items: center; }
+        .theme-switch { display: inline-block; height: 24px; position: relative; width: 50px; }
+        .theme-switch input { display: none; }
+        .slider { background-color: var(--secondary-color); bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; border-radius: 24px; }
+        .slider:before { background-color: #fff; bottom: 4px; content: ""; height: 16px; left: 4px; position: absolute; transition: .4s; width: 16px; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary-color); }
+        input:checked + .slider:before { transform: translateX(26px); }
+        .theme-label { font-size: 0.9em; margin: 0 8px; }
+
+        /* Form Controls */
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.95em; }
+        .input-group { display: flex; }
+        input[type="number"], select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(0, 121, 107, 0.2);
+        }
+        .input-group select { border-radius: 0 4px 4px 0; border-left: none; }
+        .input-group input { border-radius: 4px 0 0 4px; }
+        .tooltip-icon { cursor: help; margin-left: 8px; color: var(--secondary-color); border: 1px solid var(--secondary-color); border-radius: 50%; width: 18px; height: 18px; display: inline-flex; justify-content: center; align-items: center; font-size: 12px; }
+
+        /* Results Display */
+        #results-output { padding-top: 15px; }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .result-item:last-child { border-bottom: none; }
+        .result-item span { font-size: 1.1em; }
+        .result-item strong { font-size: 1.3em; color: var(--primary-color); }
+        #error-message { color: var(--error-color); font-weight: bold; margin-top: 15px; }
+
+        /* Action Buttons */
+        .btn { display: block; width: 100%; padding: 12px; margin-bottom: 10px; font-size: 1rem; font-weight: bold; text-align: center; text-decoration: none; cursor: pointer; border: none; border-radius: 4px; transition: opacity 0.2s; }
+        .btn:last-child { margin-bottom: 0; }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-secondary { background-color: var(--secondary-color); color: white; }
+        .btn:hover { opacity: 0.85; }
+
+        /* --- MONETIZATION PLACEHOLDERS --- */
+        .ad-placeholder { min-height: 250px; width: 100%; background-color: var(--card-bg); border: 2px dashed var(--border-color); display: flex; align-items: center; justify-content: center; text-align: center; padding: 10px; color: var(--secondary-color); font-weight: bold; border-radius: 8px; }
+        .ad-placeholder p { margin: 0; }
+        
+        /* Hide dynamic fields by default */
+        .tile-dimension-fields { display: none; }
+        .tile-dimension-fields.active { display: block; }
+        
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .container { grid-template-columns: 350px 1fr; }
+            #actions-column { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; }
+            #actions-column > * { flex: 1 1 250px; }
+        }
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+            body { font-size: 14px; }
+            .btn { padding: 15px; }
+        }
+
+        /* Print Styles */
+        @media print {
+            body { background-color: #fff; color: #000; }
+            #controls-column, #actions-column, header, .ad-placeholder, .btn, h2 { display: none; }
+            .container { display: block; margin: 0; padding: 0; }
+            .card { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+            #results-card { display: block; } /* Ensure results card is visible */
+            #printable-header { display: block !important; }
+        }
+        #printable-header { display: none; } /* Hide by default */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Professional Tile Calculator</h1>
+            <div class="theme-switch-wrapper">
+                <span class="theme-label">Light</span>
+                <label class="theme-switch" for="theme-checkbox">
+                    <input type="checkbox" id="theme-checkbox" />
+                    <div class="slider"></div>
+                </label>
+                <span class="theme-label">Dark</span>
+            </div>
+        </header>
+
+        <!-- Column 1: Controls -->
+        <div id="controls-column">
+            <div class="card">
+                <h2>1. Input Dimensions</h2>
+                <form id="tile-form">
+                    <fieldset>
+                        <legend style="font-weight: bold; padding-bottom: 10px;">Room Area</legend>
+                        <div class="form-group">
+                            <label for="roomLength">Room Length</label>
+                            <div class="input-group">
+                                <input type="number" id="roomLength" value="12" step="0.1" required>
+                                <select id="roomUnits">
+                                    <option value="feet" selected>Feet (ft)</option>
+                                    <option value="inches">Inches (in)</option>
+                                    <option value="meters">Meters (m)</option>
+                                    <option value="cm">cm</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="roomWidth">Room Width</label>
+                            <div class="input-group">
+                                <input type="number" id="roomWidth" value="10" step="0.1" required>
+                                <select id="roomWidthUnits" style="display: none;"></select> <!-- Synced with roomLength units -->
+                            </div>
+                        </div>
+                    </fieldset>
+                    <fieldset style="border-top: 1px solid var(--border-color); margin-top: 20px;">
+                        <legend style="font-weight: bold; padding-bottom: 10px;">Tile Specification</legend>
+                        <div class="form-group">
+                            <label for="tileShape">Tile Shape</label>
+                            <select id="tileShape">
+                                <option value="square" selected>Square</option>
+                                <option value="rectangular">Rectangular</option>
+                                <option value="hexagonal">Hexagonal</option>
+                            </select>
+                        </div>
+
+                        <!-- DYNAMIC TILE DIMENSION INPUTS -->
+                        <div id="square-dims" class="tile-dimension-fields active">
+                            <div class="form-group">
+                                <label for="tileSide">Side Length</label>
+                                <div class="input-group">
+                                    <input type="number" id="tileSide" value="12" step="0.1" required>
+                                    <select id="tileUnits">
+                                        <option value="inches" selected>Inches (in)</option>
+                                        <option value="feet">Feet (ft)</option>
+                                        <option value="cm">cm</option>
+                                        <option value="meters">Meters (m)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="rectangular-dims" class="tile-dimension-fields">
+                             <div class="form-group">
+                                <label for="tileLength">Tile Length</label>
+                                <div class="input-group"><input type="number" id="tileLength" value="12" step="0.1" required></div>
+                            </div>
+                             <div class="form-group">
+                                <label for="tileWidth">Tile Width</label>
+                                <div class="input-group"><input type="number" id="tileWidth" value="8" step="0.1" required></div>
+                            </div>
+                        </div>
+                         <div id="hexagonal-dims" class="tile-dimension-fields">
+                             <div class="form-group">
+                                <label for="hexSide">Side to Side Distance</label>
+                                <div class="input-group"><input type="number" id="hexSide" value="6" step="0.1" required></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="wastage">Wastage Percentage (%)</label>
+                            <div class="input-group">
+                                <input type="number" id="wastage" value="10" step="1" required>
+                                <span class="tooltip-icon" title="Recommended 10-15% extra tiles to account for cuts, breaks, and future repairs.">?</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="pricePerTile">Price Per Tile (Optional)</label>
+                            <div class="input-group"><input type="number" id="pricePerTile" step="0.01" placeholder="e.g., 2.50"></div>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+
+        <!-- Column 2: Results -->
+        <div id="results-column">
+            <div class="card" id="results-card" aria-live="polite">
+                <h1 id="printable-header">Tile Calculation Summary</h1>
+                <h2>2. Calculation Results</h2>
+                <div id="results-output">
+                    <!-- Results dynamically inserted here -->
+                </div>
+                <div id="error-message"></div>
+            </div>
+        </div>
+        
+        <!-- Column 3: Actions & Monetization -->
+        <div id="actions-column">
+             <div class="card">
+                <h2>Actions</h2>
+                <button id="printBtn" class="btn btn-secondary">Print Results</button>
+                <button id="savePdfBtn" class="btn btn-secondary">Save as PDF</button>
+                <button id="saveCsvBtn" class="btn btn-secondary">Save as CSV / Excel</button>
+                <button id="saveTxtBtn" class="btn btn-secondary">Save as Text</button>
+            </div>
+             <div class="card">
+                <h2>Share</h2>
+                <button id="shareLinkBtn" class="btn btn-primary">Copy Shareable Link</button>
+                <a id="emailLinkBtn" href="#" class="btn btn-primary" style="margin-top: 10px;">Share via Email</a>
+            </div>
+
+            <div class="ad-placeholder">
+                <!-- =============================== -->
+                <!-- YLLIX AD CODE SLOT              -->
+                <!-- Replace this div with your Yllix ad script -->
+                <!-- =============================== -->
+                <p>Yllix Ad Space<br>(e.g., 300x250)</p>
+            </div>
+            <div class="ad-placeholder">
+                <!-- =============================== -->
+                <!-- ADSTERRA AD CODE SLOT           -->
+                <!-- Replace this div with your Adsterra ad script -->
+                <!-- =============================== -->
+                <p>Adsterra Ad Space<br>(e.g., 300x250)</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // --- DOM Elements ---
+        const form = document.getElementById('tile-form');
+        const elements = {
+            roomLength: document.getElementById('roomLength'),
+            roomWidth: document.getElementById('roomWidth'),
+            roomUnits: document.getElementById('roomUnits'),
+            tileShape: document.getElementById('tileShape'),
+            tileSide: document.getElementById('tileSide'),
+            tileLength: document.getElementById('tileLength'),
+            tileWidth: document.getElementById('tileWidth'),
+            hexSide: document.getElementById('hexSide'),
+            tileUnits: document.getElementById('tileUnits'),
+            wastage: document.getElementById('wastage'),
+            pricePerTile: document.getElementById('pricePerTile'),
+            resultsOutput: document.getElementById('results-output'),
+            errorMessage: document.getElementById('error-message'),
+            shapeFields: {
+                square: document.getElementById('square-dims'),
+                rectangular: document.getElementById('rectangular-dims'),
+                hexagonal: document.getElementById('hexagonal-dims'),
+            },
+            printBtn: document.getElementById('printBtn'),
+            savePdfBtn: document.getElementById('savePdfBtn'),
+            saveCsvBtn: document.getElementById('saveCsvBtn'),
+            saveTxtBtn: document.getElementById('saveTxtBtn'),
+            shareLinkBtn: document.getElementById('shareLinkBtn'),
+            emailLinkBtn: document.getElementById('emailLinkBtn'),
+            themeCheckbox: document.getElementById('theme-checkbox'),
+        };
+
+        // --- Conversion Factors to base unit (cm) ---
+        const CONVERSIONS_TO_CM = {
+            inches: 2.54,
+            feet: 30.48,
+            meters: 100,
+            cm: 1,
+        };
+
+        // --- Application State ---
+        let lastValidResults = {};
+
+        // --- Core Calculation Logic ---
+        function calculateAndDisplay() {
+            elements.errorMessage.textContent = '';
+            
+            // 1. Get and validate all inputs
+            const roomLength = parseFloat(elements.roomLength.value);
+            const roomWidth = parseFloat(elements.roomWidth.value);
+            const wastage = parseFloat(elements.wastage.value);
+            const pricePerTile = parseFloat(elements.pricePerTile.value) || 0;
+            const roomUnit = elements.roomUnits.value;
+            const tileUnit = elements.tileUnits.value;
+            const shape = elements.tileShape.value;
+
+            if (isNaN(roomLength) || isNaN(roomWidth) || isNaN(wastage) || roomLength <= 0 || roomWidth <= 0) {
+                elements.errorMessage.textContent = 'Please enter valid, positive room dimensions and wastage.';
+                elements.resultsOutput.innerHTML = '';
+                return;
+            }
+
+            // 2. Convert all dimensions to base unit (cm)
+            const roomAreaCM = (roomLength * CONVERSIONS_TO_CM[roomUnit]) * (roomWidth * CONVERSIONS_TO_CM[roomUnit]);
+            let tileAreaCM = 0;
+
+            try {
+                switch(shape) {
+                    case 'square':
+                        const side = parseFloat(elements.tileSide.value);
+                        if (isNaN(side) || side <= 0) throw new Error("Invalid tile side length.");
+                        const sideCM = side * CONVERSIONS_TO_CM[tileUnit];
+                        tileAreaCM = sideCM * sideCM;
+                        break;
+                    case 'rectangular':
+                        const tileL = parseFloat(elements.tileLength.value);
+                        const tileW = parseFloat(elements.tileWidth.value);
+                        if (isNaN(tileL) || isNaN(tileW) || tileL <= 0 || tileW <= 0) throw new Error("Invalid tile dimensions.");
+                        const tileLCM = tileL * CONVERSIONS_TO_CM[tileUnit];
+                        const tileWCM = tileW * CONVERSIONS_TO_CM[tileUnit];
+                        tileAreaCM = tileLCM * tileWCM;
+                        break;
+                    case 'hexagonal':
+                        // Using side-to-side distance for hexagon area calculation for tiling practicality
+                        const hexSide = parseFloat(elements.hexSide.value);
+                        if (isNaN(hexSide) || hexSide <= 0) throw new Error("Invalid hexagon side distance.");
+                        const hexSideCM = hexSide * CONVERSIONS_TO_CM[tileUnit];
+                        // Area = (3 * sqrt(3) / 2) * side^2. Let's use a simpler, more practical tiling approximation for hexagons.
+                        // Practical Area: SideToSide * SideToSide * (2*sqrt(3)/3)
+                        tileAreaCM = hexSideCM * hexSideCM * 0.866; // This is a practical packing approximation
+                        break;
+                }
+            } catch (e) {
+                elements.errorMessage.textContent = e.message;
+                elements.resultsOutput.innerHTML = '';
+                return;
+            }
+
+            if (tileAreaCM <= 0) {
+                 elements.errorMessage.textContent = "Tile area cannot be zero. Please check tile dimensions.";
+                 elements.resultsOutput.innerHTML = '';
+                 return;
+            }
+
+            // 3. Perform calculations
+            const roomAreaDisplay = roomLength * roomWidth;
+            const tilesNeeded = Math.ceil(roomAreaCM / tileAreaCM);
+            const tilesWithWastage = Math.ceil(tilesNeeded * (1 + wastage / 100));
+            const totalCost = tilesWithWastage * pricePerTile;
+            
+            lastValidResults = {
+                'Room Area': `${roomAreaDisplay.toFixed(2)} sq ${roomUnit}`,
+                'Tiles Needed (no wastage)': `${tilesNeeded} tiles`,
+                'Wastage': `${wastage}%`,
+                'Total Tiles (incl. wastage)': `${tilesWithWastage} tiles`,
+                ...(pricePerTile > 0 && { 'Estimated Total Cost': `$${totalCost.toFixed(2)}` })
+            };
+
+            updateUI();
+            generateShareLink();
+        }
+
+        // --- UI & Event Handlers ---
+        function updateUI() {
+            elements.resultsOutput.innerHTML = Object.entries(lastValidResults)
+                .map(([key, value]) => `
+                    <div class="result-item">
+                        <span>${key}</span>
+                        <strong>${value}</strong>
+                    </div>
+                `).join('');
+        }
+        
+        function handleShapeChange() {
+            const shape = elements.tileShape.value;
+            // Hide all fields first
+            Object.values(elements.shapeFields).forEach(field => field.classList.remove('active'));
+            // Show the relevant one
+            if (elements.shapeFields[shape]) {
+                elements.shapeFields[shape].classList.add('active');
+            }
+             // For rectangular, sync the tile unit selector
+             // A better UX would be one unit selector for all tiles, done here.
+            calculateAndDisplay();
+        }
+
+        function generateExportContent(format = 'txt') {
+            if (Object.keys(lastValidResults).length === 0) return '';
+            
+            const title = "Tile Calculation Summary";
+            const separator = format === 'csv' ? ',' : ': ';
+            
+            const header = format === 'csv' ? "Parameter,Value\n" : `${title}\n=======================\n`;
+            
+            const body = Object.entries(lastValidResults)
+                .map(([key, value]) => format === 'csv' ? `"${key}","${value}"` : `${key}${separator}${value}`)
+                .join(format === 'csv' ? '\n' : '\n');
+                
+            return header + body;
+        }
+
+        function triggerDownload(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        elements.printBtn.addEventListener('click', () => window.print());
+        elements.saveTxtBtn.addEventListener('click', () => {
+             const content = generateExportContent('txt');
+             if(content) triggerDownload(content, 'tile-calculation.txt', 'text/plain;charset=utf-8');
+        });
+        elements.saveCsvBtn.addEventListener('click', () => {
+             const content = generateExportContent('csv');
+             if(content) triggerDownload(content, 'tile-calculation.csv', 'text/csv;charset=utf-8');
+        });
+        elements.savePdfBtn.addEventListener('click', () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const resultsCard = document.getElementById('results-card');
+            
+            html2canvas(resultsCard, {
+                backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--card-bg'),
+                scale: 2 // Improve quality
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const imgProps = doc.getImageProperties(imgData);
+                const pdfWidth = doc.internal.pageSize.getWidth() - 20; // with margin
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                doc.addImage(imgData, 'PNG', 10, 10, pdfWidth, pdfHeight);
+                doc.save('tile-calculation.pdf');
+            });
+        });
+
+        // Share functionality
+        function generateShareLink() {
+            const params = new URLSearchParams();
+            params.set('rl', elements.roomLength.value);
+            params.set('rw', elements.roomWidth.value);
+            params.set('ru', elements.roomUnits.value);
+            params.set('ts', elements.tileShape.value);
+            params.set('w', elements.wastage.value);
+            params.set('p', elements.pricePerTile.value);
+            
+            const shape = elements.tileShape.value;
+            params.set('tu', elements.tileUnits.value);
+            if(shape === 'square') params.set('tsd', elements.tileSide.value);
+            if(shape === 'rectangular') {
+                params.set('tl', elements.tileLength.value);
+                params.set('tw', elements.tileWidth.value);
+            }
+            if(shape === 'hexagonal') params.set('thd', elements.hexSide.value);
+
+            const link = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+            
+            elements.shareLinkBtn.onclick = () => {
+                navigator.clipboard.writeText(link).then(() => {
+                    const originalText = elements.shareLinkBtn.textContent;
+                    elements.shareLinkBtn.textContent = 'Copied!';
+                    setTimeout(() => { elements.shareLinkBtn.textContent = originalText; }, 2000);
+                });
+            };
+
+            const emailBody = `Here are the tile calculations:\n\n${generateExportContent('txt')}\n\nView the calculator with these settings here:\n${link}`;
+            elements.emailLinkBtn.href = `mailto:?subject=Tile Calculation Results&body=${encodeURIComponent(emailBody)}`;
+        }
+        
+        function loadStateFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const setVal = (el, key) => { if (params.has(key)) el.value = params.get(key); };
+            
+            setVal(elements.roomLength, 'rl');
+            setVal(elements.roomWidth, 'rw');
+            setVal(elements.roomUnits, 'ru');
+            setVal(elements.tileShape, 'ts');
+            setVal(elements.wastage, 'w');
+            setVal(elements.pricePerTile, 'p');
+            setVal(elements.tileUnits, 'tu');
+            setVal(elements.tileSide, 'tsd');
+            setVal(elements.tileLength, 'tl');
+            setVal(elements.tileWidth, 'tw');
+            setVal(elements.hexSide, 'thd');
+        }
+
+        // --- Theme Management ---
+        elements.themeCheckbox.addEventListener('change', () => {
+            const theme = elements.themeCheckbox.checked ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+        });
+        
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            elements.themeCheckbox.checked = savedTheme === 'dark';
+        }
+        
+        // --- Initialization ---
+        form.addEventListener('input', calculateAndDisplay);
+        elements.tileShape.addEventListener('change', handleShapeChange);
+        
+        // Initial setup on page load
+        initTheme();
+        loadStateFromURL();
+        handleShapeChange(); // This also triggers the first calculation
+    });
+    </script>
+</body>
+</html>

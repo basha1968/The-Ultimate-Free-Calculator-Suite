@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mathematics Engine with Horsepower Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --accent: #e74c3c;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --light-bg: #f8f9fa;
+            --dark-bg: #1e2a38;
+            --text-light: #333;
+            --text-dark: #f0f0f0;
+            --card-light: #fff;
+            --card-dark: #253341;
+            --border-light: #e0e0e0;
+            --border-dark: #34495e;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: var(--dark-bg);
+            --text-color: var(--text-dark);
+            --card-bg: var(--card-dark);
+            --border-color: var(--border-dark);
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --input-bg: #2c3e50;
+            --input-text: #f0f0f0;
+        }
+
+        [data-theme="light"] {
+            --bg-color: var(--light-bg);
+            --text-color: var(--text-light);
+            --card-bg: var(--card-light);
+            --border-color: var(--border-light);
+            --shadow-color: var(--shadow);
+            --input-bg: #fff;
+            --input-text: #333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding-bottom: 40px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 25px 0;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        header h1 {
+            font-size: 2.4rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            padding: 5px;
+            max-width: 500px;
+            margin: 15px auto 0;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: white;
+            color: var(--secondary);
+        }
+
+        .calculator-wrapper {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+
+        @media (min-width: 992px) {
+            .calculator-wrapper {
+                grid-template-columns: 1fr 350px;
+            }
+        }
+
+        .calculator-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 5px 15px var(--shadow-color);
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--primary);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .input-row input, .input-row select {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--input-bg);
+            color: var(--input-text);
+            font-size: 1rem;
+        }
+
+        .input-row input:focus, .input-row select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .unit-label {
+            min-width: 50px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: linear-gradient(to bottom, var(--primary), #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+
+        .btn-success {
+            background: linear-gradient(to bottom, var(--success), #27ae60);
+        }
+
+        .btn-warning {
+            background: linear-gradient(to bottom, var(--warning), #e67e22);
+        }
+
+        .btn-accent {
+            background: linear-gradient(to bottom, var(--accent), #c0392b);
+        }
+
+        .result-container {
+            padding: 20px;
+            background-color: rgba(52, 152, 219, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+            margin: 20px 0;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(52, 152, 219, 0.2);
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            font-weight: 600;
+        }
+
+        .result-value {
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .actions-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .ad-container {
+            background-color: rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 25px 0;
+            border: 1px dashed var(--border-color);
+        }
+
+        .ad-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+
+        .ad-content {
+            height: 250px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(45deg, #f1f2f6, #dfe4ea);
+            border-radius: 8px;
+            color: #7f8c8d;
+            font-weight: 600;
+            padding: 15px;
+        }
+
+        .dark-mode-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            z-index: 100;
+        }
+
+        .formula-box {
+            background-color: rgba(52, 152, 219, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 3px solid var(--primary);
+            font-family: 'Courier New', monospace;
+        }
+
+        .share-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .share-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .share-btn:hover {
+            transform: translateY(-3px);
+        }
+
+        .facebook { background: #3b5998; }
+        .twitter { background: #1da1f2; }
+        .linkedin { background: #0077b5; }
+        .email { background: #dd4b39; }
+        .link { background: #6c757d; }
+
+        .export-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .export-btn {
+            padding: 10px 20px;
+            border-radius: 50px;
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            border: none;
+            font-size: 0.9rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 0 10px;
+            margin-top: 40px;
+            color: var(--text-color);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .error-message {
+            color: var(--accent);
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            margin-left: 8px;
+            color: var(--primary);
+            cursor: help;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 300px;
+            background-color: var(--secondary);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 15px;
+            position: absolute;
+            z-index: 10;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.9rem;
+            font-weight: normal;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .input-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .export-options {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body data-theme="light">
+    <div class="dark-mode-toggle" id="themeToggle">
+        <i class="fas fa-moon"></i>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>
+                <i class="fas fa-calculator"></i> 
+                Mathematics Engine with Horsepower Calculator
+            </h1>
+            <p>Advanced mathematical computations with horsepower calculation</p>
+            
+            <div class="tabs">
+                <div class="tab active" data-tab="math">Math Engine</div>
+                <div class="tab" data-tab="horsepower">Horsepower Calculator</div>
+            </div>
+        </header>
+
+        <div class="ad-container">
+            <div class="ad-label">Advertisement</div>
+            <div class="ad-content">
+                <i class="fas fa-ad" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                <div>Adsterra Ad Space</div>
+                <div class="ad-lazy-load" style="font-size: 0.8rem; margin-top: 10px;">Banner Ad - 728x90</div>
+            </div>
+        </div>
+
+        <div class="calculator-wrapper">
+            <div class="main-content">
+                <div id="mathEngine" class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-square-root-alt"></i> Mathematics Engine</h2>
+                    
+                    <div class="input-group">
+                        <label for="mathExpression">Mathematical Expression <span class="tooltip">?
+                            <span class="tooltip-text">Enter a mathematical expression (e.g., 2+3*4, sin(30), sqrt(16))</span>
+                        </span></label>
+                        <div class="input-row">
+                            <input type="text" id="mathExpression" placeholder="Enter expression" value="sin(30 * Math.PI / 180)">
+                        </div>
+                    </div>
+                    
+                    <div class="formula-box">
+                        <p><strong>Supported Functions:</strong> Math.sin(), Math.cos(), Math.tan(), Math.log(), Math.log10(), Math.sqrt(), Math.abs(), Math.pow()</p>
+                        <p><strong>Constants:</strong> Math.PI, Math.E</p>
+                        <p><strong>Examples:</strong> (2+3)*4, Math.sin(30 * Math.PI / 180), Math.pow(2,3), Math.sqrt(16)</p>
+                    </div>
+                    
+                    <button id="calculateMathBtn" class="btn btn-block">
+                        <i class="fas fa-calculator"></i> Calculate Expression
+                    </button>
+                    
+                    <div class="result-container">
+                        <h3><i class="fas fa-chart-bar"></i> Calculation Results</h3>
+                        <div class="result-item">
+                            <span class="result-label">Expression:</span>
+                            <span class="result-value" id="expressionText">sin(30 * Math.PI / 180)</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Result:</span>
+                            <span class="result-value" id="mathResult">0.5</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="horsepowerCalc" class="calculator-card" style="display: none;">
+                    <h2 class="card-title"><i class="fas fa-horse"></i> Horsepower Calculator</h2>
+                    
+                    <div class="input-group">
+                        <label for="torque">Torque <span class="tooltip">?
+                            <span class="tooltip-text">Enter the torque value in lb-ft or Nm</span>
+                        </span></label>
+                        <div class="input-row">
+                            <input type="number" id="torque" placeholder="Enter torque" value="300">
+                            <select id="torqueUnit">
+                                <option value="lb-ft">lb-ft</option>
+                                <option value="nm">Nm</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="rpm">RPM <span class="tooltip">?
+                            <span class="tooltip-text">Enter the rotational speed in revolutions per minute</span>
+                        </span></label>
+                        <div class="input-row">
+                            <input type="number" id="rpm" placeholder="Enter RPM" value="5000">
+                            <span class="unit-label">RPM</span>
+                        </div>
+                    </div>
+                    
+                    <div class="formula-box">
+                        <p><strong>Horsepower Formulas:</strong></p>
+                        <p>For lb-ft: HP = (Torque × RPM) / 5252</p>
+                        <p>For Nm: HP = (Torque × RPM) / 7121</p>
+                    </div>
+                    
+                    <button id="calculateHpBtn" class="btn btn-block">
+                        <i class="fas fa-bolt"></i> Calculate Horsepower
+                    </button>
+                    
+                    <div class="result-container">
+                        <h3><i class="fas fa-tachometer-alt"></i> Calculation Results</h3>
+                        <div class="result-item">
+                            <span class="result-label">Torque:</span>
+                            <span class="result-value" id="resultTorque">300 lb-ft</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">RPM:</span>
+                            <span class="result-value" id="resultRpm">5000</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Horsepower:</span>
+                            <span class="result-value" id="resultHp">285.61 HP</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Kilowatts:</span>
+                            <span class="result-value" id="resultKw">212.99 kW</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-share-alt"></i> Export & Share</h2>
+                    
+                    <div class="export-options">
+                        <button class="export-btn" id="printBtn">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                        <button class="export-btn" id="pdfBtn">
+                            <i class="fas fa-file-pdf"></i> PDF
+                        </button>
+                        <button class="export-btn" id="csvBtn">
+                            <i class="fas fa-file-csv"></i> CSV
+                        </button>
+                        <button class="export-btn" id="txtBtn">
+                            <i class="fas fa-file-alt"></i> TXT
+                        </button>
+                    </div>
+                    
+                    <div class="share-container">
+                        <div class="share-btn facebook" title="Share on Facebook">
+                            <i class="fab fa-facebook-f"></i>
+                        </div>
+                        <div class="share-btn twitter" title="Share on Twitter">
+                            <i class="fab fa-twitter"></i>
+                        </div>
+                        <div class="share-btn linkedin" title="Share on LinkedIn">
+                            <i class="fab fa-linkedin-in"></i>
+                        </div>
+                        <div class="share-btn email" title="Share via Email">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="share-btn link" title="Copy Link">
+                            <i class="fas fa-link"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="ad-container">
+                    <div class="ad-label">Advertisement</div>
+                    <div class="ad-content">
+                        <i class="fas fa-ad" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        <div>Yllix Ad Space</div>
+                        <div class="ad-lazy-load" style="font-size: 0.8rem; margin-top: 10px;">Sidebar Ad - 300x600</div>
+                    </div>
+                </div>
+                
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-info-circle"></i> About This Tool</h2>
+                    <p>This professional mathematics engine provides advanced calculation capabilities:</p>
+                    <ul style="margin: 15px 0 15px 20px;">
+                        <li>Basic arithmetic operations</li>
+                        <li>Trigonometric functions</li>
+                        <li>Logarithms and exponents</li>
+                        <li>Horsepower calculations</li>
+                        <li>Unit conversions</li>
+                    </ul>
+                    <p>All calculations happen in your browser - no data is sent to any server.</p>
+                </div>
+                
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-lightbulb"></i> Horsepower Facts</h2>
+                    <ul style="margin: 15px 0 15px 20px;">
+                        <li>1 horsepower = 745.7 watts</li>
+                        <li>The term was coined by James Watt in the 18th century</li>
+                        <li>Formula based on work done by horses turning mill wheels</li>
+                        <li>Modern cars range from 100 to over 1000 horsepower</li>
+                        <li>Formula 1 cars produce around 1000 horsepower</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Mathematics Engine & Horsepower Calculator &copy; 2023 | Secure and Ad-Supported</p>
+            <p>All calculations performed locally - no data leaves your device</p>
+        </footer>
+    </div>
+
+    <script>
+        // Initialize variables and DOM elements
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const themeToggle = document.getElementById('themeToggle');
+            const tabs = document.querySelectorAll('.tab');
+            const mathEngine = document.getElementById('mathEngine');
+            const horsepowerCalc = document.getElementById('horsepowerCalc');
+            const mathExpression = document.getElementById('mathExpression');
+            const mathResult = document.getElementById('mathResult');
+            const expressionText = document.getElementById('expressionText');
+            const torqueInput = document.getElementById('torque');
+            const torqueUnit = document.getElementById('torqueUnit');
+            const rpmInput = document.getElementById('rpm');
+            const resultTorque = document.getElementById('resultTorque');
+            const resultRpm = document.getElementById('resultRpm');
+            const resultHp = document.getElementById('resultHp');
+            const resultKw = document.getElementById('resultKw');
+            const body = document.body;
+            
+            // Initialize theme
+            let isDarkMode = localStorage.getItem('darkMode') === 'true';
+            setTheme(isDarkMode);
+            
+            // Theme toggle functionality
+            themeToggle.addEventListener('click', () => {
+                isDarkMode = !isDarkMode;
+                setTheme(isDarkMode);
+                localStorage.setItem('darkMode', isDarkMode);
+            });
+            
+            // Tab switching
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    if (tab.dataset.tab === 'math') {
+                        mathEngine.style.display = 'block';
+                        horsepowerCalc.style.display = 'none';
+                    } else {
+                        mathEngine.style.display = 'none';
+                        horsepowerCalc.style.display = 'block';
+                    }
+                });
+            });
+            
+            // Calculate math expression
+            document.getElementById('calculateMathBtn').addEventListener('click', calculateMath);
+            
+            // Calculate horsepower
+            document.getElementById('calculateHpBtn').addEventListener('click', calculateHorsepower);
+            
+            // Set theme function
+            function setTheme(isDark) {
+                body.setAttribute('data-theme', isDark ? 'dark' : 'light');
+                themeToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+            }
+            
+            // Safe math expression evaluation
+            function safeEval(expr) {
+                // Create a safe context with only allowed Math functions
+                const context = {
+                    Math: {
+                        sin: Math.sin,
+                        cos: Math.cos,
+                        tan: Math.tan,
+                        log: Math.log,
+                        log10: Math.log10,
+                        sqrt: Math.sqrt,
+                        abs: Math.abs,
+                        pow: Math.pow,
+                        PI: Math.PI,
+                        E: Math.E
+                    }
+                };
+                
+                try {
+                    // Use Function constructor to safely evaluate the expression
+                    const func = new Function('context', `return (${expr})`);
+                    return func(context);
+                } catch (e) {
+                    throw new Error('Invalid expression');
+                }
+            }
+            
+            // Calculate math expression
+            function calculateMath() {
+                const expression = mathExpression.value.trim();
+                if (!expression) return;
+                
+                expressionText.textContent = expression;
+                
+                try {
+                    const result = safeEval(expression);
+                    mathResult.textContent = result;
+                } catch (e) {
+                    mathResult.textContent = 'Error: ' + e.message;
+                }
+            }
+            
+            // Calculate horsepower
+            function calculateHorsepower() {
+                const torque = parseFloat(torqueInput.value);
+                const rpm = parseFloat(rpmInput.value);
+                const unit = torqueUnit.value;
+                
+                if (isNaN(torque)) {
+                    alert('Please enter a valid torque value');
+                    return;
+                }
+                
+                if (isNaN(rpm)) {
+                    alert('Please enter a valid RPM value');
+                    return;
+                }
+                
+                let horsepower = 0;
+                
+                if (unit === 'lb-ft') {
+                    horsepower = (torque * rpm) / 5252;
+                } else {
+                    horsepower = (torque * rpm) / 7121;
+                }
+                
+                const kilowatts = horsepower * 0.7457;
+                
+                resultTorque.textContent = `${torque} ${unit}`;
+                resultRpm.textContent = rpm;
+                resultHp.textContent = `${horsepower.toFixed(2)} HP`;
+                resultKw.textContent = `${kilowatts.toFixed(2)} kW`;
+            }
+            
+            // Export to PDF
+            document.getElementById('pdfBtn').addEventListener('click', function() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                const currentTab = document.querySelector('.tab.active').dataset.tab;
+                
+                doc.setFontSize(18);
+                doc.text('Calculation Results', 10, 10);
+                
+                doc.setFontSize(12);
+                
+                if (currentTab === 'math') {
+                    doc.text(`Expression: ${expressionText.textContent}`, 10, 20);
+                    doc.text(`Result: ${mathResult.textContent}`, 10, 30);
+                } else {
+                    doc.text(`Torque: ${resultTorque.textContent}`, 10, 20);
+                    doc.text(`RPM: ${resultRpm.textContent}`, 10, 30);
+                    doc.text(`Horsepower: ${resultHp.textContent}`, 10, 40);
+                    doc.text(`Kilowatts: ${resultKw.textContent}`, 10, 50);
+                }
+                
+                doc.save('calculation-results.pdf');
+            });
+            
+            // Export to CSV
+            document.getElementById('csvBtn').addEventListener('click', function() {
+                const currentTab = document.querySelector('.tab.active').dataset.tab;
+                let content = 'Parameter,Value\n';
+                
+                if (currentTab === 'math') {
+                    content += `Expression,${expressionText.textContent}\n`;
+                    content += `Result,${mathResult.textContent}\n`;
+                } else {
+                    content += `Torque,${resultTorque.textContent}\n`;
+                    content += `RPM,${resultRpm.textContent}\n`;
+                    content += `Horsepower,${resultHp.textContent}\n`;
+                    content += `Kilowatts,${resultKw.textContent}\n`;
+                }
+                
+                const blob = new Blob([content], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'calculation-results.csv';
+                a.click();
+            });
+            
+            // Export to TXT
+            document.getElementById('txtBtn').addEventListener('click', function() {
+                const currentTab = document.querySelector('.tab.active').dataset.tab;
+                let content = 'Calculation Results\n==================\n\n';
+                
+                if (currentTab === 'math') {
+                    content += `Expression: ${expressionText.textContent}\n`;
+                    content += `Result: ${mathResult.textContent}\n`;
+                } else {
+                    content += `Torque: ${resultTorque.textContent}\n`;
+                    content += `RPM: ${resultRpm.textContent}\n`;
+                    content += `Horsepower: ${resultHp.textContent}\n`;
+                    content += `Kilowatts: ${resultKw.textContent}\n`;
+                }
+                
+                const blob = new Blob([content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'calculation-results.txt';
+                a.click();
+            });
+            
+            // Print functionality
+            document.getElementById('printBtn').addEventListener('click', function() {
+                // Hide ads for printing
+                document.querySelectorAll('.ad-container').forEach(ad => {
+                    ad.style.display = 'none';
+                });
+                
+                window.print();
+                
+                // Show ads again after printing
+                setTimeout(() => {
+                    document.querySelectorAll('.ad-container').forEach(ad => {
+                        ad.style.display = 'block';
+                    });
+                }, 500);
+            });
+            
+            // Social sharing
+            document.querySelector('.facebook').addEventListener('click', function() {
+                const url = encodeURIComponent(window.location.href);
+                const text = encodeURIComponent('Check out my calculation results!');
+                window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`, '_blank');
+            });
+            
+            document.querySelector('.twitter').addEventListener('click', function() {
+                const text = encodeURIComponent('Professional Calculation Results');
+                const url = encodeURIComponent(window.location.href);
+                window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+            });
+            
+            document.querySelector('.linkedin').addEventListener('click', function() {
+                const url = encodeURIComponent(window.location.href);
+                const title = encodeURIComponent('Calculation Results');
+                const summary = encodeURIComponent('Check out my calculation results');
+                window.open(`https://www.linkedin.com/shareArticle?mini=true&url=${url}&title=${title}&summary=${summary}`, '_blank');
+            });
+            
+            document.querySelector('.email').addEventListener('click', function() {
+                const currentTab = document.querySelector('.tab.active').dataset.tab;
+                let body = '';
+                
+                if (currentTab === 'math') {
+                    body = `Check out my calculation:\n\nExpression: ${expressionText.textContent}\nResult: ${mathResult.textContent}\n\nCalculated with: ${window.location.href}`;
+                } else {
+                    body = `Check out my horsepower calculation:\n\nTorque: ${resultTorque.textContent}\nRPM: ${resultRpm.textContent}\nHorsepower: ${resultHp.textContent}\nKilowatts: ${resultKw.textContent}\n\nCalculated with: ${window.location.href}`;
+                }
+                
+                const subject = 'Calculation Results';
+                window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            });
+            
+            document.querySelector('.link').addEventListener('click', function() {
+                navigator.clipboard.writeText(window.location.href);
+                alert('Link copied to clipboard!');
+            });
+            
+            // Initialize with sample calculations
+            calculateMath();
+            calculateHorsepower();
+        });
+    </script>
+</body>
+</html>

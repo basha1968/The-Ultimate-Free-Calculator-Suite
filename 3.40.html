@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProSpeed Calculator | Advanced Speed Calculation Tool</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --accent: #4cc9f0;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --border-radius: 12px;
+            --shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        .dark-mode {
+            --primary: #4895ef;
+            --secondary: #4361ee;
+            --light: #121212;
+            --dark: #f8f9fa;
+            --gray: #adb5bd;
+            --light-gray: #1e1e1e;
+            --card-bg: rgba(30, 30, 46, 0.8);
+            --body-bg: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            --header-bg: linear-gradient(135deg, var(--primary), var(--secondary));
+            --card-border: 1px solid rgba(255, 255, 255, 0.1);
+            --text-color: #f8f9fa;
+            --input-bg: rgba(30, 30, 46, 0.5);
+            --input-border: rgba(255, 255, 255, 0.1);
+            --result-bg: rgba(26, 42, 58, 0.5);
+            --result-border: 1px solid rgba(67, 97, 238, 0.3);
+            --result-card-bg: rgba(18, 18, 18, 0.5);
+            --result-card-border: 1px solid rgba(67, 97, 238, 0.2);
+            --visualization-bg: rgba(67, 97, 238, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--light-gray);
+            color: var(--dark);
+            transition: var(--transition);
+            min-height: 100vh;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%);
+            background-attachment: fixed;
+        }
+
+        .dark-mode body {
+            background: var(--body-bg);
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header Styles */
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 1.5rem 0;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+        .logo i {
+            font-size: 2.2rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 18px;
+            align-items: center;
+        }
+
+        .theme-toggle {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Calculator Container */
+        .calculator-container {
+            display: flex;
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        .main-content {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .sidebar {
+            flex: 1;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .dark-mode .card {
+            background: var(--card-bg);
+            border: var(--card-border);
+        }
+
+        .card-header {
+            background: rgba(67, 97, 238, 0.1);
+            padding: 18px 24px;
+            font-weight: 700;
+            font-size: 1.3rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .dark-mode .card-header {
+            background: rgba(67, 97, 238, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-body {
+            padding: 25px;
+        }
+
+        /* Calculator Styles */
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        label {
+            font-weight: 600;
+            color: var(--gray);
+            font-size: 0.95rem;
+        }
+
+        input, select {
+            padding: 14px 16px;
+            border: 1px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            background: var(--light);
+            color: var(--dark);
+            transition: var(--transition);
+            font-size: 1rem;
+        }
+
+        .dark-mode input, .dark-mode select {
+            background: var(--input-bg);
+            border-color: var(--input-border);
+            color: var(--text-color);
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        .btn {
+            padding: 14px 24px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 1.05rem;
+        }
+
+        .btn:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(67, 97, 238, 0.3);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-icon {
+            padding: 10px;
+            width: 42px;
+            height: 42px;
+        }
+
+        /* Results Section */
+        .results {
+            margin-top: 25px;
+            padding: 25px;
+            background: var(--result-bg, rgba(240, 249, 255, 0.6));
+            border-radius: var(--border-radius);
+            display: none;
+            border: var(--result-border, 1px solid rgba(67, 97, 238, 0.2));
+        }
+
+        .results.show {
+            display: block;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-title {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .result-card {
+            background: var(--result-card-bg, rgba(255, 255, 255, 0.7));
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            border: var(--result-card-border, 1px solid rgba(67, 97, 238, 0.1));
+        }
+
+        .result-card h4 {
+            color: var(--gray);
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px dashed var(--light-gray);
+        }
+        
+        .dark-mode .result-item {
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+        }
+
+        .result-value {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        /* Visualization */
+        .speed-visualization {
+            margin-top: 30px;
+            padding: 20px;
+            background: var(--visualization-bg, rgba(67, 97, 238, 0.05));
+            border-radius: var(--border-radius);
+            text-align: center;
+        }
+        
+        .visualization-title {
+            font-weight: 700;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .speed-meter {
+            width: 100%;
+            height: 200px;
+            position: relative;
+            margin: 30px auto;
+            max-width: 400px;
+        }
+
+        .needle {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 4px;
+            height: 90px;
+            background: var(--danger);
+            transform-origin: bottom center;
+            transform: translateX(-50%) rotate(-90deg);
+            transition: transform 1s ease-in-out;
+            border-radius: 4px 4px 0 0;
+            z-index: 10;
+        }
+
+        .needle-head {
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            background: var(--danger);
+            border-radius: 50%;
+            transform: translateX(-50%);
+            z-index: 11;
+        }
+
+        .scale {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 15%;
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+
+        /* Actions Bar */
+        .actions-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px solid var(--light-gray);
+        }
+
+        .dark-mode .actions-bar {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .calculator-grid { grid-template-columns: 1fr; }
+            .calculator-container { flex-direction: column; }
+        }
+
+        @media (max-width: 768px) {
+            .header-content { flex-wrap: wrap; gap: 20px; }
+            .result-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>ProSpeed Calculator</span>
+                </div>
+                <div class="header-actions">
+                    <button class="theme-toggle" id="themeToggle">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="calculator-container">
+            <div class="main-content">
+                <div class="card">
+                    <div class="card-header"><i class="fas fa-calculator"></i> Speed Calculator</div>
+                    <div class="card-body">
+                        <div class="calculator-grid">
+                            <div class="input-section">
+                                <div class="form-group">
+                                    <label for="distance">Distance:</label>
+                                    <div style="display: flex; gap: 10px;">
+                                        <input type="number" id="distance" placeholder="Enter distance" value="100" min="0" step="0.01">
+                                        <select id="distanceUnit">
+                                            <option value="km">Kilometers (km)</option>
+                                            <option value="miles">Miles</option>
+                                            <option value="meters">Meters</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="time">Time:</label>
+                                    <div style="display: flex; gap: 10px;">
+                                        <input type="number" id="time" placeholder="Enter time" value="2" min="0" step="0.01">
+                                        <select id="timeUnit">
+                                            <option value="hours">Hours</option>
+                                            <option value="minutes">Minutes</option>
+                                            <option value="seconds">Seconds</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button class="btn" id="calculateSpeed"><i class="fas fa-bolt"></i> Calculate Speed</button>
+                            </div>
+                            <div class="info-section">
+                                <label for="speedInput">Or Enter Speed Directly:</label>
+                                <div style="display: flex; gap: 10px;">
+                                    <input type="number" id="speedInput" placeholder="Enter speed" min="0" step="0.01">
+                                    <select id="speedUnit">
+                                        <option value="kmh">km/h</option>
+                                        <option value="mph">mph</option>
+                                        <option value="ms">m/s</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="results" id="speedResults">
+                            <h3 class="result-title"><i class="fas fa-star"></i> Speed Calculation Results</h3>
+                            <div class="result-grid">
+                                <div class="result-card">
+                                    <h4><i class="fas fa-tachometer-alt"></i> Speed</h4>
+                                    <div class="result-item"><span>Kilometers per hour:</span><span class="result-value" id="resultKmh"></span></div>
+                                    <div class="result-item"><span>Miles per hour:</span><span class="result-value" id="resultMph"></span></div>
+                                    <div class="result-item"><span>Meters per second:</span><span class="result-value" id="resultMs"></span></div>
+                                </div>
+                                <div class="result-card">
+                                    <h4><i class="fas fa-road"></i> Distance Covered</h4>
+                                    <div class="result-item"><span>Per hour:</span><span class="result-value" id="distPerHour"></span></div>
+                                    <div class="result-item"><span>Per minute:</span><span class="result-value" id="distPerMinute"></span></div>
+                                    <div class="result-item"><span>Per second:</span><span class="result-value" id="distPerSecond"></span></div>
+                                </div>
+                                <div class="result-card">
+                                    <h4><i class="fas fa-clock"></i> Time Analysis</h4>
+                                    <div class="result-item"><span>Time for 1 km:</span><span class="result-value" id="timePerKm"></span></div>
+                                    <div class="result-item"><span>Time for 1 mile:</span><span class="result-value" id="timePerMile"></span></div>
+                                    <div class="result-item"><span>100m time:</span><span class="result-value" id="timeFor100m"></span></div>
+                                </div>
+                            </div>
+                            <div class="speed-visualization">
+                                <h4 class="visualization-title"><i class="fas fa-gauge-high"></i> Speed Visualization</h4>
+                                <div class="speed-meter">
+                                    <div class="needle" id="speedNeedle"></div>
+                                    <div class="needle-head"></div>
+                                    <div class="scale"><span>0</span><span>50</span><span>100</span><span>150</span><span>200 km/h</span></div>
+                                </div>
+                                <p>Current speed: <strong id="currentSpeedDisplay"></strong></p>
+                            </div>
+                        </div>
+                        <div class="actions-bar">
+                            <button class="btn btn-outline" id="exportCSV"><i class="fas fa-file-csv"></i> Export CSV</button>
+                            <button class="btn btn-outline" id="exportTXT"><i class="fas fa-file-alt"></i> Export TXT</button>
+                            <button class="btn" id="shareResult"><i class="fas fa-share-alt"></i> Share</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const themeToggle = document.getElementById('themeToggle');
+        const calculateBtn = document.getElementById('calculateSpeed');
+        const speedResults = document.getElementById('speedResults');
+        const distanceInput = document.getElementById('distance');
+        const timeInput = document.getElementById('time');
+        const distanceUnit = document.getElementById('distanceUnit');
+        const timeUnit = document.getElementById('timeUnit');
+        const speedInput = document.getElementById('speedInput');
+        const speedUnit = document.getElementById('speedUnit');
+
+        // Result Elements
+        const resultKmh = document.getElementById('resultKmh');
+        const resultMph = document.getElementById('resultMph');
+        const resultMs = document.getElementById('resultMs');
+        const distPerHour = document.getElementById('distPerHour');
+        const distPerMinute = document.getElementById('distPerMinute');
+        const distPerSecond = document.getElementById('distPerSecond');
+        const timePerKm = document.getElementById('timePerKm');
+        const timePerMile = document.getElementById('timePerMile');
+        const timeFor100m = document.getElementById('timeFor100m');
+        const speedNeedle = document.getElementById('speedNeedle');
+        const currentSpeedDisplay = document.getElementById('currentSpeedDisplay');
+        
+        // --- Conversion Factors ---
+        const distanceToKm = { km: 1, miles: 1.60934, meters: 0.001 };
+        const timeToHours = { hours: 1, minutes: 1 / 60, seconds: 1 / 3600 };
+        const speedToKmh = { kmh: 1, mph: 1.60934, ms: 3.6 };
+
+        // --- Event Listeners ---
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+            updateThemeIcon();
+        });
+        
+        calculateBtn.addEventListener('click', calculateFromDistanceTime);
+        speedInput.addEventListener('input', calculateFromSpeed);
+        speedUnit.addEventListener('change', calculateFromSpeed);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.classList.add('dark-mode');
+            }
+            updateThemeIcon();
+            calculateFromDistanceTime();
+        });
+        
+        // --- Main Functions ---
+        function updateThemeIcon() {
+            const icon = themeToggle.querySelector('i');
+            icon.classList.toggle('fa-moon', !document.body.classList.contains('dark-mode'));
+            icon.classList.toggle('fa-sun', document.body.classList.contains('dark-mode'));
+        }
+
+        function calculateFromDistanceTime() {
+            const dist = parseFloat(distanceInput.value);
+            const time = parseFloat(timeInput.value);
+            
+            if (isNaN(dist) || isNaN(time) || dist <= 0 || time <= 0) {
+                speedResults.classList.remove('show');
+                return;
+            }
+
+            const distKm = dist * distanceToKm[distanceUnit.value];
+            const timeHrs = time * timeToHours[timeUnit.value];
+            const speedKmh = distKm / timeHrs;
+            
+            updateAllResults(speedKmh);
+        }
+
+        function calculateFromSpeed() {
+            const speed = parseFloat(speedInput.value);
+            
+            if (isNaN(speed) || speed <= 0) {
+                 speedResults.classList.remove('show');
+                return;
+            }
+
+            const speedKmh = speed * speedToKmh[speedUnit.value];
+            updateAllResults(speedKmh);
+        }
+
+        function updateAllResults(speedKmh) {
+            if (speedKmh === Infinity || isNaN(speedKmh)) return;
+
+            // Speeds
+            const speedMph = speedKmh / speedToKmh['mph'];
+            const speedMs = speedKmh / speedToKmh['ms'];
+
+            resultKmh.textContent = `${speedKmh.toFixed(2)} km/h`;
+            resultMph.textContent = `${speedMph.toFixed(2)} mph`;
+            resultMs.textContent = `${speedMs.toFixed(2)} m/s`;
+
+            // Distance covered
+            distPerHour.textContent = `${speedKmh.toFixed(2)} km`;
+            distPerMinute.textContent = `${(speedKmh / 60).toFixed(2)} km`;
+            distPerSecond.textContent = `${(speedMs).toFixed(2)} m`;
+
+            // Time analysis
+            timePerKm.textContent = `${(60 / speedKmh).toFixed(2)} min`;
+            timePerMile.textContent = `${(60 / speedMph).toFixed(2)} min`;
+            timeFor100m.textContent = `${(100 / speedMs).toFixed(2)} sec`;
+
+            updateSpeedVisualization(speedKmh);
+
+            speedResults.classList.add('show');
+        }
+
+        function updateSpeedVisualization(speedKmh) {
+            const displaySpeed = Math.min(speedKmh, 200); // Cap at 200 for visualization
+            const rotation = (displaySpeed / 200) * 180 - 90;
+            
+            speedNeedle.style.transform = `translateX(-50%) rotate(${rotation}deg)`;
+            currentSpeedDisplay.textContent = `${speedKmh.toFixed(1)} km/h`;
+        }
+
+        // --- Export & Share Functions ---
+        function generateReportText(format = 'txt') {
+            const separator = format === 'csv' ? ',' : ': ';
+            const newline = '\r\n';
+            let content = '';
+
+            if (format === 'csv') {
+                content += `Parameter,Value,Unit${newline}`;
+                content += `Speed (km/h)${separator}${resultKmh.textContent.replace(' km/h', '')}${separator}km/h${newline}`;
+                content += `Speed (mph)${separator}${resultMph.textContent.replace(' mph', '')}${separator}mph${newline}`;
+                content += `Speed (m/s)${separator}${resultMs.textContent.replace(' m/s', '')}${separator}m/s${newline}`;
+            } else {
+                content += `ProSpeed Calculation Report${newline}=============================${newline}`;
+                content += `Speed (km/h)${separator}${resultKmh.textContent}${newline}`;
+                content += `Speed (mph)${separator}${resultMph.textContent}${newline}`;
+                content += `Speed (m/s)${separator}${resultMs.textContent}${newline}`;
+                content += `-----------------------------${newline}`;
+                content += `Time for 1 km${separator}${timePerKm.textContent}${newline}`;
+                content += `Time for 1 mile${separator}${timePerMile.textContent}${newline}`;
+                content += `Time for 100m${separator}${timeFor100m.textContent}${newline}`;
+            }
+            return content;
+        }
+
+        function downloadFile(content, filename, contentType) {
+            const blob = new Blob([content], { type: contentType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        document.getElementById('exportTXT').addEventListener('click', () => {
+            if (!speedResults.classList.contains('show')) { alert('Please calculate a speed first.'); return; }
+            const report = generateReportText('txt');
+            downloadFile(report, 'speed_calculation.txt', 'text/plain;charset=utf-8;');
+        });
+
+        document.getElementById('exportCSV').addEventListener('click', () => {
+            if (!speedResults.classList.contains('show')) { alert('Please calculate a speed first.'); return; }
+            const report = generateReportText('csv');
+            downloadFile(report, 'speed_calculation.csv', 'text/csv;charset=utf-8;');
+        });
+
+        document.getElementById('shareResult').addEventListener('click', () => {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'My Speed Calculation',
+                    text: `I calculated a speed of ${resultKmh.textContent} using the ProSpeed Calculator!`,
+                    url: window.location.href,
+                }).catch(console.error);
+            } else {
+                alert('Web Share API is not supported in this browser.');
+            }
+        });
+    </script>
+</body>
+</html>

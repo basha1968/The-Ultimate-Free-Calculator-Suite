@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Time Duration Calculator</title>
+
+    <!-- Dependencies for PDF Export & Date/Time Logic -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/3.4.4/luxon.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #f7f9fc;
+            --text-color: #34495e;
+            --primary-color: #3498db;
+            --secondary-color: #7f8c8d;
+            --accent-color: #2ecc71;
+            --border-color: #ecf0f1;
+            --card-bg: #ffffff;
+            --input-bg: #ffffff;
+            --input-border: #bdc3c7;
+            --shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            --error-color: #e74c3c;
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #2c3e50;
+            --text-color: #ecf0f1;
+            --primary-color: #5dade2;
+            --secondary-color: #95a5a6;
+            --accent-color: #58d68d;
+            --border-color: #34495e;
+            --card-bg: #34495e;
+            --input-bg: #2c3e50;
+            --input-border: #7f8c8d;
+            --shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            --error-color: #e57373;
+        }
+
+        /* General & Layout */
+        *, *::before, *::after { box-sizing: border-box; }
+        body { margin: 0; font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-color); line-height: 1.6; transition: background-color 0.3s, color 0.3s; }
+        .container { max-width: 1400px; margin: 20px auto; padding: 20px; display: grid; grid-template-columns: 1fr 320px; gap: 30px; }
+        h1, h2 { color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
+        .card { background-color: var(--card-bg); border-radius: 12px; padding: 25px; box-shadow: var(--shadow); border: 1px solid var(--border-color); }
+        .grid { display: grid; gap: 20px; }
+
+        /* Columns */
+        #controls-column, #results-column { display: flex; flex-direction: column; gap: 30px; }
+        
+        /* Header & Theme Toggle */
+        header { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; }
+        .theme-switch-wrapper { display: flex; align-items: center; }
+        .theme-switch { display: inline-block; height: 24px; position: relative; width: 50px; }
+        .theme-switch input { display: none; }
+        .slider { background-color: var(--secondary-color); bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; border-radius: 24px; }
+        .slider:before { background-color: #fff; bottom: 4px; content: ""; height: 16px; left: 4px; position: absolute; transition: .4s; width: 16px; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary-color); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        /* Form Controls */
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9em; }
+        input, select { width: 100%; padding: 12px; border: 1px solid var(--input-border); border-radius: 6px; background-color: var(--input-bg); color: var(--text-color); font-size: 1rem; }
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator { filter: invert(var(--theme-invert, 0)); }
+        [data-theme="dark"] { --theme-invert: 1; }
+        .preset-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+        .preset-buttons button { padding: 8px 12px; background: var(--border-color); border: none; border-radius: 6px; cursor: pointer; color: var(--text-color); }
+        
+        /* Results Display */
+        #results-card { background: linear-gradient(135deg, var(--primary-color), var(--accent-color)); color: white; }
+        #results-card h2 { color: white; border-bottom-color: rgba(255,255,255,0.3); }
+        .duration-breakdown { font-size: 1.5em; text-align: center; margin: 20px 0; }
+        .duration-breakdown span { font-weight: 700; font-size: 1.8em; margin: 0 5px;}
+        .duration-breakdown small { font-size: 0.6em; opacity: 0.8; }
+        .total-duration-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .total-duration-grid .result-item { background: rgba(255,255,255,0.1); border-radius: 6px; padding: 10px; }
+        .total-duration-grid strong { display: block; font-size: 1.2em; }
+        #error-message { color: var(--error-color); font-weight: bold; background: var(--bg-color); padding: 10px; border-radius: 6px; margin-top: 15px; }
+
+        /* Action Buttons */
+        .btn { display: flex; align-items: center; justify-content: center; width: 100%; padding: 12px; margin-bottom: 10px; font-size: 1rem; font-weight: bold; text-align: center; text-decoration: none; cursor: pointer; border: none; border-radius: 6px; transition: opacity 0.2s; }
+        .btn:last-child { margin-bottom: 0; }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-secondary { background-color: var(--card-bg); color: var(--text-color); border: 1px solid var(--primary-color);}
+        .btn:hover { opacity: 0.85; }
+        
+        /* Ad Placeholders */
+        .ad-placeholder { min-height: 250px; width: 100%; background-color: var(--card-bg); border: 2px dashed var(--border-color); display: flex; align-items: center; justify-content: center; text-align: center; padding: 10px; color: var(--secondary-color); font-weight: bold; border-radius: 8px; }
+        
+        /* Responsive */
+        @media (max-width: 900px) {
+            .container { grid-template-columns: 1fr; }
+        }
+
+        /* Print */
+        @media print {
+            body { background-color: #fff; color: #000; font-size: 12pt; }
+            .container { all: unset; display: block; }
+            #results-column, .card, .btn, header, .ad-placeholder { display: none; }
+            #printable-area { display: block !important; box-shadow: none; border: 1px solid #ccc; }
+        }
+        #printable-area { display: block; } /* Show it always, just hide others on print */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header><h1>Time Duration Calculator</h1>
+            <div class="theme-switch-wrapper"><label class="theme-switch" for="theme-checkbox"><input type="checkbox" id="theme-checkbox" /><div class="slider"></div></label></div>
+        </header>
+
+        <!-- Main Column: Inputs & Results -->
+        <div id="controls-column">
+            <div class="card grid">
+                <div class="grid" style="grid-template-columns: 1fr 1fr; align-items: end;">
+                    <div class="form-group">
+                        <label for="startDate">Start Date & Time</label>
+                        <input type="datetime-local" id="startDate">
+                    </div>
+                     <div class="form-group">
+                        <label for="startTimezone">Timezone</label>
+                        <select id="startTimezone"></select>
+                    </div>
+                </div>
+                 <div class="grid" style="grid-template-columns: 1fr 1fr; align-items: end;">
+                     <div class="form-group">
+                        <label for="endDate">End Date & Time</label>
+                        <input type="datetime-local" id="endDate">
+                    </div>
+                     <div class="form-group">
+                        <label for="endTimezone">Timezone</label>
+                        <select id="endTimezone"></select>
+                    </div>
+                </div>
+                <div><label>Presets</label><div class="preset-buttons" id="preset-buttons"></div></div>
+            </div>
+
+             <div class="card" id="printable-area">
+                <h2>Calculation Results</h2>
+                <div id="results-card" class="card">
+                     <div id="duration-breakdown-wrapper"><p>Duration will be calculated here.</p></div>
+                     <h2 style="font-size:1.2em; text-align:center; margin-top:25px;">In Total</h2>
+                     <div class="total-duration-grid" id="total-duration-grid"></div>
+                </div>
+                <div id="error-message" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- Right Column: Actions & Monetization -->
+        <div id="results-column">
+            <div class="card">
+                <h2>Actions</h2>
+                <button id="printBtn" class="btn btn-secondary">Print Report</button>
+                <button id="savePdfBtn" class="btn btn-secondary">Save as PDF</button>
+                <button id="saveCsvBtn" class="btn btn-secondary">Save as CSV</button>
+                <button id="saveTxtBtn" class="btn btn-secondary">Save as Text</button>
+                <button id="shareLinkBtn" class="btn btn-primary" style="margin-top:10px">Copy Shareable Link</button>
+            </div>
+
+            <div class="ad-placeholder">
+                <!-- =============================== -->
+                <!-- YLLIX AD CODE SLOT              -->
+                <!-- Replace this div with your Yllix ad script -->
+                <!-- =============================== -->
+                <p>Yllix Ad Space<br>(e.g. 300x250)</p>
+            </div>
+
+            <div class="ad-placeholder">
+                <!-- =============================== -->
+                <!-- ADSTERRA AD CODE SLOT           -->
+                <!-- Replace this div with your Adsterra ad script -->
+                <!-- =============================== -->
+                <p>Adsterra Ad Space<br>(e.g. 300x250)</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const DateTime = luxon.DateTime;
+        const els = {
+            startDate: document.getElementById('startDate'), endDate: document.getElementById('endDate'),
+            startTimezone: document.getElementById('startTimezone'), endTimezone: document.getElementById('endTimezone'),
+            durationBreakdown: document.getElementById('duration-breakdown-wrapper'),
+            totalDurationGrid: document.getElementById('total-duration-grid'),
+            errorMessage: document.getElementById('error-message'),
+            presetButtons: document.getElementById('preset-buttons'),
+            themeCheckbox: document.getElementById('theme-checkbox'),
+            printBtn: document.getElementById('printBtn'), savePdfBtn: document.getElementById('savePdfBtn'),
+            saveCsvBtn: document.getElementById('saveCsvBtn'), saveTxtBtn: document.getElementById('saveTxtBtn'),
+            shareLinkBtn: document.getElementById('shareLinkBtn'),
+            printableArea: document.getElementById('printable-area'),
+        };
+
+        const timezones = [ 'Local', 'UTC', 'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'Europe/London', 'Europe/Paris', 'Asia/Tokyo' ];
+        let lastResult = {};
+        
+        const calculateDuration = () => {
+            try {
+                els.errorMessage.style.display = 'none';
+                let startZone = els.startTimezone.value;
+                let endZone = els.endTimezone.value;
+                if(startZone === 'Local') startZone = DateTime.local().zoneName;
+                if(endZone === 'Local') endZone = DateTime.local().zoneName;
+                
+                const startDT = DateTime.fromISO(els.startDate.value, { zone: startZone });
+                const endDT = DateTime.fromISO(els.endDate.value, { zone: endZone });
+
+                if (!startDT.isValid || !endDT.isValid) throw new Error("Invalid date or time format.");
+                if (endDT < startDT) throw new Error("End date must be after start date.");
+                
+                // --- Calculations ---
+                const duration = endDT.diff(startDT, ['years', 'months', 'days', 'hours', 'minutes', 'seconds']);
+                const breakdown = duration.toObject();
+                lastResult = { breakdown, totals: {} };
+                
+                ['years', 'months', 'days', 'hours', 'minutes', 'seconds'].forEach(unit => {
+                    lastResult.totals[unit] = endDT.diff(startDT, unit).as(unit);
+                });
+                
+                displayResults();
+            } catch (error) {
+                els.errorMessage.textContent = error.message;
+                els.errorMessage.style.display = 'block';
+            }
+        };
+
+        const displayResults = () => {
+             const b = lastResult.breakdown;
+             els.durationBreakdown.innerHTML = `<div class="duration-breakdown">
+                ${b.years > 0 ? `<span>${Math.floor(b.years)}</span><small>y</small>`:''}
+                ${b.months > 0 ? `<span>${Math.floor(b.months)}</span><small>m</small>`:''}
+                ${b.days > 0 ? `<span>${Math.floor(b.days)}</span><small>d</small>`:''}
+                <span>${Math.floor(b.hours)}</span><small>h</small> 
+                <span>${Math.floor(b.minutes)}</span><small>min</small> 
+                <span>${Math.floor(b.seconds)}</span><small>s</small>
+            </div>`;
+
+            const totals = lastResult.totals;
+            els.totalDurationGrid.innerHTML = `
+                <div class="result-item">Total Years <strong>${totals.years.toFixed(6)}</strong></div>
+                <div class="result-item">Total Months <strong>${totals.months.toFixed(4)}</strong></div>
+                <div class="result-item">Total Days <strong>${totals.days.toFixed(2)}</strong></div>
+                <div class="result-item">Total Weeks <strong>${(totals.days / 7).toFixed(2)}</strong></div>
+                <div class="result-item">Total Hours <strong>${totals.hours.toLocaleString(undefined, {maximumFractionDigits:0})}</strong></div>
+                <div class="result-item">Total Minutes <strong>${totals.minutes.toLocaleString(undefined, {maximumFractionDigits:0})}</strong></div>
+                <div class="result-item" style="grid-column: 1 / -1; text-align:center;">Total Seconds <strong>${totals.seconds.toLocaleString(undefined, {maximumFractionDigits:0})}</strong></div>`;
+        };
+        
+        const generateExportContent = (format) => {
+             const { breakdown, totals } = lastResult;
+             if (!breakdown) return '';
+             const header = "Time Duration Calculation Result";
+             const breakdownStr = `Duration: ${Math.floor(breakdown.years)}y, ${Math.floor(breakdown.months)}m, ${Math.floor(breakdown.days)}d, ${Math.floor(breakdown.hours)}h, ${Math.floor(breakdown.minutes)}min, ${Math.floor(breakdown.seconds)}s`;
+            if (format === 'txt') {
+                 return `${header}\n======================\n${breakdownStr}\n\nIn Totals:\n` + Object.entries(totals).map(([key, value]) => `  Total ${key}: ${value.toLocaleString()}`).join('\n');
+            }
+            if(format === 'csv'){
+                 let csv = `Parameter,Value\n"Breakdown", "${breakdownStr}"\n`;
+                 Object.entries(totals).forEach(([key, value]) => csv += `"Total ${key}","${value}"\n`);
+                 return csv;
+            }
+        }
+        
+        // Setup Presets
+        const presets = {
+            'Now': () => { els.endDate.value = DateTime.now().toFormat("yyyy-MM-dd'T'HH:mm:ss"); },
+            'Last 7 Days': () => { els.startDate.value = DateTime.now().minus({ days: 7 }).toFormat("yyyy-MM-dd'T'HH:mm:ss"); presets['Now'](); },
+            'Last 30 Days': () => { els.startDate.value = DateTime.now().minus({ days: 30 }).toFormat("yyyy-MM-dd'T'HH:mm:ss"); presets['Now'](); },
+            'This Month': () => { const now = DateTime.now(); els.startDate.value = now.startOf('month').toFormat("yyyy-MM-dd'T'HH:mm:ss"); presets['Now'](); },
+            'This Year': () => { const now = DateTime.now(); els.startDate.value = now.startOf('year').toFormat("yyyy-MM-dd'T'HH:mm:ss"); presets['Now'](); },
+        };
+        Object.keys(presets).forEach(key => {
+            const btn = document.createElement('button');
+            btn.textContent = key;
+            btn.onclick = () => { presets[key](); calculateDuration(); };
+            els.presetButtons.appendChild(btn);
+        });
+        
+        // --- Init & Event Listeners ---
+        function init() {
+            // Theme
+            const savedTheme = localStorage.getItem('timeDurationTheme');
+            if (savedTheme) { document.documentElement.setAttribute('data-theme', savedTheme); els.themeCheckbox.checked = savedTheme === 'dark'; }
+            els.themeCheckbox.onchange = (e) => { const theme = e.target.checked ? 'dark' : 'light'; document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('timeDurationTheme', theme); };
+
+            // Timezones
+            timezones.forEach(tz => {
+                const opt1 = new Option(tz, tz); const opt2 = new Option(tz, tz);
+                els.startTimezone.add(opt1); els.endTimezone.add(opt2);
+            });
+            
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('s') && params.has('e')) {
+                 els.startDate.value = params.get('s');
+                 els.endDate.value = params.get('e');
+                 els.startTimezone.value = params.get('sz') || 'Local';
+                 els.endTimezone.value = params.get('ez') || 'Local';
+            } else {
+                 els.endDate.value = DateTime.now().toFormat("yyyy-MM-dd'T'HH:mm:ss");
+                 els.startDate.value = DateTime.now().minus({days: 1}).toFormat("yyyy-MM-dd'T'HH:mm:ss");
+            }
+            
+            ['startDate', 'endDate', 'startTimezone', 'endTimezone'].forEach(id => {
+                 document.getElementById(id).addEventListener('input', calculateDuration);
+            });
+            
+            calculateDuration();
+        }
+
+        els.printBtn.onclick = () => window.print();
+        els.savePdfBtn.onclick = () => {
+             const { jsPDF } = window.jspdf; const doc = new jsPDF('p', 'mm', 'a4');
+             html2canvas(els.printableArea, { scale: 2 }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png'); const pdfWidth = doc.internal.pageSize.getWidth()-20;
+                const pdfHeight = (doc.getImageProperties(imgData).height * pdfWidth) / doc.getImageProperties(imgData).width;
+                doc.addImage(imgData, 'PNG', 10, 10, pdfWidth, pdfHeight); doc.save('time-duration-report.pdf');
+            });
+        }
+        els.saveTxtBtn.onclick = () => { triggerDownload(generateExportContent('txt'), 'time-duration.txt', 'text/plain'); };
+        els.saveCsvBtn.onclick = () => { triggerDownload(generateExportContent('csv'), 'time-duration.csv', 'text/csv'); };
+        
+        els.shareLinkBtn.onclick = () => {
+            const params = new URLSearchParams({ s: els.startDate.value, e: els.endDate.value, sz: els.startTimezone.value, ez: els.endTimezone.value });
+            navigator.clipboard.writeText(`${location.origin}${location.pathname}?${params.toString()}`).then(() => {
+                els.shareLinkBtn.textContent = 'Copied!'; setTimeout(() => els.shareLinkBtn.textContent = 'Copy Shareable Link', 2000);
+            });
+        };
+        
+        function triggerDownload(content, filename, mimeType){
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([content], { type: `${mimeType};charset=utf-8;` }));
+            a.download = filename;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }
+        
+        init();
+    });
+    </script>
+</body>
+</html>

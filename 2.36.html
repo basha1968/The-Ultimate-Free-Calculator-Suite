@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weight Watchers Points Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #4a9d5e;
+            --secondary: #ff6b6b;
+            --accent: #6a7fdb;
+            --light: #f8f9fa;
+            --dark: #2c3e50;
+            --success: #28a745;
+            --warning: #ffc107;
+            --info: #17a2b8;
+            --border-radius: 10px;
+            --transition: all 0.3s ease;
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dark-mode {
+            --light: #1e2a38;
+            --dark: #ecf0f1;
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: var(--transition);
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .dark-mode body {
+            background: linear-gradient(135deg, #1a2a4a 0%, #2c3e50 100%);
+            color: #ecf0f1;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            margin-bottom: 20px;
+        }
+        
+        header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        header h1 i {
+            background: var(--primary);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        header p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto;
+            opacity: 0.9;
+        }
+        
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            z-index: 100;
+        }
+        
+        .calculator-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 900px) {
+            .calculator-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .input-section, .result-section {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: var(--shadow);
+        }
+        
+        .dark-mode .input-section, 
+        .dark-mode .result-section {
+            background: #253449;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary);
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        label i {
+            color: var(--accent);
+        }
+        
+        input {
+            width: 100%;
+            padding: 14px 15px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 1.1rem;
+        }
+        
+        .dark-mode input {
+            background: #1e2a38;
+            border-color: #34495e;
+            color: #ecf0f1;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(106, 127, 219, 0.2);
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            margin-left: 10px;
+            cursor: help;
+        }
+        
+        .tooltip i {
+            color: var(--accent);
+        }
+        
+        .tooltip-text {
+            visibility: hidden;
+            width: 280px;
+            background: var(--dark);
+            color: white;
+            text-align: center;
+            border-radius: var(--border-radius);
+            padding: 15px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.9rem;
+            font-weight: normal;
+        }
+        
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 25px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--shadow);
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .calculate-btn {
+            width: 100%;
+            padding: 16px;
+            margin-top: 10px;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        
+        .result-card {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 25px;
+            border: 1px solid #d1e7ff;
+        }
+        
+        .dark-mode .result-card {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2c3e50 100%);
+            border-color: #34495e;
+        }
+        
+        .result-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: var(--accent);
+        }
+        
+        .result-value {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 15px 0;
+        }
+        
+        .result-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .detail-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+        }
+        
+        .dark-mode .detail-card {
+            background: #1e2a38;
+        }
+        
+        .detail-card h4 {
+            margin-bottom: 8px;
+            color: var(--accent);
+            font-size: 0.95rem;
+        }
+        
+        .detail-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            min-width: 120px;
+            background: var(--accent);
+        }
+        
+        .share-btn {
+            background: var(--info);
+        }
+        
+        .export-btn {
+            background: var(--warning);
+            color: #333;
+        }
+        
+        .ad-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .ad-section {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .ad-container {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            text-align: center;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: var(--shadow);
+        }
+        
+        .dark-mode .ad-container {
+            background: #253449;
+        }
+        
+        .ad-container h3 {
+            margin-bottom: 15px;
+            color: var(--warning);
+        }
+        
+        .ad-placeholder {
+            width: 100%;
+            height: 150px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: var(--border-radius);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .dark-mode .ad-placeholder {
+            background: linear-gradient(135deg, #1e2a38 0%, #253449 100%);
+            color: #95a5a6;
+        }
+        
+        .ad-placeholder i {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: var(--warning);
+        }
+        
+        .history-panel {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 30px;
+            margin-top: 30px;
+            box-shadow: var(--shadow);
+        }
+        
+        .dark-mode .history-panel {
+            background: #253449;
+        }
+        
+        .history-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .history-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .dark-mode .history-item {
+            border-bottom: 1px solid #34495e;
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .history-details {
+            flex: 1;
+        }
+        
+        .history-points {
+            font-weight: bold;
+            font-size: 1.4rem;
+            color: var(--primary);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 40px;
+            border-top: 1px solid #eee;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .dark-mode footer {
+            border-top: 1px solid #34495e;
+        }
+        
+        /* Print styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .result-section, .result-section * {
+                visibility: visible;
+            }
+            .result-section {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white;
+                color: black;
+                padding: 20px;
+                box-shadow: none;
+                border: none;
+            }
+            .action-buttons, .ad-section, .info-section, header, .input-section, .theme-toggle {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" id="themeToggle">
+        <i class="fas fa-moon"></i>
+    </button>
+    
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-weight"></i> Weight Watchers Points Calculator</h1>
+            <p>Calculate the SmartPoints® for your meals using the latest Weight Watchers formula</p>
+        </header>
+        
+        <div class="ad-section">
+            <div class="ad-container">
+                <h3>Adsterra Ad Space</h3>
+                <div class="ad-placeholder">
+                    <i class="fas fa-ad"></i>
+                    <p>Banner Advertisement (728x90)</p>
+                    <p>Adsterra code would be placed here</p>
+                </div>
+            </div>
+            
+            <div class="ad-container">
+                <h3>Yllix Ad Space</h3>
+                <div class="ad-placeholder">
+                    <i class="fas fa-window-restore"></i>
+                    <p>Floating/Pop-under Ad (300x600)</p>
+                    <p>Yllix code would be placed here</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="calculator-container">
+            <div class="input-section">
+                <h2 class="section-title"><i class="fas fa-edit"></i> Food Details</h2>
+                
+                <div class="input-group">
+                    <label for="calories">
+                        <i class="fas fa-fire"></i> Calories
+                        <span class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">Total calories in the food item. This is the primary factor in point calculation.</span>
+                        </span>
+                    </label>
+                    <input type="number" id="calories" min="0" placeholder="Enter calories" value="250">
+                </div>
+                
+                <div class="input-group">
+                    <label for="sat-fat">
+                        <i class="fas fa-bacon"></i> Saturated Fat (g)
+                        <span class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">Grams of saturated fat. Higher values increase points.</span>
+                        </span>
+                    </label>
+                    <input type="number" id="sat-fat" min="0" step="0.1" placeholder="Enter saturated fat" value="4">
+                </div>
+                
+                <div class="input-group">
+                    <label for="sugar">
+                        <i class="fas fa-candy-cane"></i> Sugar (g)
+                        <span class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">Grams of sugar. Higher values increase points.</span>
+                        </span>
+                    </label>
+                    <input type="number" id="sugar" min="0" step="0.1" placeholder="Enter sugar" value="15">
+                </div>
+                
+                <div class="input-group">
+                    <label for="protein">
+                        <i class="fas fa-drumstick-bite"></i> Protein (g)
+                        <span class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">Grams of protein. Higher values decrease points.</span>
+                        </span>
+                    </label>
+                    <input type="number" id="protein" min="0" step="0.1" placeholder="Enter protein" value="10">
+                </div>
+                
+                <button class="calculate-btn" id="calculate">
+                    <i class="fas fa-calculator"></i> Calculate Points
+                </button>
+                
+                <div class="formula-section">
+                    <h4><i class="fas fa-square-root-alt"></i> Formula:</h4>
+                    <p>Points = (calories/33) + (satFat/4) + (sugar/12) - (protein/10)</p>
+                </div>
+            </div>
+            
+            <div class="result-section">
+                <h2 class="section-title"><i class="fas fa-chart-pie"></i> Calculation Results</h2>
+                
+                <div class="result-card">
+                    <h3>Total SmartPoints®</h3>
+                    <div class="result-value" id="points">7</div>
+                    <p>Based on the nutritional information provided</p>
+                    
+                    <div class="result-details">
+                        <div class="detail-card">
+                            <h4>Calories</h4>
+                            <div class="detail-value" id="res-calories">250</div>
+                        </div>
+                        <div class="detail-card">
+                            <h4>Sat. Fat</h4>
+                            <div class="detail-value" id="res-satfat">4g</div>
+                        </div>
+                        <div class="detail-card">
+                            <h4>Sugar</h4>
+                            <div class="detail-value" id="res-sugar">15g</div>
+                        </div>
+                        <div class="detail-card">
+                            <h4>Protein</h4>
+                            <div class="detail-value" id="res-protein">10g</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="action-btn" id="print-btn">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+                    
+                    <button class="action-btn export-btn" id="export-btn">
+                        <i class="fas fa-file-export"></i> Export
+                    </button>
+                    
+                    <button class="action-btn share-btn" id="share-btn">
+                        <i class="fas fa-share-alt"></i> Share
+                    </button>
+                </div>
+                
+                <div class="export-options" id="exportOptions" style="display: none; margin-top: 15px;">
+                    <div style="display: flex; gap: 10px;">
+                        <button class="action-btn" id="pdf-btn" style="background: #e74c3c;">
+                            <i class="fas fa-file-pdf"></i> PDF
+                        </button>
+                        <button class="action-btn" id="csv-btn" style="background: #27ae60;">
+                            <i class="fas fa-file-csv"></i> CSV
+                        </button>
+                        <button class="action-btn" id="txt-btn" style="background: #3498db;">
+                            <i class="fas fa-file-alt"></i> TXT
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="history-panel">
+            <h2 class="section-title"><i class="fas fa-history"></i> Recent Calculations</h2>
+            <div class="history-list" id="historyList">
+                <div class="history-item">
+                    <div class="history-details">
+                        <div>Chicken Salad</div>
+                        <div style="font-size: 0.9rem; opacity: 0.8;">Cal: 320, SF: 3g, Sug: 8g, Pro: 25g</div>
+                    </div>
+                    <div class="history-points">5</div>
+                </div>
+                <div class="history-item">
+                    <div class="history-details">
+                        <div>Protein Shake</div>
+                        <div style="font-size: 0.9rem; opacity: 0.8;">Cal: 180, SF: 1g, Sug: 4g, Pro: 30g</div>
+                    </div>
+                    <div class="history-points">2</div>
+                </div>
+                <div class="history-item">
+                    <div class="history-details">
+                        <div>Chocolate Bar</div>
+                        <div style="font-size: 0.9rem; opacity: 0.8;">Cal: 210, SF: 5g, Sug: 20g, Pro: 2g</div>
+                    </div>
+                    <div class="history-points">9</div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 Weight Watchers Points Calculator | Secure & Privacy-Focused</p>
+            <p>All calculations are performed client-side. No personal data is stored or transmitted.</p>
+        </footer>
+    </div>
+    
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        
+        // Check for saved theme preference
+        const savedTheme = localStorage.getItem('wwTheme');
+        if (savedTheme === 'dark') {
+            body.classList.add('dark-mode');
+            themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+        }
+        
+        // Toggle theme on button click
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            const isDark = body.classList.contains('dark-mode');
+            localStorage.setItem('wwTheme', isDark ? 'dark' : 'light');
+            themeToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        });
+        
+        // DOM Elements
+        const caloriesInput = document.getElementById('calories');
+        const satFatInput = document.getElementById('sat-fat');
+        const sugarInput = document.getElementById('sugar');
+        const proteinInput = document.getElementById('protein');
+        const calculateBtn = document.getElementById('calculate');
+        const pointsDisplay = document.getElementById('points');
+        const resCalories = document.getElementById('res-calories');
+        const resSatFat = document.getElementById('res-satfat');
+        const resSugar = document.getElementById('res-sugar');
+        const resProtein = document.getElementById('res-protein');
+        const exportBtn = document.getElementById('export-btn');
+        const exportOptions = document.getElementById('exportOptions');
+        const printBtn = document.getElementById('print-btn');
+        const shareBtn = document.getElementById('share-btn');
+        const historyList = document.getElementById('historyList');
+        
+        // Calculate points using the Weight Watchers formula
+        function calculatePoints() {
+            // Get input values
+            const calories = parseFloat(caloriesInput.value) || 0;
+            const satFat = parseFloat(satFatInput.value) || 0;
+            const sugar = parseFloat(sugarInput.value) || 0;
+            const protein = parseFloat(proteinInput.value) || 0;
+            
+            // Validate inputs
+            if (calories <= 0) {
+                alert('Please enter a valid number of calories');
+                return;
+            }
+            
+            // Calculate points
+            const points = (calories / 33) + (satFat / 4) + (sugar / 12) - (protein / 10);
+            
+            // Round to nearest whole number
+            const roundedPoints = Math.round(points);
+            
+            // Display results
+            pointsDisplay.textContent = roundedPoints;
+            resCalories.textContent = calories;
+            resSatFat.textContent = satFat + 'g';
+            resSugar.textContent = sugar + 'g';
+            resProtein.textContent = protein + 'g';
+            
+            // Add to history
+            addToHistory(calories, satFat, sugar, protein, roundedPoints);
+        }
+        
+        // Add calculation to history
+        function addToHistory(cal, satFat, sugar, protein, points) {
+            const historyItem = document.createElement('div');
+            historyItem.className = 'history-item';
+            
+            historyItem.innerHTML = `
+                <div class="history-details">
+                    <div>Custom Calculation</div>
+                    <div style="font-size: 0.9rem; opacity: 0.8;">Cal: ${cal}, SF: ${satFat}g, Sug: ${sugar}g, Pro: ${protein}g</div>
+                </div>
+                <div class="history-points">${points}</div>
+            `;
+            
+            historyList.insertBefore(historyItem, historyList.firstChild);
+            
+            // Limit to 10 items
+            if (historyList.children.length > 10) {
+                historyList.removeChild(historyList.lastChild);
+            }
+        }
+        
+        // Export functions
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(18);
+            doc.text("Weight Watchers Points Report", 105, 20, null, null, 'center');
+            
+            doc.setFontSize(14);
+            doc.text("Food Details", 20, 40);
+            
+            doc.setFontSize(12);
+            doc.text(`Calories: ${caloriesInput.value}`, 20, 50);
+            doc.text(`Saturated Fat: ${satFatInput.value}g`, 20, 60);
+            doc.text(`Sugar: ${sugarInput.value}g`, 20, 70);
+            doc.text(`Protein: ${proteinInput.value}g`, 20, 80);
+            
+            doc.setFontSize(16);
+            doc.text(`Total SmartPoints®: ${pointsDisplay.textContent}`, 105, 100, null, null, 'center');
+            
+            doc.save('ww_points_report.pdf');
+        }
+        
+        function exportToCSV() {
+            const csvContent = 
+`Category,Value
+Calories,${caloriesInput.value}
+Saturated Fat (g),${satFatInput.value}
+Sugar (g),${sugarInput.value}
+Protein (g),${proteinInput.value}
+SmartPoints,${pointsDisplay.textContent}`;
+            
+            const link = document.createElement('a');
+            link.download = 'ww_points_report.csv';
+            link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+            link.click();
+        }
+        
+        function exportToTXT() {
+            const txtContent = 
+`Weight Watchers Points Report
+=============================
+Calories: ${caloriesInput.value}
+Saturated Fat: ${satFatInput.value}g
+Sugar: ${sugarInput.value}g
+Protein: ${proteinInput.value}g
+
+Total SmartPoints®: ${pointsDisplay.textContent}`;
+            
+            const link = document.createElement('a');
+            link.download = 'ww_points_report.txt';
+            link.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(txtContent);
+            link.click();
+        }
+        
+        // Event Listeners
+        calculateBtn.addEventListener('click', calculatePoints);
+        
+        // Calculate on initial load
+        calculatePoints();
+        
+        // Auto-calculate when inputs change
+        [caloriesInput, satFatInput, sugarInput, proteinInput].forEach(input => {
+            input.addEventListener('input', calculatePoints);
+        });
+        
+        exportBtn.addEventListener('click', () => {
+            exportOptions.style.display = exportOptions.style.display === 'block' ? 'none' : 'block';
+        });
+        
+        document.getElementById('pdf-btn').addEventListener('click', exportToPDF);
+        document.getElementById('csv-btn').addEventListener('click', exportToCSV);
+        document.getElementById('txt-btn').addEventListener('click', exportToTXT);
+        
+        printBtn.addEventListener('click', () => {
+            window.print();
+        });
+        
+        shareBtn.addEventListener('click', () => {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Weight Watchers Points',
+                    text: `I calculated ${pointsDisplay.textContent} SmartPoints® for this food item!`,
+                    url: window.location.href
+                }).catch(console.error);
+            } else {
+                alert('Share functionality is supported in modern browsers. Please copy the URL manually.');
+            }
+        });
+    </script>
+</body>
+</html>

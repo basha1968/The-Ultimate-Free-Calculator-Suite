@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scientific Notation Calculator | Professional Math Tool</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #7209b7;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --danger: #f44336;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --border: #dee2e6;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+            --bg: #f5f7fa;
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            --card-bg: #ffffff;
+            --text: #212529;
+            --text-secondary: #6c757d;
+            --explanation-bg: #f0f7ff;
+            --ad-bg: #f0f0f0;
+        }
+
+        .dark-mode {
+            --bg: #121826;
+            --bg-gradient: linear-gradient(135deg, #0d1117 0%, #1a1f29 100%);
+            --card-bg: #1e293b;
+            --text: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            --explanation-bg: #1e3a8a;
+            --ad-bg: #1f2937;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        /* Theme toggle */
+        .theme-toggle {
+            position: absolute;
+            top: 25px;
+            right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            width: 60px;
+            height: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 0 5px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .toggle-circle {
+            width: 22px;
+            height: 22px;
+            background: var(--primary);
+            border-radius: 50%;
+            position: absolute;
+            left: 4px;
+            transition: transform 0.3s;
+        }
+
+        .dark-mode .toggle-circle {
+            transform: translateX(30px);
+        }
+
+        .theme-toggle i {
+            font-size: 14px;
+            position: absolute;
+        }
+
+        .theme-toggle .fa-sun {
+            color: #ff9800;
+            left: 8px;
+        }
+
+        .theme-toggle .fa-moon {
+            color: #e2e8f0;
+            right: 8px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            position: relative;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .logo i {
+            font-size: 2.5rem;
+            color: var(--primary);
+        }
+
+        .logo h1 {
+            font-size: 2.2rem;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .tagline {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .ad-banner {
+            background-color: var(--ad-bg);
+            border: 1px dashed var(--border);
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .calculator-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+
+        @media (min-width: 992px) {
+            .calculator-container {
+                grid-template-columns: 3fr 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            background: var(--card-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .input-group > div {
+            flex: 1;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-block {
+            display: block;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-success:hover {
+            background: #43a047;
+        }
+
+        .result-container {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 25px;
+            margin-top: 20px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .result-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 15px 0;
+            word-break: break-all;
+        }
+
+        .notation-toggle {
+            display: flex;
+            justify-content: center;
+            margin: 15px 0;
+        }
+
+        .notation-btn {
+            padding: 8px 15px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .notation-btn:first-child {
+            border-radius: 8px 0 0 8px;
+        }
+
+        .notation-btn:last-child {
+            border-radius: 0 8px 8px 0;
+        }
+
+        .notation-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .history-container {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .history-item {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .output-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 25px;
+            justify-content: center;
+        }
+
+        .output-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .output-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .ad-sidebar {
+            background-color: var(--ad-bg);
+            border: 1px dashed var(--border);
+            height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 25px 0;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        .ad-footer {
+            background-color: var(--ad-bg);
+            border: 1px dashed var(--border);
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 30px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+        }
+
+        .security-badge {
+            display: inline-block;
+            background: var(--success);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            margin-left: 5px;
+        }
+
+        .tooltip i {
+            color: var(--primary);
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 250px;
+            background-color: var(--text);
+            color: var(--card-bg);
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.9rem;
+            font-weight: normal;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .error-message {
+            color: var(--danger);
+            margin-top: 5px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .gdpr-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .logo h1 {
+                font-size: 1.8rem;
+            }
+            
+            .card-header {
+                font-size: 1rem;
+                padding: 12px 15px;
+            }
+            
+            .card-body {
+                padding: 15px;
+            }
+            
+            .theme-toggle {
+                position: relative;
+                top: 0;
+                right: 0;
+                margin: 10px auto;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .gdpr-banner {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-calculator"></i>
+                <h1>Scientific Notation Calculator <span class="security-badge">Secure</span></h1>
+            </div>
+            <p class="tagline">Convert, calculate, and operate with scientific notation efficiently</p>
+            
+            <div class="theme-toggle" id="theme-toggle">
+                <div class="toggle-circle"></div>
+                <i class="fas fa-sun"></i>
+                <i class="fas fa-moon"></i>
+            </div>
+        </header>
+        
+        <div class="ad-banner">
+            [Adsterra Ad Banner - 728x90]
+        </div>
+        
+        <div class="calculator-container">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-calculator"></i> Scientific Notation Calculator
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="number-input">Enter a number <span class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">Enter standard or scientific notation (e.g., 123000 or 1.23e5)</span>
+                        </span></label>
+                        <input type="text" id="number-input" placeholder="e.g., 123000 or 1.23e5" value="123000">
+                        <div class="error-message" id="number-error">Please enter a valid number</div>
+                    </div>
+                    
+                    <div class="notation-toggle">
+                        <button class="notation-btn active" id="standard-btn">Standard Notation</button>
+                        <button class="notation-btn" id="scientific-btn">Scientific Notation</button>
+                    </div>
+                    
+                    <button id="convert-btn" class="btn btn-block">
+                        <i class="fas fa-exchange-alt"></i> Convert Notation
+                    </button>
+                    
+                    <div class="result-container">
+                        <div id="conversion-result" class="result-value">1.23 × 10<sup>5</sup></div>
+                    </div>
+                    
+                    <h3 style="margin: 25px 0 15px; text-align: center;">Arithmetic Operations</h3>
+                    
+                    <div class="input-group">
+                        <div>
+                            <label for="operand1">Operand 1</label>
+                            <input type="text" id="operand1" placeholder="e.g., 1.23e5" value="1.23e5">
+                        </div>
+                        <div>
+                            <label for="operand2">Operand 2</label>
+                            <input type="text" id="operand2" placeholder="e.g., 4.56e3" value="4.56e3">
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <div>
+                            <label for="operation">Operation</label>
+                            <select id="operation">
+                                <option value="add">Addition (+)</option>
+                                <option value="subtract">Subtraction (-)</option>
+                                <option value="multiply">Multiplication (×)</option>
+                                <option value="divide">Division (÷)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>&nbsp;</label>
+                            <button id="calculate-btn" class="btn btn-block">
+                                <i class="fas fa-calculator"></i> Calculate
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="result-container">
+                        <div id="calculation-result" class="result-value">1.2756 × 10<sup>5</sup></div>
+                    </div>
+                    
+                    <div class="output-options">
+                        <button class="output-btn" id="print-btn">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                        <button class="output-btn" id="save-pdf-btn">
+                            <i class="fas fa-file-pdf"></i> Save as PDF
+                        </button>
+                        <button class="output-btn" id="save-txt-btn">
+                            <i class="fas fa-file-alt"></i> Save as TXT
+                        </button>
+                        <button class="output-btn" id="save-csv-btn">
+                            <i class="fas fa-file-csv"></i> Save as CSV
+                        </button>
+                        <button class="output-btn" id="share-btn">
+                            <i class="fas fa-share-alt"></i> Share
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-history"></i> Calculation History
+                    </div>
+                    <div class="card-body">
+                        <div class="history-container" id="history-container">
+                            <div class="history-item">
+                                <div><strong>123000 → Scientific</strong></div>
+                                <div>1.23 × 10<sup>5</sup></div>
+                                <div style="font-size:0.8rem;color:var(--text-secondary);">Just now</div>
+                            </div>
+                            <div class="history-item">
+                                <div><strong>1.23e5 + 4.56e3</strong></div>
+                                <div>1.2756 × 10<sup>5</sup></div>
+                                <div style="font-size:0.8rem;color:var(--text-secondary);">Just now</div>
+                            </div>
+                        </div>
+                        <button class="btn clear" onclick="clearHistory()" style="width:100%; margin-top:15px;">
+                            <i class="fas fa-trash"></i> Clear History
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="ad-sidebar">
+                    [Yllix Sidebar Ad - 300x250]
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-shield-alt"></i> Security Status
+                    </div>
+                    <div class="card-body">
+                        <div style="margin-bottom: 15px;">
+                            <i class="fas fa-lock" style="color: var(--success);"></i> 
+                            <span>Input Sanitization: <strong>Active</strong></span>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <i class="fas fa-user-shield" style="color: var(--success);"></i> 
+                            <span>XSS Protection: <strong>Enabled</strong></span>
+                        </div>
+                        <div>
+                            <i class="fas fa-check-circle" style="color: var(--success);"></i> 
+                            <span>GDPR Compliance: <strong>Active</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 Scientific Notation Calculator | Secure & GDPR Compliant</p>
+            <div class="footer-links">
+                <a href="#"><i class="fas fa-lock"></i> Privacy Policy</a>
+                <a href="#"><i class="fas fa-file-contract"></i> Terms of Service</a>
+                <a href="#"><i class="fas fa-cookie"></i> Cookie Settings</a>
+                <a href="#"><i class="fas fa-envelope"></i> Contact Support</a>
+            </div>
+            <div class="ad-footer">
+                [Adsterra Footer Ad - 728x90]
+            </div>
+        </footer>
+    </div>
+    
+    <div class="gdpr-banner" id="gdpr-banner">
+        <div>
+            This website uses cookies to ensure you get the best experience. 
+            <a href="#" style="color: var(--primary);">Learn more</a>
+        </div>
+        <div>
+            <button class="btn" onclick="acceptCookies()" style="margin-right: 10px;">Accept All</button>
+            <button class="btn" onclick="rejectCookies()" style="background: transparent; border: 1px solid var(--border); color: var(--text);">Reject Non-Essential</button>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const numberInput = document.getElementById('number-input');
+        const convertBtn = document.getElementById('convert-btn');
+        const conversionResult = document.getElementById('conversion-result');
+        const operand1 = document.getElementById('operand1');
+        const operand2 = document.getElementById('operand2');
+        const operation = document.getElementById('operation');
+        const calculateBtn = document.getElementById('calculate-btn');
+        const calculationResult = document.getElementById('calculation-result');
+        const standardBtn = document.getElementById('standard-btn');
+        const scientificBtn = document.getElementById('scientific-btn');
+        const historyContainer = document.getElementById('history-container');
+        const themeToggle = document.getElementById('theme-toggle');
+        const body = document.body;
+        const gdprBanner = document.getElementById('gdpr-banner');
+        
+        // State
+        let notationMode = 'scientific'; // 'scientific' or 'standard'
+        let history = [];
+        let useScientific = true;
+        
+        // Initialize calculator
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Set theme based on preference
+            if (localStorage.getItem('theme') === 'dark') {
+                body.classList.add('dark-mode');
+            } else if (localStorage.getItem('theme') === 'light') {
+                body.classList.remove('dark-mode');
+            } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark');
+            }
+            
+            // Check GDPR consent
+            if (!localStorage.getItem('gdpr_consent')) {
+                gdprBanner.style.display = 'flex';
+            }
+            
+            // Load history
+            loadHistory();
+        });
+        
+        // Set up all event listeners
+        function setupEventListeners() {
+            // Theme toggle
+            themeToggle.addEventListener('click', toggleTheme);
+            
+            // Notation toggle
+            standardBtn.addEventListener('click', () => toggleNotation('standard'));
+            scientificBtn.addEventListener('click', () => toggleNotation('scientific'));
+            
+            // Calculator buttons
+            convertBtn.addEventListener('click', convertNotation);
+            calculateBtn.addEventListener('click', performCalculation);
+            
+            // Output buttons
+            document.getElementById('print-btn').addEventListener('click', printResult);
+            document.getElementById('save-pdf-btn').addEventListener('click', saveAsPdf);
+            document.getElementById('save-txt-btn').addEventListener('click', saveAsTxt);
+            document.getElementById('save-csv-btn').addEventListener('click', saveAsCsv);
+            document.getElementById('share-btn').addEventListener('click', shareResult);
+        }
+        
+        // Toggle theme
+        function toggleTheme() {
+            body.classList.toggle('dark-mode');
+            const isDark = body.classList.contains('dark-mode');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+        
+        // Toggle notation display
+        function toggleNotation(mode) {
+            notationMode = mode;
+            standardBtn.classList.toggle('active', mode === 'standard');
+            scientificBtn.classList.toggle('active', mode === 'scientific');
+            
+            // Update results display
+            if (history.length > 0) {
+                convertNotation();
+                performCalculation();
+            }
+        }
+        
+        // Convert between standard and scientific notation
+        function convertNotation() {
+            const input = sanitizeInput(numberInput.value);
+            if (!input) {
+                showError(numberInput, "Please enter a valid number");
+                return;
+            }
+            
+            let numberValue;
+            try {
+                // Handle scientific notation input
+                if (input.includes('e') || input.includes('E')) {
+                    const parts = input.split(/[eE]/);
+                    if (parts.length !== 2) throw new Error("Invalid scientific notation");
+                    numberValue = parseFloat(parts[0]) * Math.pow(10, parseInt(parts[1]));
+                } else {
+                    numberValue = parseFloat(input);
+                }
+                
+                if (isNaN(numberValue)) throw new Error("Invalid number");
+            } catch (e) {
+                showError(numberInput, "Please enter a valid number");
+                return;
+            }
+            
+            clearError(numberInput);
+            
+            let result;
+            if (notationMode === 'scientific') {
+                result = toScientificNotation(numberValue);
+            } else {
+                result = numberValue.toString();
+            }
+            
+            conversionResult.innerHTML = result;
+            
+            // Add to history
+            addToHistory({
+                type: 'conversion',
+                input: input,
+                result: result,
+                mode: notationMode
+            });
+        }
+        
+        // Perform arithmetic operations
+        function performCalculation() {
+            const input1 = sanitizeInput(operand1.value);
+            const input2 = sanitizeInput(operand2.value);
+            const op = operation.value;
+            
+            if (!input1 || !input2) {
+                if (!input1) showError(operand1, "Invalid operand");
+                if (!input2) showError(operand2, "Invalid operand");
+                return;
+            }
+            
+            let num1, num2;
+            try {
+                num1 = parseScientific(input1);
+                num2 = parseScientific(input2);
+                
+                if (isNaN(num1) || isNaN(num2)) throw new Error("Invalid numbers");
+            } catch (e) {
+                showError(operand1, "Invalid numbers");
+                showError(operand2, "Invalid numbers");
+                return;
+            }
+            
+            clearError(operand1);
+            clearError(operand2);
+            
+            let result;
+            switch (op) {
+                case 'add':
+                    result = num1 + num2;
+                    break;
+                case 'subtract':
+                    result = num1 - num2;
+                    break;
+                case 'multiply':
+                    result = num1 * num2;
+                    break;
+                case 'divide':
+                    if (num2 === 0) {
+                        calculationResult.textContent = "Error: Division by zero";
+                        return;
+                    }
+                    result = num1 / num2;
+                    break;
+                default:
+                    result = 0;
+            }
+            
+            let displayResult;
+            if (notationMode === 'scientific') {
+                displayResult = toScientificNotation(result);
+            } else {
+                displayResult = result.toString();
+            }
+            
+            calculationResult.innerHTML = displayResult;
+            
+            // Add to history
+            addToHistory({
+                type: 'operation',
+                operand1: input1,
+                operand2: input2,
+                operation: op,
+                result: displayResult,
+                mode: notationMode
+            });
+        }
+        
+        // Helper function to parse scientific notation
+        function parseScientific(input) {
+            if (input.includes('e') || input.includes('E')) {
+                const parts = input.split(/[eE]/);
+                return parseFloat(parts[0]) * Math.pow(10, parseInt(parts[1]));
+            }
+            return parseFloat(input);
+        }
+        
+        // Convert to scientific notation
+        function toScientificNotation(num) {
+            if (num === 0) return "0";
+            
+            const absNum = Math.abs(num);
+            let exponent = Math.floor(Math.log10(absNum));
+            let coefficient = num / Math.pow(10, exponent);
+            
+            // Adjust for numbers less than 1
+            if (absNum < 1) {
+                exponent = Math.ceil(Math.log10(absNum));
+                coefficient = num / Math.pow(10, exponent);
+            }
+            
+            // Format coefficient with 4 decimal places
+            coefficient = coefficient.toFixed(4);
+            
+            // Remove trailing zeros and unnecessary decimal point
+            coefficient = coefficient.replace(/\.?0+$/, '');
+            
+            return `${coefficient} × 10<sup>${exponent}</sup>`;
+        }
+        
+        // Add to history
+        function addToHistory(entry) {
+            entry.timestamp = new Date().toLocaleString();
+            history.unshift(entry);
+            
+            // Keep only last 10 items
+            if (history.length > 10) {
+                history.pop();
+            }
+            
+            saveHistory();
+            renderHistory();
+        }
+        
+        // Render history
+        function renderHistory() {
+            historyContainer.innerHTML = '';
+            
+            history.forEach(entry => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                
+                if (entry.type === 'conversion') {
+                    historyItem.innerHTML = `
+                        <div><strong>${entry.input} → ${entry.mode === 'scientific' ? 'Scientific' : 'Standard'}</strong></div>
+                        <div>${entry.result}</div>
+                        <div style="font-size:0.8rem;color:var(--text-secondary);">${entry.timestamp}</div>
+                    `;
+                } else {
+                    // Map operation symbols
+                    const opSymbols = {
+                        'add': '+',
+                        'subtract': '-',
+                        'multiply': '×',
+                        'divide': '÷'
+                    };
+                    
+                    historyItem.innerHTML = `
+                        <div><strong>${entry.operand1} ${opSymbols[entry.operation]} ${entry.operand2}</strong></div>
+                        <div>${entry.result}</div>
+                        <div style="font-size:0.8rem;color:var(--text-secondary);">${entry.timestamp}</div>
+                    `;
+                }
+                
+                historyContainer.appendChild(historyItem);
+            });
+        }
+        
+        // Save history to localStorage
+        function saveHistory() {
+            localStorage.setItem('calcHistory', JSON.stringify(history));
+        }
+        
+        // Load history from localStorage
+        function loadHistory() {
+            const savedHistory = localStorage.getItem('calcHistory');
+            if (savedHistory) {
+                try {
+                    history = JSON.parse(savedHistory) || [];
+                    renderHistory();
+                } catch (e) {
+                    history = [];
+                }
+            }
+        }
+        
+        // Clear history
+        function clearHistory() {
+            history = [];
+            saveHistory();
+            renderHistory();
+        }
+        
+        // Input sanitization
+        function sanitizeInput(input) {
+            // Remove any potentially dangerous characters
+            return input.replace(/[^0-9eE.\-+×]/g, '')
+                        .replace(/×/g, 'e') // Convert ×10^ to e notation
+                        .replace(/\s+/g, '')  // Remove whitespace
+                        .trim();
+        }
+        
+        // Error handling
+        function showError(inputElement, message) {
+            const errorElement = inputElement.parentElement.querySelector('.error-message');
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+                inputElement.style.borderColor = 'var(--danger)';
+            }
+        }
+        
+        function clearError(inputElement) {
+            const errorElement = inputElement.parentElement.querySelector('.error-message');
+            if (errorElement) {
+                errorElement.style.display = 'none';
+                inputElement.style.borderColor = '';
+            }
+        }
+        
+        // GDPR functions
+        function acceptCookies() {
+            localStorage.setItem('gdpr_consent', 'accepted');
+            gdprBanner.style.display = 'none';
+            // Here you would typically load ad scripts
+        }
+        
+        function rejectCookies() {
+            localStorage.setItem('gdpr_consent', 'rejected');
+            gdprBanner.style.display = 'none';
+        }
+        
+        // Output functions
+        function printResult() {
+            window.print();
+        }
+        
+        function saveAsPdf() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(18);
+            doc.text('Scientific Notation Calculator - Results', 20, 20);
+            
+            doc.setFontSize(12);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, 20, 30);
+            
+            let yPos = 40;
+            history.forEach(entry => {
+                let content = '';
+                if (entry.type === 'conversion') {
+                    content = `${entry.input} → ${entry.mode === 'scientific' ? 'Scientific' : 'Standard'}: ${entry.result}`;
+                } else {
+                    const opSymbols = {
+                        'add': '+',
+                        'subtract': '-',
+                        'multiply': '×',
+                        'divide': '÷'
+                    };
+                    content = `${entry.operand1} ${opSymbols[entry.operation]} ${entry.operand2} = ${entry.result}`;
+                }
+                
+                doc.text(content, 20, yPos);
+                yPos += 10;
+            });
+            
+            doc.save('scientific-notation-results.pdf');
+        }
+        
+        function saveAsTxt() {
+            let content = "Scientific Notation Calculator - Results\n\n";
+            content += "Generated: " + new Date().toLocaleString() + "\n\n";
+            
+            history.forEach(entry => {
+                if (entry.type === 'conversion') {
+                    content += `${entry.input} → ${entry.mode === 'scientific' ? 'Scientific' : 'Standard'}: ${entry.result.replace(/<sup>|<\/sup>/g, '^')}\n`;
+                } else {
+                    const opSymbols = {
+                        'add': '+',
+                        'subtract': '-',
+                        'multiply': '×',
+                        'divide': '÷'
+                    };
+                    content += `${entry.operand1} ${opSymbols[entry.operation]} ${entry.operand2} = ${entry.result.replace(/<sup>|<\/sup>/g, '^')}\n`;
+                }
+            });
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'scientific-notation-results.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        function saveAsCsv() {
+            let content = "Type,Input1,Input2,Operation,Result,Timestamp\n";
+            
+            history.forEach(entry => {
+                if (entry.type === 'conversion') {
+                    content += `Conversion,${entry.input},,,${entry.result.replace(/<sup>|<\/sup>/g, '^')},${entry.timestamp}\n`;
+                } else {
+                    const opSymbols = {
+                        'add': '+',
+                        'subtract': '-',
+                        'multiply': '×',
+                        'divide': '÷'
+                    };
+                    content += `Operation,${entry.operand1},${entry.operand2},${opSymbols[entry.operation]},${entry.result.replace(/<sup>|<\/sup>/g, '^')},${entry.timestamp}\n`;
+                }
+            });
+            
+            const blob = new Blob([content], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'scientific-notation-results.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        function shareResult() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Scientific Notation Calculator',
+                    text: `Check out my calculations: ${window.location.href}`,
+                    url: window.location.href
+                }).catch(console.error);
+            } else {
+                // Fallback for browsers without Web Share API
+                const el = document.createElement('textarea');
+                el.value = `Scientific Notation Calculations:\n${window.location.href}`;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                
+                alert('Link copied to clipboard!');
+            }
+        }
+    </script>
+</body>
+</html>

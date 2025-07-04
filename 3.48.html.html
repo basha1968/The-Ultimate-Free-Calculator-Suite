@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Tip Calculator</title>
+
+    <!-- Dependencies for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #f5f7fa;
+            --text-color: #3d526c;
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --accent-color: #28a745;
+            --border-color: #dee2e6;
+            --card-bg: #ffffff;
+            --input-bg: #ffffff;
+            --shadow: 0 6px 18px rgba(0, 0, 0, 0.07);
+            --font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1b26;
+            --text-color: #a9b1d6;
+            --primary-color: #7aa2f7;
+            --secondary-color: #565f89;
+            --accent-color: #9ece6a;
+            --border-color: #414868;
+            --card-bg: #24283b;
+            --input-bg: #1f2335;
+            --shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* General & Layout */
+        *, *::before, *::after { box-sizing: border-box; }
+        html { font-size: 100%; } /* For accessibility font scaling */
+        body { margin: 0; font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-color); line-height: 1.6; transition: background-color 0.3s, color 0.3s; font-size: 1rem; }
+        .container { max-width: 900px; margin: 2rem auto; padding: 1rem; display: grid; grid-template-columns: 1fr; gap: 2rem; }
+        .calculator-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; padding: 2.5rem; background: var(--card-bg); border-radius: 16px; box-shadow: var(--shadow); }
+        .card { padding: 1.5rem; background: var(--card-bg); border-radius: 12px; box-shadow: var(--shadow); }
+        h1, h2 { color: var(--primary-color); }
+        
+        /* Inputs Panel */
+        .input-panel label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; }
+        .input-group { position: relative; display: flex; align-items: center; margin-bottom: 1.5rem; }
+        .input-group span { position: absolute; left: 1rem; font-size: 1.2rem; color: var(--secondary-color); }
+        .input-group input { width: 100%; padding: 0.8rem 1rem 0.8rem 3rem; border: 2px solid var(--border-color); border-radius: 8px; background-color: var(--input-bg); color: var(--text-color); font-size: 1.2rem; text-align: right; }
+        .tip-presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin: 1rem 0; }
+        .tip-presets button { padding: 0.8rem; background: var(--bg-color); border: 1px solid transparent; border-radius: 6px; cursor: pointer; color: var(--text-color); font-weight: bold; font-size: 1rem; }
+        .tip-presets button.active { background: var(--primary-color); color: white; border-color: var(--primary-color);}
+        
+        /* Results Panel */
+        .results-panel { background: var(--primary-color); color: white; padding: 2rem; border-radius: 12px; display: flex; flex-direction: column; }
+        .results-panel .result-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .results-panel .result-item span { font-size: 1rem; opacity: 0.9; }
+        .results-panel .result-item strong { font-size: 2.2rem; color: var(--accent-color); }
+        .results-panel .total-per-person strong { font-size: 2.8rem; }
+        #reset-btn { margin-top: auto; padding: 1rem; background: var(--accent-color); border: none; border-radius: 8px; font-weight: bold; font-size: 1.2rem; cursor: pointer; color: var(--primary-color); }
+
+        /* Actions & Ads */
+        .actions-ads { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+        .btn-group button { width: 100%; margin-bottom: 0.8rem; }
+        .btn { padding: 0.8rem 1.5rem; font-weight: 600; border-radius: 8px; border: 2px solid var(--primary-color); cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: var(--primary-color); color: white; }
+        .btn-secondary { background: transparent; color: var(--primary-color); }
+        .ad-placeholder { min-height: 250px; border: 2px dashed var(--border-color); display: flex; align-items: center; justify-content: center; text-align:center; padding: 1rem; color: var(--secondary-color); border-radius: 12px; }
+        
+        /* Header & Theme */
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 0 1rem; }
+        #theme-toggle { font-size: 1.5rem; cursor: pointer; background:none; border:none; color:var(--text-color); }
+        
+        @media (max-width: 768px) {
+            .calculator-wrapper { grid-template-columns: 1fr; }
+        }
+
+        /* Print Styles */
+        @media print {
+            body { background: #fff !important; color: #000 !important; font-size: 12pt; }
+            .container, .header, .actions-ads { display: none; }
+            .calculator-wrapper { all: unset; display: block; }
+            #printable-receipt { display: block !important; box-shadow: none; border: 1px solid #ccc; padding: 1rem; }
+        }
+        #printable-receipt { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header class="header">
+            <h1>Tip Calculator Pro</h1>
+            <button id="theme-toggle" title="Toggle Dark/Light Mode" aria-label="Toggle theme">🌓</button>
+        </header>
+
+        <main class="calculator-wrapper" id="main-calculator">
+            <section class="input-panel">
+                <div class="form-group">
+                    <label for="billAmount">Bill Amount</label>
+                    <div class="input-group">
+                        <span id="currency-symbol">$</span><input type="number" id="billAmount" placeholder="0.00" min="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="tipPercentage">Select Tip %</label>
+                    <div class="tip-presets">
+                        <button class="tip-preset-btn" data-percent="10">10%</button>
+                        <button class="tip-preset-btn active" data-percent="15">15%</button>
+                        <button class="tip-preset-btn" data-percent="18">18%</button>
+                        <button class="tip-preset-btn" data-percent="20">20%</button>
+                        <button class="tip-preset-btn" data-percent="25">25%</button>
+                        <input type="number" id="customTip" placeholder="Custom" min="0" style="padding:0.8rem; text-align:center;"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="numPeople">Number of People</label>
+                     <div class="input-group">
+                        <span>👥</span><input type="number" id="numPeople" value="1" min="1">
+                    </div>
+                </div>
+            </section>
+            
+            <section class="results-panel">
+                <div class="result-item">
+                    <div><span>Tip Amount</span><br><small>/ person</small></div>
+                    <strong id="tipPerPerson">$0.00</strong>
+                </div>
+                 <div class="result-item total-per-person">
+                    <div><span>Total</span><br><small>/ person</small></div>
+                    <strong id="totalPerPerson">$0.00</strong>
+                </div>
+                <button id="reset-btn">RESET</button>
+            </section>
+        </main>
+        
+        <footer class="actions-ads">
+            <div class="card btn-group">
+                <h2>Actions</h2>
+                <button id="printBtn" class="btn btn-secondary">Print Receipt</button>
+                <button id="savePdfBtn" class="btn btn-secondary">Save as PDF</button>
+                <button id="saveTxtBtn" class="btn btn-secondary">Save as Text</button>
+                <button id="shareBtn" class="btn btn-primary">Share Results</button>
+            </div>
+             <div class="card currency-card">
+                 <h2>Settings</h2>
+                 <label for="currency-select">Currency</label>
+                 <select id="currency-select"></select>
+             </div>
+             <div class="card ad-placeholder">
+                <!-- =============================== -->
+                <!-- YLLIX AD CODE SLOT              -->
+                <!-- =============================== -->
+                <p>Yllix Ad Space</p>
+            </div>
+            <div class="card ad-placeholder">
+                <!-- =============================== -->
+                <!-- ADSTERRA AD CODE SLOT           -->
+                <!-- =============================== -->
+                <p>Adsterra Ad Space</p>
+            </div>
+        </footer>
+
+        <!-- Element for printing -->
+        <div id="printable-receipt"></div>
+    </div>
+    
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const D = document;
+    const CURRENCIES = { 'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'INR': '₹' };
+    let lastResult = {};
+    
+    const els = {
+        billAmount: D.getElementById('billAmount'),
+        customTip: D.getElementById('customTip'),
+        numPeople: D.getElementById('numPeople'),
+        tipPresets: D.querySelectorAll('.tip-preset-btn'),
+        tipPerPerson: D.getElementById('tipPerPerson'),
+        totalPerPerson: D.getElementById('totalPerPerson'),
+        currencySelect: D.getElementById('currency-select'),
+        currencySymbol: D.getElementById('currency-symbol'),
+        resetBtn: D.getElementById('reset-btn'),
+        themeToggle: D.getElementById('theme-toggle'),
+    };
+    
+    // --- Core Calculation Logic ---
+    const calculate = () => {
+        const bill = parseFloat(els.billAmount.value) || 0;
+        const people = parseInt(els.numPeople.value, 10) || 1;
+        const customTipVal = parseFloat(els.customTip.value);
+        let tipPercent = parseFloat(D.querySelector('.tip-preset-btn.active')?.dataset.percent) || 0;
+
+        if (!isNaN(customTipVal) && customTipVal >= 0) {
+            tipPercent = customTipVal;
+            // Deselect preset buttons if custom is used
+            els.tipPresets.forEach(b => b.classList.remove('active'));
+        }
+        
+        // Input validation
+        if (bill < 0 || people < 1) {
+            // Can add visual error feedback here
+            return;
+        }
+        
+        const tipTotal = bill * (tipPercent / 100);
+        const billTotal = bill + tipTotal;
+        
+        lastResult = {
+            tipPerPerson: tipTotal / people,
+            totalPerPerson: billTotal / people,
+            currency: els.currencySelect.value,
+            bill: bill, tipPercent: tipPercent, people: people
+        };
+        
+        updateUI();
+    };
+    
+    const updateUI = () => {
+        const currencySymbol = CURRENCIES[lastResult.currency] || '$';
+        els.currencySymbol.textContent = currencySymbol;
+        els.tipPerPerson.textContent = formatCurrency(lastResult.tipPerPerson, lastResult.currency);
+        els.totalPerPerson.textContent = formatCurrency(lastResult.totalPerPerson, lastResult.currency);
+    };
+    
+    const formatCurrency = (amount, currencyCode) => {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: currencyCode,
+        }).format(amount);
+    };
+    
+    // --- Event Listeners ---
+    [els.billAmount, els.customTip, els.numPeople, els.currencySelect].forEach(el => el.addEventListener('input', calculate));
+    
+    els.tipPresets.forEach(btn => {
+        btn.addEventListener('click', () => {
+            els.tipPresets.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            els.customTip.value = ''; // Clear custom tip when preset is clicked
+            calculate();
+        });
+    });
+    
+    els.resetBtn.addEventListener('click', () => {
+        els.billAmount.value = '';
+        els.customTip.value = '';
+        els.numPeople.value = '1';
+        D.querySelector('.tip-preset-btn[data-percent="15"]').click(); // Reset to default 15%
+        calculate();
+    });
+    
+    // --- Theme Management ---
+    const setTheme = (theme) => {
+        D.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('tipCalcTheme', theme);
+        els.themeToggle.textContent = theme === 'dark' ? '☀️' : '🌓';
+    };
+    els.themeToggle.addEventListener('click', () => setTheme(D.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
+
+    // --- Actions (Print, Save, Share) ---
+    const generateSummary = (format = 'txt') => {
+        if (!lastResult.bill) return "No calculation performed.";
+        const c = (val) => formatCurrency(val, lastResult.currency);
+        const nl = format === 'csv' ? ',' : (format === 'html' ? '<br>' : '\n');
+        
+        const data = {
+            'Bill Total': c(lastResult.bill), 'Tip': `${lastResult.tipPercent}%`, 'Split Between': `${lastResult.people} People`,
+            'Tip Amount per Person': c(lastResult.tipPerPerson), 'Total per Person': c(lastResult.totalPerPerson)
+        };
+        
+        if (format === 'csv') return "Parameter,Value\n" + Object.entries(data).map(([k,v]) => `"${k}","${v}"`).join("\n");
+        return Object.entries(data).map(([k, v]) => `${k}:${format === 'html' ? '<strong>' : ''} ${v}${format === 'html' ? '</strong>' : ''}`).join(nl);
+    };
+    
+    D.getElementById('printBtn').onclick = () => {
+        const receipt = D.getElementById('printable-receipt');
+        receipt.innerHTML = `<h2>Payment Summary</h2><p>${generateSummary('html')}</p><small>Generated by Pro Tip Calculator</small>`;
+        window.print();
+    };
+
+    D.getElementById('savePdfBtn').onclick = () => {
+        const { jsPDF } = window.jspdf;
+        html2canvas(D.getElementById('main-calculator')).then(canvas => {
+            const doc = new jsPDF();
+            doc.addImage(canvas.toDataURL('image/png'), 'PNG', 15, 15, 180, 0);
+            doc.save('tip-summary.pdf');
+        });
+    };
+    D.getElementById('saveTxtBtn').onclick = () => {
+        const blob = new Blob([generateSummary('txt')], {type:'text/plain;charset=utf-8'});
+        const a = D.createElement('a'); a.href = URL.createObjectURL(blob); a.download='tip-summary.txt'; a.click();
+    };
+    D.getElementById('shareBtn').onclick = async () => {
+        const shareData = {
+            title: 'Tip Calculation Summary',
+            text: generateSummary('txt'),
+            url: window.location.href
+        };
+        try {
+            if (navigator.share) { // Use Web Share API if available
+                await navigator.share(shareData);
+            } else { // Fallback to clipboard
+                await navigator.clipboard.writeText(shareData.text);
+                alert('Results copied to clipboard!');
+            }
+        } catch (err) {
+            console.error('Share failed:', err);
+            alert('Could not share results.');
+        }
+    };
+    
+    // --- Ad Refresh Logic ---
+    const refreshAds = () => {
+        // This is a placeholder for your ad network's refresh function.
+        // It's crucial to consult Adsterra/Yllix documentation for their specific API.
+        console.log("AD REFRESH TRIGGERED at", new Date().toLocaleTimeString());
+        // Example: if(window.adsterra_refresh) { window.adsterra_refresh('ad_unit_id'); }
+        // Example: if(window.yllix_refresh) { window.yllix_refresh(); }
+    };
+    //setInterval(refreshAds, 60000); // Refresh every 60 seconds. CAUTION: Check ad network policies on refresh rates.
+    
+    // --- Initialization ---
+    const init = () => {
+        // Load theme
+        setTheme(localStorage.getItem('tipCalcTheme') || 'light');
+        
+        // Populate currencies
+        Object.keys(CURRENCIES).forEach(code => {
+            const option = new Option(`${code} (${CURRENCIES[code]})`, code);
+            els.currencySelect.add(option);
+        });
+        const savedCurrency = localStorage.getItem('tipCalcCurrency') || 'USD';
+        els.currencySelect.value = savedCurrency;
+        els.currencySelect.onchange = () => localStorage.setItem('tipCalcCurrency', els.currencySelect.value);
+
+        calculate();
+    };
+
+    init();
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Mass Calculator</title>
+    <!-- External library for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- External libraries for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- All CSS styles are included directly in this file -->
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --border: #dee2e6;
+            --card-bg: #ffffff;
+            --body-bg: #f0f2f5;
+            --text: #333333;
+            --text-light: #6c757d;
+            --shadow: 0 4px 12px rgba(0,0,0,0.1);
+            --transition: all 0.3s ease;
+        }
+
+        .dark-mode {
+            --primary: #5e72e4;
+            --secondary: #4a56d6;
+            --success: #63d3ff;
+            --light: #343a40;
+            --dark: #f8f9fa;
+            --gray: #adb5bd;
+            --border: #495057;
+            --card-bg: #212529;
+            --body-bg: #121212;
+            --text: #f8f9fa;
+            --text-light: #ced4da;
+            --shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--body-bg);
+            color: var(--text);
+            line-height: 1.6;
+            transition: var(--transition);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: var(--primary);
+            position: relative;
+            display: inline-block;
+        }
+
+        h1:after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--success);
+            border-radius: 2px;
+        }
+
+        .subtitle {
+            color: var(--text-light);
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin: 20px auto;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            padding: 25px;
+            margin-bottom: 30px;
+            transition: var(--transition);
+            border: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i {
+            color: var(--success);
+        }
+
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .calculator-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-with-unit {
+            display: flex;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        input, select {
+            padding: 14px;
+            border: none;
+            background: var(--card-bg);
+            color: var(--text);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        input {
+            flex: 1;
+            outline: none;
+        }
+
+        input:focus {
+            background: rgba(67, 97, 238, 0.05);
+        }
+
+        select {
+            width: 100px;
+            border-left: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+        }
+
+        button.secondary {
+            background: var(--light);
+            color: var(--text);
+        }
+
+        button.secondary:hover {
+            background: var(--border);
+        }
+
+        .buttons-row {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .result-container {
+            background: rgba(67, 97, 238, 0.1);
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            margin-top: 30px;
+            border: 1px dashed var(--primary);
+        }
+
+        .result-value {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 15px 0;
+        }
+
+        .result-details {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .result-box {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 10px;
+            min-width: 120px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        .result-label {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 5px;
+        }
+
+        .result-data {
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        .export-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .export-btn {
+            background: var(--light);
+            color: var(--text);
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1px solid var(--border);
+        }
+
+        .export-btn:hover {
+            background: rgba(67, 97, 238, 0.1);
+            border-color: var(--primary);
+        }
+
+        .export-btn i {
+            font-size: 1.8rem;
+            color: var(--primary);
+        }
+
+        .ad-container {
+            background: rgba(0,0,0,0.03);
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            margin: 25px 0;
+            border: 1px dashed var(--border);
+            color: var(--text-light);
+        }
+
+        .ad-label {
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.8rem;
+            margin-bottom: 15px;
+            color: var(--text-light);
+        }
+
+        .ad-content {
+            height: 250px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.05);
+            border-radius: 8px;
+            margin: 15px 0;
+            gap: 15px;
+        }
+
+        .ad-content i {
+            font-size: 2.5rem;
+            color: var(--gray);
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            z-index: 100;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--dark);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.85rem;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px 0;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border);
+        }
+
+        @media (max-width: 768px) {
+            .buttons-row {
+                flex-direction: column;
+            }
+            
+            .export-options {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="theme-toggle" id="themeToggle">
+        <i class="fas fa-moon"></i>
+    </div>
+    
+    <div class="container">
+        <header>
+            <h1>Professional Mass Calculator</h1>
+            <p class="subtitle">Calculate mass using density and volume with support for multiple units. Export results, share calculations, and enjoy an ad-supported experience.</p>
+        </header>
+        
+        <div class="calculator-grid">
+            <div>
+                <div class="card" id="calculation-card">
+                    <h2 class="card-title"><i class="fas fa-calculator"></i> Calculation Parameters</h2>
+                    
+                    <div class="input-group">
+                        <label for="density">
+                            <i class="fas fa-weight-scale"></i> Density
+                            <div class="tooltip">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltip-text">Mass per unit volume (e.g., kg/m³, g/cm³, lb/ft³)</span>
+                            </div>
+                        </label>
+                        <div class="input-with-unit">
+                            <input type="number" id="density" placeholder="Enter density value" min="0" step="any">
+                            <select id="densityUnit">
+                                <option value="kg/m3">kg/m³</option>
+                                <option value="g/cm3">g/cm³</option>
+                                <option value="g/ml">g/mL</option>
+                                <option value="lb/ft3">lb/ft³</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="volume">
+                            <i class="fas fa-cube"></i> Volume
+                            <div class="tooltip">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltip-text">Amount of space occupied (e.g., m³, cm³, ft³, L)</span>
+                            </div>
+                        </label>
+                        <div class="input-with-unit">
+                            <input type="number" id="volume" placeholder="Enter volume value" min="0" step="any">
+                            <select id="volumeUnit">
+                                <option value="m3">m³</option>
+                                <option value="cm3">cm³</option>
+                                <option value="ft3">ft³</option>
+                                <option value="l">L</option>
+                                <option value="ml">mL</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="buttons-row">
+                        <button id="calculateBtn"><i class="fas fa-calculator"></i> Calculate Mass</button>
+                        <button id="resetBtn" class="secondary"><i class="fas fa-redo"></i> Reset</button>
+                    </div>
+                    
+                    <div class="result-container" id="resultContainer" style="display: none;">
+                        <h3><i class="fas fa-weight-hanging"></i> Calculated Mass</h3>
+                        <div class="result-value" id="resultValue">0 kg</div>
+                        
+                        <div class="result-details">
+                            <div class="result-box">
+                                <div class="result-label">In Pounds</div>
+                                <div class="result-data" id="resultPounds">0 lb</div>
+                            </div>
+                            <div class="result-box">
+                                <div class="result-label">In Grams</div>
+                                <div class="result-data" id="resultGrams">0 g</div>
+                            </div>
+                            <div class="result-box">
+                                <div class="result-label">In Ounces</div>
+                                <div class="result-data" id="resultOunces">0 oz</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2 class="card-title"><i class="fas fa-share-alt"></i> Export & Share Results</h2>
+                    <p>Save or share your calculation results in multiple formats:</p>
+                    
+                    <div class="export-options">
+                        <div class="export-btn" id="printBtn">
+                            <i class="fas fa-print"></i>
+                            <span>Print</span>
+                        </div>
+                        <div class="export-btn" id="pdfBtn">
+                            <i class="fas fa-file-pdf"></i>
+                            <span>Save as PDF</span>
+                        </div>
+                        <div class="export-btn" id="txtBtn">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Save as TXT</span>
+                        </div>
+                        <div class="export-btn" id="csvBtn">
+                            <i class="fas fa-file-csv"></i>
+                            <span>Save as CSV</span>
+                        </div>
+                        <div class="export-btn" id="emailBtn">
+                            <i class="fas fa-envelope"></i>
+                            <span>Email</span>
+                        </div>
+                        <div class="export-btn" id="shareBtn">
+                            <i class="fas fa-share"></i>
+                            <span>Share Link</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="card">
+                    <h2 class="card-title"><i class="fas fa-ad"></i> Ad Space</h2>
+                    <p>This calculator is supported by non-intrusive advertisements:</p>
+                    
+                    <div class="ad-container">
+                        <div class="ad-label">Adsterra Ad Space</div>
+                        <div class="ad-content">
+                            <i class="fas fa-ad"></i>
+                            <p>Adsterra Advertisement</p>
+                            <small>300x250 Banner</small>
+                        </div>
+                        <small>Your support helps keep this tool free</small>
+                    </div>
+                    
+                    <div class="ad-container">
+                        <div class="ad-label">Yllix Ad Space</div>
+                        <div class="ad-content">
+                            <i class="fas fa-ad"></i>
+                            <p>Yllix Advertisement</p>
+                            <small>300x250 Banner</small>
+                        </div>
+                        <small>Advertisement helps maintain this service</small>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2 class="card-title"><i class="fas fa-info-circle"></i> How to Use</h2>
+                    <div style="margin-top: 15px;">
+                        <div style="display: flex; align-items: flex-start; margin-bottom: 15px;">
+                            <div style="background: var(--primary); color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0;">1</div>
+                            <div>Enter the <strong>density</strong> value and select the appropriate unit</div>
+                        </div>
+                        <div style="display: flex; align-items: flex-start; margin-bottom: 15px;">
+                            <div style="background: var(--primary); color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0;">2</div>
+                            <div>Enter the <strong>volume</strong> value and select the appropriate unit</div>
+                        </div>
+                        <div style="display: flex; align-items: flex-start; margin-bottom: 15px;">
+                            <div style="background: var(--primary); color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0;">3</div>
+                            <div>Click <strong>Calculate Mass</strong> to see results</div>
+                        </div>
+                        <div style="display: flex; align-items: flex-start;">
+                            <div style="background: var(--primary); color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0;">4</div>
+                            <div>Export or share your results using the options below</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 Professional Mass Calculator | Secure & Client-Side Processing | All Rights Reserved</p>
+            <p style="margin-top: 10px;">This calculator performs all operations locally in your browser for enhanced privacy and security.</p>
+        </footer>
+    </div>
+    
+    <!-- All JavaScript logic is included directly in this file -->
+    <script>
+        // Theme toggle
+        const themeToggle = document.getElementById('themeToggle');
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const icon = themeToggle.querySelector('i');
+            if (document.body.classList.contains('dark-mode')) {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+        });
+
+        // Unit conversion factors
+        const densityConversions = {
+            'kg/m3': 1,
+            'g/cm3': 1000,
+            'g/ml': 1000,
+            'lb/ft3': 16.0185
+        };
+
+        const volumeConversions = {
+            'm3': 1,
+            'cm3': 0.000001,
+            'ft3': 0.0283168,
+            'l': 0.001,
+            'ml': 0.000001
+        };
+
+        // Mass conversion factors
+        const massConversions = {
+            'kg': 1,
+            'g': 1000,
+            'lb': 2.20462,
+            'oz': 35.274
+        };
+
+        // DOM elements
+        const densityInput = document.getElementById('density');
+        const densityUnit = document.getElementById('densityUnit');
+        const volumeInput = document.getElementById('volume');
+        const volumeUnit = document.getElementById('volumeUnit');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultValue = document.getElementById('resultValue');
+        const resultPounds = document.getElementById('resultPounds');
+        const resultGrams = document.getElementById('resultGrams');
+        const resultOunces = document.getElementById('resultOunces');
+
+        // Event listeners
+        calculateBtn.addEventListener('click', calculateMass);
+        resetBtn.addEventListener('click', resetCalculator);
+
+        // Print and Export buttons
+        document.getElementById('printBtn').addEventListener('click', printResults);
+        document.getElementById('pdfBtn').addEventListener('click', exportToPDF);
+        document.getElementById('txtBtn').addEventListener('click', exportToTXT);
+        document.getElementById('csvBtn').addEventListener('click', exportToCSV);
+        document.getElementById('emailBtn').addEventListener('click', shareViaEmail);
+        document.getElementById('shareBtn').addEventListener('click', shareLink);
+
+        // Calculation function
+        function calculateMass() {
+            const density = parseFloat(densityInput.value);
+            const densityUnitVal = densityUnit.value;
+            const volume = parseFloat(volumeInput.value);
+            const volumeUnitVal = volumeUnit.value;
+
+            // Validate inputs
+            if (isNaN(density)) {
+                alert('Please enter a valid density value.');
+                densityInput.focus();
+                return;
+            }
+
+            if (isNaN(volume)) {
+                alert('Please enter a valid volume value.');
+                volumeInput.focus();
+                return;
+            }
+
+            // Convert to standard units (kg/m³ and m³)
+            const densityKgPerM3 = density * densityConversions[densityUnitVal];
+            const volumeM3 = volume * volumeConversions[volumeUnitVal];
+
+            // Calculate mass in kg
+            const massKg = densityKgPerM3 * volumeM3;
+
+            // Convert to other units
+            const massLb = massKg * massConversions['lb'];
+            const massG = massKg * massConversions['g'];
+            const massOz = massKg * massConversions['oz'];
+
+            // Display results
+            resultValue.textContent = `${massKg.toFixed(4)} kg`;
+            resultPounds.textContent = `${massLb.toFixed(4)} lb`;
+            resultGrams.textContent = `${massG.toFixed(2)} g`;
+            resultOunces.textContent = `${massOz.toFixed(2)} oz`;
+
+            resultContainer.style.display = 'block';
+        }
+
+        // Reset calculator
+        function resetCalculator() {
+            densityInput.value = '';
+            volumeInput.value = '';
+            densityUnit.selectedIndex = 0;
+            volumeUnit.selectedIndex = 0;
+            resultContainer.style.display = 'none';
+            densityInput.focus();
+        }
+
+        // --- EXPORT FUNCTIONS ---
+
+        function checkResults() {
+            if (resultContainer.style.display === 'none') {
+                alert('Please perform a calculation before exporting or sharing.');
+                return false;
+            }
+            return true;
+        }
+
+        function printResults() {
+            window.print();
+        }
+
+        function exportToPDF() {
+            if (!checkResults()) return;
+            alert("Generating PDF... Please wait.");
+            
+            const { jsPDF } = window.jspdf;
+            const elementToCapture = document.getElementById('calculation-card');
+
+            html2canvas(elementToCapture, {
+                useCORS: true,
+                scale: 2 // Increase scale for better quality
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const doc = new jsPDF('p', 'mm', 'a4');
+                const imgProps = doc.getImageProperties(imgData);
+                const pdfWidth = doc.internal.pageSize.getWidth() - 20; // with margin
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                
+                doc.text("Mass Calculation Report", 10, 10);
+                doc.addImage(imgData, 'PNG', 10, 20, pdfWidth, pdfHeight);
+                doc.save('mass-calculation-report.pdf');
+            });
+        }
+
+        function exportToTXT() {
+            if (!checkResults()) return;
+
+            const density = densityInput.value;
+            const densityUnitVal = densityUnit.options[densityUnit.selectedIndex].text;
+            const volume = volumeInput.value;
+            const volumeUnitVal = volumeUnit.options[volumeUnit.selectedIndex].text;
+            
+            const content = `Mass Calculation Report\r\n` +
+                           `========================\r\n\r\n` +
+                           `INPUTS:\r\n`+
+                           `  - Density: ${density} ${densityUnitVal}\r\n` +
+                           `  - Volume:  ${volume} ${volumeUnitVal}\r\n\r\n` +
+                           `RESULTS:\r\n`+
+                           `  - Calculated Mass: ${resultValue.textContent}\r\n` +
+                           `  - In Pounds:       ${resultPounds.textContent}\r\n` +
+                           `  - In Grams:        ${resultGrams.textContent}\r\n` +
+                           `  - In Ounces:       ${resultOunces.textContent}\r\n\r\n` +
+                           `Generated on: ${new Date().toLocaleString()}`;
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'mass_calculation.txt';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 100);
+        }
+
+        function exportToCSV() {
+            if (!checkResults()) return;
+
+            const density = densityInput.value;
+            const densityUnitVal = densityUnit.options[densityUnit.selectedIndex].text;
+            const volume = volumeInput.value;
+            const volumeUnitVal = volumeUnit.options[volumeUnit.selectedIndex].text;
+            
+            const content = `Parameter,Value,Unit\n` +
+                           `Density,${density},"${densityUnitVal}"\n` +
+                           `Volume,${volume},"${volumeUnitVal}"\n` +
+                           `Result (kg),${resultValue.textContent.split(' ')[0]},"kg"\n` +
+                           `Result (lb),${resultPounds.textContent.split(' ')[0]},"lb"\n` +
+                           `Result (g),${resultGrams.textContent.split(' ')[0]},"g"\n` +
+                           `Result (oz),${resultOunces.textContent.split(' ')[0]},"oz"\n` +
+                           `Generated on,"${new Date().toLocaleString()}",`;
+            
+            const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'mass_calculation.csv';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 100);
+        }
+
+        function shareViaEmail() {
+            if (!checkResults()) return;
+
+            const subject = 'Mass Calculation Results';
+            const body = `Hello,\n\nHere are my mass calculation results:\n\n` +
+                         `INPUTS:\n`+
+                         `  - Density: ${densityInput.value} ${densityUnit.options[densityUnit.selectedIndex].text}\n` +
+                         `  - Volume:  ${volumeInput.value} ${volumeUnit.options[volumeUnit.selectedIndex].text}\n\n` +
+                         `RESULTS:\n`+
+                         `  - Calculated Mass: ${resultValue.textContent}\n` +
+                         `  - In Pounds:       ${resultPounds.textContent}\n` +
+                         `  - In Grams:        ${resultGrams.textContent}\n` +
+                         `  - In Ounces:       ${resultOunces.textContent}\n\n` +
+                         `Calculated using the Professional Mass Calculator.`;
+            
+            window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        }
+
+        function shareLink() {
+            const density = densityInput.value;
+            const densityUnitVal = densityUnit.value;
+            const volume = volumeInput.value;
+            const volumeUnitVal = volumeUnit.value;
+
+            if (!density || !volume) {
+                alert('Please enter both density and volume to create a shareable link.');
+                return;
+            }
+
+            const params = new URLSearchParams({
+                density: density,
+                dUnit: densityUnitVal,
+                volume: volume,
+                vUnit: volumeUnitVal
+            });
+
+            const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                alert('Shareable link copied to clipboard!');
+            }, () => {
+                prompt('Could not copy automatically. Please copy the link manually:', shareUrl);
+            });
+        }
+
+        // Initialize and handle shared links on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            densityInput.focus();
+
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('density') && params.has('volume')) {
+                densityInput.value = params.get('density');
+                if (params.has('dUnit')) densityUnit.value = params.get('dUnit');
+                volumeInput.value = params.get('volume');
+                if (params.has('vUnit')) volumeUnit.value = params.get('vUnit');
+                calculateMass();
+            }
+        });
+    </script>
+</body>
+</html>

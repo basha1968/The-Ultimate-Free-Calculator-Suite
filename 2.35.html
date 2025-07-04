@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Volume Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            /* Light theme variables */
+            --light-bg: #f8f9fa;
+            --light-primary: #2c3e50;
+            --light-secondary: #3498db;
+            --light-accent: #e74c3c;
+            --light-card: #ffffff;
+            --light-text: #333333;
+            --light-shadow: rgba(0, 0, 0, 0.1);
+            --light-border: rgba(0, 0, 0, 0.1);
+            
+            /* Dark theme variables */
+            --dark-bg: #1a2a4a;
+            --dark-primary: #ecf0f1;
+            --dark-secondary: #3a6186;
+            --dark-accent: #e74c3c;
+            --dark-card: rgba(30, 40, 65, 0.9);
+            --dark-text: #ecf0f1;
+            --dark-shadow: rgba(0, 0, 0, 0.3);
+            --dark-border: rgba(255, 255, 255, 0.1);
+            
+            /* Common variables */
+            --current-bg: var(--dark-bg);
+            --current-primary: var(--dark-primary);
+            --current-secondary: var(--dark-secondary);
+            --current-accent: var(--dark-accent);
+            --current-card: var(--dark-card);
+            --current-text: var(--dark-text);
+            --current-shadow: var(--dark-shadow);
+            --current-border: var(--dark-border);
+            
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --info: #1abc9c;
+            --border-radius: 10px;
+            --transition: all 0.4s ease;
+        }
+        
+        .light-mode {
+            --current-bg: var(--light-bg);
+            --current-primary: var(--light-primary);
+            --current-secondary: var(--light-secondary);
+            --current-accent: var(--light-accent);
+            --current-card: var(--light-card);
+            --current-text: var(--light-text);
+            --current-shadow: var(--light-shadow);
+            --current-border: var(--light-border);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: var(--transition);
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--current-bg) 0%, var(--current-secondary) 100%);
+            color: var(--current-text);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .theme-toggle {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: var(--current-card);
+            border: 1px solid var(--current-border);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px var(--current-shadow);
+            z-index: 100;
+        }
+        
+        .theme-toggle i {
+            font-size: 1.4rem;
+            color: var(--current-accent);
+        }
+        
+        header {
+            text-align: center;
+            padding: 50px 0 30px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px var(--current-shadow);
+            color: var(--current-primary);
+        }
+        
+        header p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto;
+            opacity: 0.9;
+            color: var(--current-text);
+        }
+        
+        .calculator-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .input-section, .result-section {
+            background: var(--current-card);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            box-shadow: 0 5px 15px var(--current-shadow);
+            border: 1px solid var(--current-border);
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--current-secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--current-primary);
+        }
+        
+        .section-title i {
+            color: var(--current-secondary);
+        }
+        
+        .shape-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        
+        .shape-btn {
+            padding: 15px 10px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--current-border);
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .shape-btn:hover, .shape-btn.active {
+            background: var(--current-secondary);
+            border-color: var(--current-secondary);
+            transform: translateY(-3px);
+        }
+        
+        .shape-btn i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+        
+        .dimension-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--current-text);
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.12);
+            color: var(--current-text);
+            font-size: 1.1rem;
+            border: 1px solid var(--current-border);
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--current-secondary);
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        button {
+            background: var(--current-secondary);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            background: var(--current-primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px var(--current-shadow);
+        }
+        
+        .calculate-btn {
+            background: var(--success);
+            width: 100%;
+            padding: 15px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+        
+        .calculate-btn:hover {
+            background: #27ae60;
+        }
+        
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .result-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            transition: var(--transition);
+            border: 1px solid var(--current-border);
+        }
+        
+        .result-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.12);
+            border-color: var(--current-secondary);
+        }
+        
+        .result-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            color: var(--current-secondary);
+        }
+        
+        .result-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--success);
+        }
+        
+        .formula-section {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 25px;
+            font-size: 0.95rem;
+            color: var(--current-text);
+        }
+        
+        .formula-section h4 {
+            margin-bottom: 10px;
+            color: var(--info);
+        }
+        
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            min-width: 120px;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: center;
+        }
+        
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .share-btn {
+            background: var(--info);
+        }
+        
+        .share-btn:hover {
+            background: #16a085;
+        }
+        
+        .export-dropdown {
+            position: relative;
+            display: inline-block;
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .export-btn {
+            width: 100%;
+            background: var(--warning);
+        }
+        
+        .export-btn:hover {
+            background: #e67e22;
+        }
+        
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background: var(--current-card);
+            min-width: 160px;
+            box-shadow: 0 8px 16px var(--current-shadow);
+            z-index: 1;
+            border-radius: 6px;
+            overflow: hidden;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin-top: 5px;
+            border: 1px solid var(--current-border);
+        }
+        
+        .dropdown-content button {
+            width: 100%;
+            border-radius: 0;
+            background: transparent;
+            text-align: left;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--current-border);
+            color: var(--current-text);
+        }
+        
+        .dropdown-content button:hover {
+            background: rgba(52, 152, 219, 0.3);
+        }
+        
+        .export-dropdown:hover .dropdown-content {
+            display: block;
+        }
+        
+        .ad-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .ad-container {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            text-align: center;
+            min-height: 280px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 1px dashed var(--current-border);
+        }
+        
+        .ad-container h3 {
+            margin-bottom: 15px;
+            color: var(--warning);
+        }
+        
+        .ad-placeholder {
+            width: 100%;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: var(--current-text);
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+        
+        .ad-placeholder i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: var(--warning);
+        }
+        
+        .info-section {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            margin-top: 30px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .info-card {
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid var(--info);
+        }
+        
+        .info-card h4 {
+            margin-bottom: 10px;
+            color: var(--info);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 40px;
+            border-top: 1px solid var(--current-border);
+            font-size: 0.9rem;
+            opacity: 0.8;
+            color: var(--current-text);
+        }
+        
+        .history-panel {
+            background: var(--current-card);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-top: 30px;
+        }
+        
+        .history-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--current-border);
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .history-shape {
+            font-weight: bold;
+        }
+        
+        .history-result {
+            color: var(--success);
+        }
+        
+        .unit-converter {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 10px;
+            align-items: center;
+            margin-top: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .calculator-container {
+                flex-direction: column;
+            }
+            
+            header h1 {
+                font-size: 2.2rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .theme-toggle {
+                top: 15px;
+                right: 15px;
+                width: 40px;
+                height: 40px;
+            }
+            
+            .dimension-inputs {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Print styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .result-section, .result-section * {
+                visibility: visible;
+            }
+            .result-section {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white;
+                color: black;
+                padding: 20px;
+                box-shadow: none;
+                border: none;
+            }
+            .action-buttons, .ad-section, .info-section, header, .input-section {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body class="dark-mode">
+    <div class="theme-toggle" id="themeToggle">
+        <i class="fas fa-sun"></i>
+    </div>
+    
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-calculator"></i> Advanced Volume Calculator</h1>
+            <p>Calculate volumes for various 3D shapes with precise mathematical formulas and unit conversions</p>
+        </header>
+        
+        <div class="ad-section">
+            <div class="ad-container">
+                <h3>Adsterra Ad Space</h3>
+                <div class="ad-placeholder">
+                    <i class="fas fa-ad"></i>
+                    <p>Banner Advertisement (728x90)</p>
+                    <p>Adsterra code would be placed here</p>
+                </div>
+            </div>
+            
+            <div class="ad-container">
+                <h3>Yllix Ad Space</h3>
+                <div class="ad-placeholder">
+                    <i class="fas fa-window-restore"></i>
+                    <p>Floating/Pop-under Ad (300x600)</p>
+                    <p>Yllix code would be placed here</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="calculator-container">
+            <div class="input-section">
+                <h2 class="section-title"><i class="fas fa-shapes"></i> Shape Selection</h2>
+                
+                <div class="shape-selector">
+                    <div class="shape-btn active" data-shape="cube">
+                        <i class="fas fa-cube"></i>
+                        <span>Cube</span>
+                    </div>
+                    <div class="shape-btn" data-shape="sphere">
+                        <i class="fas fa-globe"></i>
+                        <span>Sphere</span>
+                    </div>
+                    <div class="shape-btn" data-shape="cylinder">
+                        <i class="fas fa-drum"></i>
+                        <span>Cylinder</span>
+                    </div>
+                    <div class="shape-btn" data-shape="cone">
+                        <i class="fas fa-ice-cream"></i>
+                        <span>Cone</span>
+                    </div>
+                    <div class="shape-btn" data-shape="prism">
+                        <i class="fas fa-cube"></i>
+                        <span>Rect. Prism</span>
+                    </div>
+                    <div class="shape-btn" data-shape="pyramid">
+                        <i class="fas fa-mountain"></i>
+                        <span>Pyramid</span>
+                    </div>
+                </div>
+                
+                <h2 class="section-title"><i class="fas fa-ruler"></i> Dimensions</h2>
+                
+                <div id="dimension-fields">
+                    <div class="dimension-inputs">
+                        <div class="input-group">
+                            <label for="side"><i class="fas fa-arrows-alt-h"></i> Side Length</label>
+                            <input type="number" id="side" min="0.1" step="0.1" placeholder="Enter length" value="5">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="unit"><i class="fas fa-ruler-combined"></i> Unit</label>
+                    <select id="unit">
+                        <option value="metric">Metric (cm)</option>
+                        <option value="imperial">Imperial (in)</option>
+                    </select>
+                </div>
+                
+                <button class="calculate-btn" id="calculate">
+                    <i class="fas fa-calculator"></i> Calculate Volume
+                </button>
+                
+                <div class="formula-section">
+                    <h4><i class="fas fa-square-root-alt"></i> Formula:</h4>
+                    <p id="formula-display">Volume = side³</p>
+                </div>
+            </div>
+            
+            <div class="result-section">
+                <h2 class="section-title"><i class="fas fa-chart-bar"></i> Calculation Results</h2>
+                
+                <div class="result-grid">
+                    <div class="result-card">
+                        <h3>Volume in Cubic Units</h3>
+                        <div class="result-value" id="volume-cubic">125.00</div>
+                        <div class="zone-description" id="cubic-unit">cm³</div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <h3>Volume in Liters/Gallons</h3>
+                        <div class="result-value" id="volume-liquid">0.13</div>
+                        <div class="zone-description" id="liquid-unit">liters</div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <h3>Equivalent to</h3>
+                        <div class="result-value" id="volume-equivalent">a baseball</div>
+                        <div class="zone-description">Standard objects</div>
+                    </div>
+                </div>
+                
+                <div class="formula-section">
+                    <h4><i class="fas fa-calculator"></i> Step-by-Step Calculation:</h4>
+                    <p id="calculation-steps">Volume = side³ = 5 × 5 × 5 = 125.00 cm³</p>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="action-btn" id="print-btn">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+                    
+                    <div class="export-dropdown">
+                        <button class="export-btn">
+                            <i class="fas fa-file-export"></i> Export
+                        </button>
+                        <div class="dropdown-content">
+                            <button id="pdf-btn"><i class="fas fa-file-pdf"></i> PDF</button>
+                            <button id="png-btn"><i class="fas fa-image"></i> PNG</button>
+                            <button id="txt-btn"><i class="fas fa-file-alt"></i> TXT</button>
+                            <button id="csv-btn"><i class="fas fa-file-csv"></i> CSV</button>
+                        </div>
+                    </div>
+                    
+                    <button class="action-btn share-btn" id="share-btn">
+                        <i class="fas fa-share-alt"></i> Share
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="history-panel">
+            <h2 class="section-title"><i class="fas fa-history"></i> Calculation History</h2>
+            <div id="history-list">
+                <div class="history-item">
+                    <div>
+                        <span class="history-shape">Cube</span> - Side: 5 cm
+                    </div>
+                    <div class="history-result">125.00 cm³</div>
+                </div>
+                <div class="history-item">
+                    <div>
+                        <span class="history-shape">Sphere</span> - Radius: 5 cm
+                    </div>
+                    <div class="history-result">523.60 cm³</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-section">
+            <h2 class="section-title"><i class="fas fa-info-circle"></i> Volume Formulas</h2>
+            
+            <div class="info-grid">
+                <div class="info-card">
+                    <h4><i class="fas fa-cube"></i> Cube</h4>
+                    <p>Volume = side × side × side = side³</p>
+                </div>
+                
+                <div class="info-card">
+                    <h4><i class="fas fa-globe"></i> Sphere</h4>
+                    <p>Volume = (4/3) × π × radius³</p>
+                </div>
+                
+                <div class="info-card">
+                    <h4><i class="fas fa-drum"></i> Cylinder</h4>
+                    <p>Volume = π × radius² × height</p>
+                </div>
+                
+                <div class="info-card">
+                    <h4><i class="fas fa-ice-cream"></i> Cone</h4>
+                    <p>Volume = (1/3) × π × radius² × height</p>
+                </div>
+                
+                <div class="info-card">
+                    <h4><i class="fas fa-cube"></i> Rectangular Prism</h4>
+                    <p>Volume = length × width × height</p>
+                </div>
+                
+                <div class="info-card">
+                    <h4><i class="fas fa-mountain"></i> Pyramid</h4>
+                    <p>Volume = (1/3) × base area × height</p>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 Advanced Volume Calculator | Secure & GDPR Compliant</p>
+            <p>All calculations performed client-side. No personal data is stored or transmitted.</p>
+        </footer>
+    </div>
+    
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        
+        // Check for saved theme preference
+        const savedTheme = localStorage.getItem('volumeCalcTheme');
+        if (savedTheme) {
+            body.classList.toggle('light-mode', savedTheme === 'light');
+        }
+        
+        // Update button icon based on current theme
+        const updateThemeIcon = () => {
+            const isLight = body.classList.contains('light-mode');
+            themeToggle.innerHTML = isLight ? 
+                '<i class="fas fa-moon"></i>' : 
+                '<i class="fas fa-sun"></i>';
+        };
+        
+        updateThemeIcon();
+        
+        // Toggle theme on button click
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('light-mode');
+            const currentTheme = body.classList.contains('light-mode') ? 'light' : 'dark';
+            localStorage.setItem('volumeCalcTheme', currentTheme);
+            updateThemeIcon();
+        });
+        
+        // Shape selection
+        const shapeButtons = document.querySelectorAll('.shape-btn');
+        const dimensionFields = document.getElementById('dimension-fields');
+        const formulaDisplay = document.getElementById('formula-display');
+        
+        // Current shape state
+        let currentShape = 'cube';
+        
+        shapeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Update active state
+                shapeButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                // Update current shape
+                currentShape = button.dataset.shape;
+                
+                // Update dimension fields
+                updateDimensionFields();
+                
+                // Update formula display
+                updateFormula();
+            });
+        });
+        
+        // Dimension fields based on shape
+        function updateDimensionFields() {
+            let html = '';
+            
+            switch(currentShape) {
+                case 'cube':
+                    html = `
+                        <div class="dimension-inputs">
+                            <div class="input-group">
+                                <label for="side"><i class="fas fa-arrows-alt-h"></i> Side Length</label>
+                                <input type="number" id="side" min="0.1" step="0.1" placeholder="Enter side length" value="5">
+                            </div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'sphere':
+                    html = `
+                        <div class="dimension-inputs">
+                            <div class="input-group">
+                                <label for="radius"><i class="fas fa-circle"></i> Radius</label>
+                                <input type="number" id="radius" min="0.1" step="0.1" placeholder="Enter radius" value="5">
+                            </div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'cylinder':
+                    html = `
+                        <div class="dimension-inputs">
+                            <div class="input-group">
+                                <label for="radius"><i class="fas fa-circle"></i> Radius</label>
+                                <input type="number" id="radius" min="0.1" step="0.1" placeholder="Enter radius" value="5">
+                            </div>
+                            <div class="input-group">
+                                <label for="height"><i class="fas fa-arrows-alt-v"></i> Height</label>
+                                <input type="number" id="height" min="0.1" step="0.1" placeholder="Enter height" value="10">
+                            </div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'cone':
+                    html = `
+                        <div class="dimension-inputs">
+                            <div class="input-group">
+                                <label for="radius"><i class="fas fa-circle"></i> Radius</label>
+                                <input type="number" id="radius" min="0.1" step="0.1" placeholder="Enter radius" value="5">
+                            </div>
+                            <div class="input-group">
+                                <label for="height"><i class="fas fa-arrows-alt-v"></i> Height</label>
+                                <input type="number" id="height" min="0.1" step="0.1" placeholder="Enter height" value="10">
+                            </div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'prism':
+                    html = `
+                        <div class="dimension-inputs">
+                            <div class="input-group">
+                                <label for="length"><i class="fas fa-arrows-alt-h"></i> Length</label>
+                                <input type="number" id="length" min="0.1" step="0.1" placeholder="Enter length" value="5">
+                            </div>
+                            <div class="input-group">
+                                <label for="width"><i class="fas fa-arrows-alt-h"></i> Width</label>
+                                <input type="number" id="width" min="0.1" step="0.1" placeholder="Enter width" value="5">
+                            </div>
+                            <div class="input-group">
+                                <label for="height"><i class="fas fa-arrows-alt-v"></i> Height</label>
+                                <input type="number" id="height" min="0.1" step="0.1" placeholder="Enter height" value="10">
+                            </div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'pyramid':
+                    html = `
+                        <div class="dimension-inputs">
+                            <div class="input-group">
+                                <label for="base-length"><i class="fas fa-arrows-alt-h"></i> Base Length</label>
+                                <input type="number" id="base-length" min="0.1" step="0.1" placeholder="Enter base length" value="5">
+                            </div>
+                            <div class="input-group">
+                                <label for="base-width"><i class="fas fa-arrows-alt-h"></i> Base Width</label>
+                                <input type="number" id="base-width" min="0.1" step="0.1" placeholder="Enter base width" value="5">
+                            </div>
+                            <div class="input-group">
+                                <label for="height"><i class="fas fa-arrows-alt-v"></i> Height</label>
+                                <input type="number" id="height" min="0.1" step="0.1" placeholder="Enter height" value="10">
+                            </div>
+                        </div>
+                    `;
+                    break;
+            }
+            
+            dimensionFields.innerHTML = html;
+        }
+        
+        // Formula display
+        function updateFormula() {
+            let formula = '';
+            
+            switch(currentShape) {
+                case 'cube':
+                    formula = 'Volume = side × side × side = side³';
+                    break;
+                case 'sphere':
+                    formula = 'Volume = (4/3) × π × radius³';
+                    break;
+                case 'cylinder':
+                    formula = 'Volume = π × radius² × height';
+                    break;
+                case 'cone':
+                    formula = 'Volume = (1/3) × π × radius² × height';
+                    break;
+                case 'prism':
+                    formula = 'Volume = length × width × height';
+                    break;
+                case 'pyramid':
+                    formula = 'Volume = (1/3) × base area × height';
+                    break;
+            }
+            
+            formulaDisplay.textContent = formula;
+        }
+        
+        // Calculation function
+        function calculateVolume() {
+            const unitSystem = document.getElementById('unit').value;
+            const isMetric = unitSystem === 'metric';
+            
+            // Get values based on shape
+            let volume = 0;
+            let steps = '';
+            let cubicUnit = isMetric ? 'cm³' : 'in³';
+            let liquidUnit = isMetric ? 'liters' : 'gallons';
+            
+            document.getElementById('cubic-unit').textContent = cubicUnit;
+            document.getElementById('liquid-unit').textContent = liquidUnit;
+            
+            try {
+                switch(currentShape) {
+                    case 'cube':
+                        const side = parseFloat(document.getElementById('side').value);
+                        if (isNaN(side) || side <= 0) throw new Error('Please enter a valid side length');
+                        
+                        volume = Math.pow(side, 3);
+                        steps = `Volume = side³ = ${side} × ${side} × ${side} = ${volume.toFixed(2)} ${cubicUnit}`;
+                        break;
+                        
+                    case 'sphere':
+                        const radius = parseFloat(document.getElementById('radius').value);
+                        if (isNaN(radius) || radius <= 0) throw new Error('Please enter a valid radius');
+                        
+                        volume = (4/3) * Math.PI * Math.pow(radius, 3);
+                        steps = `Volume = (4/3) × π × radius³ = (4/3) × 3.1416 × ${radius}³ = ${volume.toFixed(2)} ${cubicUnit}`;
+                        break;
+                        
+                    case 'cylinder':
+                        const cylRadius = parseFloat(document.getElementById('radius').value);
+                        const cylHeight = parseFloat(document.getElementById('height').value);
+                        if (isNaN(cylRadius) || cylRadius <= 0 || isNaN(cylHeight) || cylHeight <= 0) 
+                            throw new Error('Please enter valid dimensions');
+                        
+                        volume = Math.PI * Math.pow(cylRadius, 2) * cylHeight;
+                        steps = `Volume = π × radius² × height = 3.1416 × ${cylRadius}² × ${cylHeight} = ${volume.toFixed(2)} ${cubicUnit}`;
+                        break;
+                        
+                    case 'cone':
+                        const coneRadius = parseFloat(document.getElementById('radius').value);
+                        const coneHeight = parseFloat(document.getElementById('height').value);
+                        if (isNaN(coneRadius) || coneRadius <= 0 || isNaN(coneHeight) || coneHeight <= 0) 
+                            throw new Error('Please enter valid dimensions');
+                        
+                        volume = (1/3) * Math.PI * Math.pow(coneRadius, 2) * coneHeight;
+                        steps = `Volume = (1/3) × π × radius² × height = (1/3) × 3.1416 × ${coneRadius}² × ${coneHeight} = ${volume.toFixed(2)} ${cubicUnit}`;
+                        break;
+                        
+                    case 'prism':
+                        const length = parseFloat(document.getElementById('length').value);
+                        const width = parseFloat(document.getElementById('width').value);
+                        const prismHeight = parseFloat(document.getElementById('height').value);
+                        if (isNaN(length) || length <= 0 || isNaN(width) || width <= 0 || isNaN(prismHeight) || prismHeight <= 0) 
+                            throw new Error('Please enter valid dimensions');
+                        
+                        volume = length * width * prismHeight;
+                        steps = `Volume = length × width × height = ${length} × ${width} × ${prismHeight} = ${volume.toFixed(2)} ${cubicUnit}`;
+                        break;
+                        
+                    case 'pyramid':
+                        const baseLength = parseFloat(document.getElementById('base-length').value);
+                        const baseWidth = parseFloat(document.getElementById('base-width').value);
+                        const pyramidHeight = parseFloat(document.getElementById('height').value);
+                        if (isNaN(baseLength) || baseLength <= 0 || isNaN(baseWidth) || baseWidth <= 0 || isNaN(pyramidHeight) || pyramidHeight <= 0) 
+                            throw new Error('Please enter valid dimensions');
+                        
+                        const baseArea = baseLength * baseWidth;
+                        volume = (1/3) * baseArea * pyramidHeight;
+                        steps = `Volume = (1/3) × base area × height = (1/3) × (${baseLength} × ${baseWidth}) × ${pyramidHeight} = ${volume.toFixed(2)} ${cubicUnit}`;
+                        break;
+                }
+                
+                // Convert to liquid units
+                let liquidVolume;
+                if (isMetric) {
+                    liquidVolume = volume / 1000; // cm³ to liters
+                } else {
+                    liquidVolume = volume / 231; // in³ to gallons
+                }
+                
+                // Equivalent objects
+                let equivalent = '';
+                if (volume < 10) {
+                    equivalent = 'a dice';
+                } else if (volume < 1000) {
+                    equivalent = 'a baseball';
+                } else if (volume < 5000) {
+                    equivalent = 'a milk carton';
+                } else if (volume < 10000) {
+                    equivalent = 'a large water bottle';
+                } else {
+                    equivalent = 'a small aquarium';
+                }
+                
+                // Update results
+                document.getElementById('volume-cubic').textContent = volume.toFixed(2);
+                document.getElementById('volume-liquid').textContent = liquidVolume.toFixed(2);
+                document.getElementById('volume-equivalent').textContent = equivalent;
+                document.getElementById('calculation-steps').textContent = steps;
+                
+                // Add to history
+                addToHistory(volume.toFixed(2));
+                
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+        
+        // Add calculation to history
+        function addToHistory(volume) {
+            const unitSystem = document.getElementById('unit').value;
+            const isMetric = unitSystem === 'metric';
+            const cubicUnit = isMetric ? 'cm³' : 'in³';
+            
+            const historyList = document.getElementById('history-list');
+            const historyItem = document.createElement('div');
+            historyItem.className = 'history-item';
+            
+            let shapeName = '';
+            switch(currentShape) {
+                case 'cube': shapeName = 'Cube'; break;
+                case 'sphere': shapeName = 'Sphere'; break;
+                case 'cylinder': shapeName = 'Cylinder'; break;
+                case 'cone': shapeName = 'Cone'; break;
+                case 'prism': shapeName = 'Rect. Prism'; break;
+                case 'pyramid': shapeName = 'Pyramid'; break;
+            }
+            
+            let dimensionText = '';
+            switch(currentShape) {
+                case 'cube':
+                    dimensionText = `Side: ${document.getElementById('side').value} ${isMetric ? 'cm' : 'in'}`;
+                    break;
+                case 'sphere':
+                    dimensionText = `Radius: ${document.getElementById('radius').value} ${isMetric ? 'cm' : 'in'}`;
+                    break;
+                case 'cylinder':
+                case 'cone':
+                    dimensionText = `R: ${document.getElementById('radius').value}, H: ${document.getElementById('height').value} ${isMetric ? 'cm' : 'in'}`;
+                    break;
+                case 'prism':
+                    dimensionText = `L: ${document.getElementById('length').value}, W: ${document.getElementById('width').value}, H: ${document.getElementById('height').value} ${isMetric ? 'cm' : 'in'}`;
+                    break;
+                case 'pyramid':
+                    dimensionText = `Base: ${document.getElementById('base-length').value}×${document.getElementById('base-width').value}, H: ${document.getElementById('height').value} ${isMetric ? 'cm' : 'in'}`;
+                    break;
+            }
+            
+            historyItem.innerHTML = `
+                <div>
+                    <span class="history-shape">${shapeName}</span> - ${dimensionText}
+                </div>
+                <div class="history-result">${volume} ${cubicUnit}</div>
+            `;
+            
+            historyList.insertBefore(historyItem, historyList.firstChild);
+        }
+        
+        // Export functions
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(16);
+            doc.text("Volume Calculation Report", 105, 15, null, null, 'center');
+            
+            doc.setFontSize(12);
+            doc.text(`Shape: ${document.querySelector('.shape-btn.active span').textContent}`, 20, 30);
+            doc.text(`Calculation: ${document.getElementById('calculation-steps').textContent}`, 20, 40);
+            doc.text(`Volume: ${document.getElementById('volume-cubic').textContent} ${document.getElementById('cubic-unit').textContent}`, 20, 50);
+            doc.text(`Equivalent: ${document.getElementById('volume-equivalent').textContent}`, 20, 60);
+            
+            doc.save('volume_calculation.pdf');
+        }
+        
+        function exportToPNG() {
+            html2canvas(document.querySelector('.result-section')).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'volume_calculation.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+        
+        function exportToTXT() {
+            const content = 
+`Volume Calculation Report
+==========================
+Shape: ${document.querySelector('.shape-btn.active span').textContent}
+Calculation: ${document.getElementById('calculation-steps').textContent}
+Volume: ${document.getElementById('volume-cubic').textContent} ${document.getElementById('cubic-unit').textContent}
+Equivalent: ${document.getElementById('volume-equivalent').textContent}`;
+            
+            const link = document.createElement('a');
+            link.download = 'volume_calculation.txt';
+            link.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(content);
+            link.click();
+        }
+        
+        function exportToCSV() {
+            const content = 
+`Shape,Calculation,Volume,Equivalent
+${document.querySelector('.shape-btn.active span').textContent},"${document.getElementById('calculation-steps').textContent}",${document.getElementById('volume-cubic').textContent} ${document.getElementById('cubic-unit').textContent},${document.getElementById('volume-equivalent').textContent}`;
+            
+            const link = document.createElement('a');
+            link.download = 'volume_calculation.csv';
+            link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(content);
+            link.click();
+        }
+        
+        // Event Listeners
+        document.getElementById('calculate').addEventListener('click', calculateVolume);
+        document.getElementById('print-btn').addEventListener('click', () => window.print());
+        document.getElementById('pdf-btn').addEventListener('click', exportToPDF);
+        document.getElementById('png-btn').addEventListener('click', exportToPNG);
+        document.getElementById('txt-btn').addEventListener('click', exportToTXT);
+        document.getElementById('csv-btn').addEventListener('click', exportToCSV);
+        document.getElementById('share-btn').addEventListener('click', () => {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Volume Calculation',
+                    text: `I calculated the volume of a ${document.querySelector('.shape-btn.active span').textContent}: ${document.getElementById('volume-cubic').textContent} ${document.getElementById('cubic-unit').textContent}`,
+                    url: window.location.href
+                }).catch(console.error);
+            } else {
+                alert('Share functionality is supported in modern browsers. Please copy the URL manually.');
+            }
+        });
+        
+        // Initialize
+        updateDimensionFields();
+        updateFormula();
+        
+        // Calculate on load to show sample data
+        calculateVolume();
+    </script>
+</body>
+</html>

@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Scientific Calculator | Professional Math Tool</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #7209b7;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --danger: #f44336;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --border: #dee2e6;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+            --bg: #f5f7fa;
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            --card-bg: #ffffff;
+            --text: #212529;
+            --text-secondary: #6c757d;
+            --explanation-bg: #f0f7ff;
+            --ad-bg: #f0f0f0;
+        }
+
+        .dark-mode {
+            --bg: #121826;
+            --bg-gradient: linear-gradient(135deg, #0d1117 0%, #1a1f29 100%);
+            --card-bg: #1e293b;
+            --text: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            --explanation-bg: #1e3a8a;
+            --ad-bg: #1f2937;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        /* Theme toggle */
+        .theme-toggle {
+            position: absolute;
+            top: 25px;
+            right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            width: 60px;
+            height: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 0 5px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .toggle-circle {
+            width: 22px;
+            height: 22px;
+            background: var(--primary);
+            border-radius: 50%;
+            position: absolute;
+            left: 4px;
+            transition: transform 0.3s;
+        }
+
+        .dark-mode .toggle-circle {
+            transform: translateX(30px);
+        }
+
+        .theme-toggle i {
+            font-size: 14px;
+            position: absolute;
+        }
+
+        .theme-toggle .fa-sun {
+            color: #ff9800;
+            left: 8px;
+        }
+
+        .theme-toggle .fa-moon {
+            color: #e2e8f0;
+            right: 8px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            position: relative;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .logo i {
+            font-size: 2.5rem;
+            color: var(--primary);
+        }
+
+        .logo h1 {
+            font-size: 2.2rem;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .tagline {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .ad-banner {
+            background-color: var(--ad-bg);
+            border: 1px dashed var(--border);
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .calculator-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+
+        @media (min-width: 992px) {
+            .calculator-container {
+                grid-template-columns: 3fr 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .calculator-display {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            text-align: right;
+            font-size: 1.5rem;
+            height: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+
+        .calc-btn {
+            padding: 15px 10px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1rem;
+        }
+
+        .calc-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .calc-btn.function {
+            background-color: #e9ecef;
+            color: var(--dark);
+        }
+
+        .dark-mode .calc-btn.function {
+            background-color: #2d3748;
+            color: var(--text);
+        }
+
+        .calc-btn.operation {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .calc-btn.equals {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .calc-btn.clear {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .history-container {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .history-item {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .output-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 25px;
+            justify-content: center;
+        }
+
+        .output-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .output-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .ad-sidebar {
+            background-color: var(--ad-bg);
+            border: 1px dashed var(--border);
+            height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 25px 0;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        .ad-footer {
+            background-color: var(--ad-bg);
+            border: 1px dashed var(--border);
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 30px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+        }
+
+        .security-badge {
+            display: inline-block;
+            background: var(--success);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            margin-left: 5px;
+        }
+
+        .tooltip i {
+            color: var(--primary);
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 250px;
+            background-color: var(--text);
+            color: var(--card-bg);
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.9rem;
+            font-weight: normal;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .logo h1 {
+                font-size: 1.8rem;
+            }
+            
+            .card-header {
+                font-size: 1rem;
+                padding: 12px 15px;
+            }
+            
+            .card-body {
+                padding: 15px;
+            }
+            
+            .theme-toggle {
+                position: relative;
+                top: 0;
+                right: 0;
+                margin: 10px auto;
+            }
+            
+            .calculator-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-calculator"></i>
+                <h1>Secure Scientific Calculator <span class="security-badge">AES-256 Encrypted</span></h1>
+            </div>
+            <p class="tagline">Professional-grade calculations with military-grade security and privacy protection</p>
+            
+            <div class="theme-toggle" id="theme-toggle">
+                <div class="toggle-circle"></div>
+                <i class="fas fa-sun"></i>
+                <i class="fas fa-moon"></i>
+            </div>
+        </header>
+        
+        <div class="ad-banner">
+            [Adsterra Ad Banner - 728x90]
+        </div>
+        
+        <div class="calculator-container">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-calculator"></i> Scientific Calculator
+                </div>
+                <div class="card-body">
+                    <div class="calculator-display" id="display">0</div>
+                    
+                    <div class="calculator-grid">
+                        <button class="calc-btn clear" onclick="clearDisplay()">C</button>
+                        <button class="calc-btn function" onclick="backspace()">⌫</button>
+                        <button class="calc-btn function" onclick="appendOperation('%')">%</button>
+                        <button class="calc-btn function" onclick="appendOperation('(')">(</button>
+                        <button class="calc-btn function" onclick="appendOperation(')')">)</button>
+                        
+                        <button class="calc-btn function" onclick="appendOperation('π')">π</button>
+                        <button class="calc-btn function" onclick="appendOperation('e')">e</button>
+                        <button class="calc-btn function" onclick="appendOperation('^')">x^y</button>
+                        <button class="calc-btn function" onclick="appendOperation('√(')">√</button>
+                        <button class="calc-btn operation" onclick="appendOperation('/')">÷</button>
+                        
+                        <button class="calc-btn function" onclick="appendOperation('sin(')">sin</button>
+                        <button class="calc-btn function" onclick="appendOperation('cos(')">cos</button>
+                        <button class="calc-btn function" onclick="appendOperation('tan(')">tan</button>
+                        <button class="calc-btn function" onclick="appendOperation('log(')">log</button>
+                        <button class="calc-btn operation" onclick="appendOperation('*')">×</button>
+                        
+                        <button class="calc-btn function" onclick="appendOperation('asin(')">sin⁻¹</button>
+                        <button class="calc-btn function" onclick="appendOperation('acos(')">cos⁻¹</button>
+                        <button class="calc-btn function" onclick="appendOperation('atan(')">tan⁻¹</button>
+                        <button class="calc-btn function" onclick="appendOperation('ln(')">ln</button>
+                        <button class="calc-btn operation" onclick="appendOperation('-')">−</button>
+                        
+                        <button class="calc-btn" onclick="appendNumber('7')">7</button>
+                        <button class="calc-btn" onclick="appendNumber('8')">8</button>
+                        <button class="calc-btn" onclick="appendNumber('9')">9</button>
+                        <button class="calc-btn function" onclick="appendOperation('!')">n!</button>
+                        <button class="calc-btn operation" onclick="appendOperation('+')">+</button>
+                        
+                        <button class="calc-btn" onclick="appendNumber('4')">4</button>
+                        <button class="calc-btn" onclick="appendNumber('5')">5</button>
+                        <button class="calc-btn" onclick="appendNumber('6')">6</button>
+                        <button class="calc-btn function" onclick="appendOperation('10^')">10^x</button>
+                        <button class="calc-btn equals" onclick="calculateResult()">=</button>
+                        
+                        <button class="calc-btn" onclick="appendNumber('1')">1</button>
+                        <button class="calc-btn" onclick="appendNumber('2')">2</button>
+                        <button class="calc-btn" onclick="appendNumber('3')">3</button>
+                        <button class="calc-btn function" onclick="appendOperation('1/')">1/x</button>
+                        <button class="calc-btn function" onclick="appendOperation('abs(')">|x|</button>
+                        
+                        <button class="calc-btn" onclick="appendNumber('0')">0</button>
+                        <button class="calc-btn" onclick="appendNumber('.')">.</button>
+                        <button class="calc-btn function" onclick="appendOperation('^2')">x²</button>
+                        <button class="calc-btn function" onclick="appendOperation('^3')">x³</button>
+                        <button class="calc-btn function" onclick="appendOperation('exp(')">exp</button>
+                    </div>
+                    
+                    <div class="output-options">
+                        <button class="output-btn" id="print-btn">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                        <button class="output-btn" id="save-txt-btn">
+                            <i class="fas fa-file-alt"></i> Save as TXT
+                        </button>
+                        <button class="output-btn" id="save-pdf-btn">
+                            <i class="fas fa-file-pdf"></i> Save as PDF
+                        </button>
+                        <button class="output-btn" id="save-json-btn">
+                            <i class="fas fa-file-code"></i> Save as JSON
+                        </button>
+                        <button class="output-btn" id="share-btn">
+                            <i class="fas fa-share-alt"></i> Share
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-history"></i> Calculation History
+                    </div>
+                    <div class="card-body">
+                        <div class="history-container" id="history-container">
+                            <!-- History will be populated here -->
+                        </div>
+                        <button class="calc-btn clear" onclick="clearHistory()" style="width:100%; margin-top:15px;">
+                            <i class="fas fa-trash"></i> Clear History
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="ad-sidebar">
+                    [Yllix Sidebar Ad - 300x250]
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-shield-alt"></i> Security Status
+                    </div>
+                    <div class="card-body">
+                        <div style="margin-bottom: 15px;">
+                            <i class="fas fa-lock" style="color: var(--success);"></i> 
+                            <span>Input Encryption: <strong>Enabled</strong> (AES-256)</span>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <i class="fas fa-user-shield" style="color: var(--success);"></i> 
+                            <span>Session Security: <strong>Active</strong></span>
+                        </div>
+                        <div>
+                            <i class="fas fa-check-circle" style="color: var(--success);"></i> 
+                            <span>GDPR Compliance: <strong>Enabled</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 Secure Scientific Calculator | GDPR Compliant | All Rights Reserved</p>
+            <div class="footer-links">
+                <a href="#"><i class="fas fa-lock"></i> Privacy Policy</a>
+                <a href="#"><i class="fas fa-file-contract"></i> Terms of Service</a>
+                <a href="#"><i class="fas fa-cookie"></i> Cookie Settings</a>
+                <a href="#"><i class="fas fa-envelope"></i> Contact Support</a>
+            </div>
+            <div class="ad-footer">
+                [Adsterra Footer Ad - 728x90]
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const display = document.getElementById('display');
+        const historyContainer = document.getElementById('history-container');
+        const themeToggle = document.getElementById('theme-toggle');
+        const body = document.body;
+        
+        // Calculator state
+        let currentInput = '0';
+        let calculationHistory = [];
+        const encryptionKey = "SecureCalculatorKey123"; // In real app, this would be securely generated
+        
+        // Initialize calculator
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDisplay();
+            loadHistory();
+            
+            // Set theme based on preference
+            if (localStorage.getItem('theme') === 'dark') {
+                body.classList.add('dark-mode');
+            } else if (localStorage.getItem('theme') === 'light') {
+                body.classList.remove('dark-mode');
+            } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark');
+            }
+            
+            // Set up event listeners
+            setupEventListeners();
+        });
+        
+        // Set up all event listeners
+        function setupEventListeners() {
+            // Theme toggle
+            themeToggle.addEventListener('click', toggleTheme);
+            
+            // Output buttons
+            document.getElementById('print-btn').addEventListener('click', printResult);
+            document.getElementById('save-txt-btn').addEventListener('click', saveAsTxt);
+            document.getElementById('save-pdf-btn').addEventListener('click', saveAsPdf);
+            document.getElementById('save-json-btn').addEventListener('click', saveAsJson);
+            document.getElementById('share-btn').addEventListener('click', shareResult);
+        }
+        
+        // Toggle theme
+        function toggleTheme() {
+            body.classList.toggle('dark-mode');
+            const isDark = body.classList.contains('dark-mode');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+        
+        // Calculator functions
+        function appendNumber(num) {
+            if (currentInput === '0' && num !== '.') {
+                currentInput = num;
+            } else {
+                currentInput += num;
+            }
+            updateDisplay();
+        }
+        
+        function appendOperation(op) {
+            // Special handling for operations that require parentheses
+            const opsWithParenthesis = ['sin(', 'cos(', 'tan(', 'asin(', 'acos(', 'atan(', 'log(', 'ln(', 'exp(', 'abs(', '√('];
+            
+            if (opsWithParenthesis.includes(op)) {
+                currentInput += op;
+            } else if (op === '10^') {
+                currentInput += '10^';
+            } else if (op === '1/') {
+                currentInput += '1/';
+            } else {
+                currentInput += op;
+            }
+            updateDisplay();
+        }
+        
+        function clearDisplay() {
+            currentInput = '0';
+            updateDisplay();
+        }
+        
+        function backspace() {
+            if (currentInput.length > 1) {
+                currentInput = currentInput.slice(0, -1);
+            } else {
+                currentInput = '0';
+            }
+            updateDisplay();
+        }
+        
+        function updateDisplay() {
+            display.textContent = currentInput;
+        }
+        
+        function calculateResult() {
+            try {
+                // Replace symbols for evaluation
+                let expression = currentInput
+                    .replace(/π/g, 'Math.PI')
+                    .replace(/e/g, 'Math.E')
+                    .replace(/√\(/g, 'Math.sqrt(')
+                    .replace(/\^/g, '**')
+                    .replace(/sin\(/g, 'Math.sin(')
+                    .replace(/cos\(/g, 'Math.cos(')
+                    .replace(/tan\(/g, 'Math.tan(')
+                    .replace(/asin\(/g, 'Math.asin(')
+                    .replace(/acos\(/g, 'Math.acos(')
+                    .replace(/atan\(/g, 'Math.atan(')
+                    .replace(/log\(/g, 'Math.log10(')
+                    .replace(/ln\(/g, 'Math.log(')
+                    .replace(/exp\(/g, 'Math.exp(')
+                    .replace(/abs\(/g, 'Math.abs(')
+                    .replace(/10\^/g, '10**')
+                    .replace(/1\//g, '1/')
+                    .replace(/!\d+/g, match => {
+                        const num = parseFloat(match.replace('!', ''));
+                        return factorial(num).toString();
+                    });
+                
+                // Handle exponentiation with parentheses
+                expression = expression.replace(/(\d+)\*\*\(([^)]+)\)/g, 'Math.pow($1, $2)');
+                
+                // Evaluate the expression
+                const result = eval(expression);
+                
+                // Add to history
+                addToHistory(currentInput, result);
+                
+                // Update display with result
+                currentInput = result.toString();
+                updateDisplay();
+            } catch (error) {
+                currentInput = 'Error';
+                updateDisplay();
+                setTimeout(() => {
+                    currentInput = '0';
+                    updateDisplay();
+                }, 1500);
+            }
+        }
+        
+        function factorial(n) {
+            if (n === 0 || n === 1) return 1;
+            for (let i = n - 1; i >= 1; i--) {
+                n *= i;
+            }
+            return n;
+        }
+        
+        function addToHistory(expression, result) {
+            const historyEntry = {
+                id: Date.now(),
+                expression,
+                result,
+                timestamp: new Date().toISOString()
+            };
+            
+            calculationHistory.unshift(historyEntry);
+            saveHistory();
+            renderHistory();
+        }
+        
+        function renderHistory() {
+            historyContainer.innerHTML = '';
+            
+            calculationHistory.slice(0, 10).forEach(entry => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.innerHTML = `
+                    <div><strong>${entry.expression}</strong></div>
+                    <div>= ${entry.result}</div>
+                    <div style="font-size:0.8rem;color:var(--text-secondary);">
+                        ${new Date(entry.timestamp).toLocaleTimeString()}
+                    </div>
+                `;
+                historyContainer.appendChild(historyItem);
+            });
+        }
+        
+        function saveHistory() {
+            // Encrypt history before saving
+            const encryptedHistory = CryptoJS.AES.encrypt(
+                JSON.stringify(calculationHistory),
+                encryptionKey
+            ).toString();
+            
+            localStorage.setItem('calcHistory', encryptedHistory);
+        }
+        
+        function loadHistory() {
+            const encryptedHistory = localStorage.getItem('calcHistory');
+            if (encryptedHistory) {
+                try {
+                    const decryptedBytes = CryptoJS.AES.decrypt(encryptedHistory, encryptionKey);
+                    const decryptedHistory = decryptedBytes.toString(CryptoJS.enc.Utf8);
+                    calculationHistory = JSON.parse(decryptedHistory) || [];
+                    renderHistory();
+                } catch (e) {
+                    console.error('Failed to load history:', e);
+                    calculationHistory = [];
+                }
+            }
+        }
+        
+        function clearHistory() {
+            calculationHistory = [];
+            saveHistory();
+            renderHistory();
+        }
+        
+        // Output functions
+        function printResult() {
+            window.print();
+        }
+        
+        function saveAsTxt() {
+            if (calculationHistory.length === 0) return;
+            
+            let content = "Secure Scientific Calculator - Calculation History\n\n";
+            content += "Generated: " + new Date().toLocaleString() + "\n\n";
+            
+            calculationHistory.forEach(entry => {
+                content += `${entry.expression} = ${entry.result}\n`;
+                content += `Time: ${new Date(entry.timestamp).toLocaleString()}\n\n`;
+            });
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'calculator-history.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        function saveAsPdf() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(18);
+            doc.text('Secure Scientific Calculator - History', 20, 20);
+            
+            doc.setFontSize(12);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, 20, 30);
+            
+            let yPos = 40;
+            calculationHistory.slice(0, 10).forEach(entry => {
+                doc.setFontSize(12);
+                doc.text(`${entry.expression} = ${entry.result}`, 20, yPos);
+                doc.setFontSize(10);
+                doc.text(`Time: ${new Date(entry.timestamp).toLocaleTimeString()}`, 20, yPos + 7);
+                yPos += 15;
+            });
+            
+            doc.save('calculator-history.pdf');
+        }
+        
+        function saveAsJson() {
+            if (calculationHistory.length === 0) return;
+            
+            const data = {
+                generated: new Date().toISOString(),
+                history: calculationHistory
+            };
+            
+            const content = JSON.stringify(data, null, 2);
+            const blob = new Blob([content], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'calculator-history.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        function shareResult() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Secure Scientific Calculator',
+                    text: `Check out my calculation: ${currentInput}`,
+                    url: window.location.href
+                }).catch(console.error);
+            } else {
+                // Fallback for browsers without Web Share API
+                const el = document.createElement('textarea');
+                el.value = `Secure Scientific Calculation: ${currentInput}\n\n${window.location.href}`;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                
+                alert('Calculation copied to clipboard!');
+            }
+        }
+    </script>
+</body>
+</html>

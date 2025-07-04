@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en"> <!-- The 'dark-mode' class will be added here by JavaScript -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Day of the Week Calculator</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #4361ee; --secondary: #3f37c9; --success: #4cc9f0; --danger: #d00000;
+            --light: #f8f9fa; --dark: #212529; --gray: #6c757d; --border: #dee2e6;
+            --shadow: 0 4px 12px rgba(0,0,0,0.08); --radius: 8px;
+            --bg-body: #f5f7fa;
+            --bg-card: white;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body { background: var(--bg-body); color: var(--dark); line-height: 1.6; padding: 20px; min-height: 100vh; transition: background-color 0.3s, color 0.3s; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        header { text-align: center; margin-bottom: 40px; }
+        h1 { font-size: 2.8rem; color: var(--secondary); margin-bottom: 10px; transition: color 0.3s; }
+        .subtitle { font-size: 1.2rem; color: var(--gray); max-width: 650px; margin: 0 auto; }
+        
+        .calculator-container, .ad-container, .features { display: grid; gap: 30px; margin-bottom: 40px; }
+        .calculator-container, .ad-container { grid-template-columns: 1fr 1fr; }
+        .features { grid-template-columns: repeat(3, 1fr); margin-top: 40px; }
+
+        @media (max-width: 992px) {
+            .calculator-container, .ad-container, .features { grid-template-columns: 1fr; }
+        }
+        
+        .input-section, .output-section, .feature-card, .ad-space { background: var(--bg-card); border-radius: var(--radius); padding: 30px; box-shadow: var(--shadow); transition: background-color 0.3s, box-shadow 0.3s; }
+        .section-title { font-size: 1.5rem; color: var(--primary); margin-bottom: 25px; padding-bottom: 10px; border-bottom: 2px solid var(--border); transition: border-color 0.3s; }
+        .input-group { margin-bottom: 20px; }
+        
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--dark); transition: color 0.3s; }
+        input, select { width: 100%; padding: 12px 15px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 1rem; transition: border-color 0.3s, box-shadow 0.3s, background-color 0.3s, color 0.3s; background-color: var(--bg-card); color: var(--dark); }
+        input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2); outline: none; }
+        
+        .calendar-options { display: flex; gap: 15px; margin: 20px 0; }
+        .calendar-option { flex: 1; text-align: center; padding: 15px; border: 2px solid var(--border); border-radius: var(--radius); cursor: pointer; transition: all 0.3s; }
+        .calendar-option.active { border-color: var(--primary); background-color: rgba(67, 97, 238, 0.05); box-shadow: 0 0 8px rgba(67, 97, 238, 0.3); }
+        .calendar-option i { font-size: 2rem; margin-bottom: 10px; color: var(--primary); }
+        
+        .btn { background-color: var(--primary); color: white; border: none; padding: 14px 20px; border-radius: var(--radius); font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: background-color 0.3s; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn:hover:not(:disabled) { background-color: var(--secondary); }
+        .btn:disabled { background-color: #a9b5c0; cursor: not-allowed; }
+
+        .result-container { text-align: center; padding: 30px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: var(--radius); color: white; margin-bottom: 25px; }
+        .result-date { font-size: 1.4rem; opacity: 0.9; }
+        .result-day { font-size: 3.5rem; font-weight: 800; margin: 15px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+        .result-calendar { font-size: 1.2rem; background: rgba(255,255,255,0.2); padding: 8px 15px; border-radius: 50px; display: inline-block; }
+        
+        .action-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; }
+        .btn-secondary { background-color: var(--gray); }
+        .btn-secondary:hover:not(:disabled) { background-color: #5a6268; }
+        
+        .social-sharing { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
+        .social-btn { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; transition: transform 0.3s; text-decoration: none; }
+        .social-btn:hover { transform: translateY(-5px); }
+        .twitter { background: #1DA1F2; } .facebook { background: #4267B2; } .linkedin { background: #2867B2; } .clipboard { background: var(--dark); }
+        
+        .ad-space { padding: 20px; text-align: center; min-height: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .ad-label { font-weight: 600; color: var(--gray); margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        .ad-content { background: #f0f2f5; width: 100%; min-height:90px; padding: 10px; border-radius: 5px; border: 1px dashed var(--border); color: var(--gray); display: flex; align-items: center; justify-content: center; transition: background-color 0.3s, border-color 0.3s; }
+        
+        .error-message { color: var(--danger); background: rgba(220, 53, 69, 0.1); padding: 12px 15px; border-radius: var(--radius); margin-top: 15px; border-left: 5px solid var(--danger); display: none; }
+        footer { text-align: center; margin-top: 50px; padding: 20px; color: var(--gray); font-size: 0.9rem; }
+        .info-text { margin: 15px 0; font-size: 0.95rem; color: var(--gray); }
+        
+        .toast-notification { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: var(--dark); color: white; padding: 12px 25px; border-radius: var(--radius); box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 1000; opacity: 0; transition: all 0.3s; pointer-events: none; }
+        .toast-notification.show { opacity: 1; transform: translate(-50%, -10px); }
+
+        /* --- Dark & Light Mode --- */
+        #theme-toggle {
+            position: fixed; top: 20px; right: 20px;
+            background: var(--bg-card); color: var(--dark);
+            border: 1px solid var(--border);
+            width: 50px; height: 50px; border-radius: 50%;
+            cursor: pointer; z-index: 1001;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; box-shadow: var(--shadow);
+            transition: background-color 0.3s, color 0.3s, transform 0.2s, border-color 0.3s;
+            overflow: hidden;
+        }
+        #theme-toggle:hover { transform: scale(1.1); }
+        #theme-toggle .fa-sun { display: none; }
+        
+        html.dark-mode {
+            --light: #212529; --dark: #f8f9fa; --gray: #adb5bd; --border: #495057;
+            --shadow: 0 4px 12px rgba(0,0,0,0.4);
+            --bg-body: #121212;
+            --bg-card: #1e1e1e;
+        }
+        html.dark-mode h1 { color: var(--success); }
+        html.dark-mode input::placeholder { color: #6c757d; }
+        html.dark-mode .calendar-option.active { background-color: rgba(67, 97, 238, 0.15); }
+        html.dark-mode .error-message { background: rgba(220, 53, 69, 0.2); color: #f7a2ab; }
+        html.dark-mode .ad-content { background: #2c2c2e; }
+        html.dark-mode #theme-toggle .fa-moon { display: none; }
+        html.dark-mode #theme-toggle .fa-sun { display: block; }
+        html.dark-mode .toast-notification { background-color: #495057; color: #f8f9fa; }
+        html.dark-mode .clipboard { background: var(--gray); }
+    </style>
+    
+    <!-- FIX: Immediately-invoked script to set theme on load and prevent flash -->
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark-mode');
+            }
+        })();
+    </script>
+</head>
+<body>
+    
+    <!-- FIX: Added Theme Toggle Button -->
+    <button id="theme-toggle" title="Toggle dark/light mode">
+        <i class="fas fa-moon"></i>
+        <i class="fas fa-sun"></i>
+    </button>
+    
+    <div class="container">
+        <!-- Header, Inputs, and Outputs (structure unchanged) -->
+        <header>
+            <h1>Day of the Week Calculator</h1>
+            <p class="subtitle">Instantly find the day of the week for any date in history or the future using a mathematically precise algorithm. Supports both Gregorian and Julian calendars for historical accuracy.</p>
+        </header>
+        
+        <div class="calculator-container">
+            <div class="input-section">
+                <h2 class="section-title">Enter a Date</h2>
+                <div class="input-group"><label for="day">Day</label><input type="number" id="day" min="1" max="31" placeholder="e.g., 25" aria-label="Day"></div>
+                <div class="input-group"><label for="month">Month</label><select id="month" aria-label="Month"><option value="">Select Month</option><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
+                <div class="input-group"><label for="year">Year</label><input type="number" id="year" placeholder="e.g., 1995" aria-label="Year"></div>
+                <div class="info-text"><i class="fas fa-info-circle"></i> For BC dates, enter a negative year (e.g., -44 for 45 BC).</div>
+                <h3 class="section-title" style="font-size: 1.3rem; margin-top: 30px;">Select Calendar System</h3>
+                <div class="calendar-options"><div class="calendar-option active" id="gregorian-option" role="button" tabindex="0"><i class="fas fa-calendar-alt"></i><h3>Gregorian</h3></div><div class="calendar-option" id="julian-option" role="button" tabindex="0"><i class="fas fa-history"></i><h3>Julian</h3></div></div>
+                <input type="hidden" id="calendar" value="gregorian">
+                <div class="error-message" id="error-message" role="alert"></div>
+                <button class="btn" id="calculate-btn"><i class="fas fa-calculator"></i> Calculate Day</button>
+            </div>
+            <div class="output-section">
+                <h2 class="section-title">Result</h2>
+                <div class="result-container" id="result-container"><div class="result-date" id="result-date">Enter a date to begin</div><div class="result-day" id="result-day">--</div><div class="result-calendar" id="result-calendar">Gregorian Calendar</div></div>
+                <div class="action-buttons"><button class="btn btn-secondary" id="print-btn" disabled><i class="fas fa-print"></i> Print</button><button class="btn btn-secondary" id="copy-btn" disabled><i class="fas fa-copy"></i> Copy</button><button class="btn btn-secondary" id="save-txt-btn" disabled><i class="fas fa-file-alt"></i> Save TXT</button><button class="btn btn-secondary" id="save-csv-btn" disabled><i class="fas fa-file-csv"></i> Save CSV</button><button class="btn btn-secondary" id="save-pdf-btn" disabled><i class="fas fa-file-pdf"></i> Save PDF</button><button class="btn" id="clear-btn"><i class="fas fa-broom"></i> Clear</button></div>
+                <div class="social-sharing"><a href="#" class="social-btn twitter" id="share-twitter" title="Share on Twitter" target="_blank"><i class="fab fa-twitter"></i></a><a href="#" class="social-btn facebook" id="share-facebook" title="Share on Facebook" target="_blank"><i class="fab fa-facebook-f"></i></a><a href="#" class="social-btn linkedin" id="share-linkedin" title="Share on LinkedIn" target="_blank"><i class="fab fa-linkedin-in"></i></a><button class="social-btn clipboard" id="share-clipboard" title="Copy shareable link"><i class="fas fa-link"></i></button></div>
+            </div>
+        </div>
+        
+        <div class="ad-container">
+            <div class="ad-space"><div class="ad-label">Adsterra Ad</div><div class="ad-content" id="adsterra-ad-space"><p>Adsterra Ad Space</p></div></div>
+            <div class="ad-space"><div class="ad-label">Yllix Ad</div><div class="ad-content" id="yllix-ad-space"><p>Yllix Ad Space</p></div></div>
+        </div>
+        
+        <div class="features">
+             <div class="feature-card"><i class="fas fa-shield-alt"></i><h3 class="feature-title">Secure & Private</h3><p>All calculations are performed in your browser. No data is ever sent to our servers, ensuring 100% privacy.</p></div>
+             <div class="feature-card"><i class="fas fa-history"></i><h3 class="feature-title">Historical Accuracy</h3><p>Switch between Gregorian and Julian calendars to find the correct day of the week for historical dates.</p></div>
+             <div class="feature-card"><i class="fas fa-mobile-alt"></i><h3 class="feature-title">Fully Responsive</h3><p>Our calculator works seamlessly on all your devices, from desktops and tablets to mobile phones.</p></div>
+        </div>
+        
+        <footer><p>© <span id="copyright-year"></span> Professional Day of the Week Calculator. All Rights Reserved.</p></footer>
+    </div>
+
+    <div id="toast" class="toast-notification"></div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Theme Toggle Logic (Event Listener) ---
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const htmlEl = document.documentElement;
+
+        themeToggleBtn.addEventListener('click', () => {
+            htmlEl.classList.toggle('dark-mode');
+            const theme = htmlEl.classList.contains('dark-mode') ? 'dark' : 'light';
+            localStorage.setItem('theme', theme);
+        });
+
+        // --- DOM Elements ---
+        const dayInput = document.getElementById('day');
+        const monthSelect = document.getElementById('month');
+        const yearInput = document.getElementById('year');
+        const calendarInput = document.getElementById('calendar');
+        const calculateBtn = document.getElementById('calculate-btn');
+        const errorMessage = document.getElementById('error-message');
+        
+        const resultDate = document.getElementById('result-date');
+        const resultDay = document.getElementById('result-day');
+        const resultCalendar = document.getElementById('result-calendar');
+        
+        const gregorianOption = document.getElementById('gregorian-option');
+        const julianOption = document.getElementById('julian-option');
+
+        const actionButtons = document.querySelectorAll('.action-buttons .btn:not(#clear-btn)');
+        const toast = document.getElementById('toast');
+
+        // --- Event Listeners ---
+        calculateBtn.addEventListener('click', handleCalculation);
+        [dayInput, monthSelect, yearInput].forEach(el => el.addEventListener('keypress', e => e.key === 'Enter' && handleCalculation()));
+        document.getElementById('clear-btn').addEventListener('click', clearForm);
+
+        gregorianOption.addEventListener('click', () => setCalendarOption('gregorian'));
+        julianOption.addEventListener('click', () => setCalendarOption('julian'));
+
+        document.getElementById('print-btn').addEventListener('click', () => window.print());
+        document.getElementById('copy-btn').addEventListener('click', copyResult);
+        document.getElementById('save-txt-btn').addEventListener('click', saveAsTxt);
+        document.getElementById('save-csv-btn').addEventListener('click', saveAsCsv);
+        document.getElementById('save-pdf-btn').addEventListener('click', saveAsPdf);
+        document.getElementById('share-clipboard').addEventListener('click', copyShareLink);
+
+        // --- State Management ---
+        let lastResult = null;
+
+        // --- Core Functions ---
+        function setCalendarOption(option) {
+            calendarInput.value = option;
+            gregorianOption.classList.toggle('active', option === 'gregorian');
+            julianOption.classList.toggle('active', option === 'julian');
+        }
+        
+        function handleCalculation() {
+            const day = parseInt(dayInput.value, 10);
+            const month = parseInt(monthSelect.value, 10);
+            const year = parseInt(yearInput.value, 10);
+            const calendar = calendarInput.value;
+
+            const error = validateDate(day, month, year);
+            if (error) { showError(error); return; }
+            hideError();
+
+            const dayOfWeek = calculateDayOfWeek(day, month, year, calendar);
+            
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            let displayYear = year;
+            let yearSuffix = '';
+            if (year <= 0) {
+                displayYear = Math.abs(year) + 1;
+                yearSuffix = ' BC';
+            }
+            
+            lastResult = {
+                dateString: `${monthNames[month-1]} ${day}, ${displayYear}${yearSuffix}`,
+                dayString: dayOfWeek,
+                calendarString: `${calendar.charAt(0).toUpperCase() + calendar.slice(1)} Calendar`
+            };
+
+            updateUI(lastResult);
+        }
+
+        function calculateDayOfWeek(day, month, year, calendar) {
+            let m = month, y = year;
+            if (m < 3) { m += 12; y--; }
+            const q = day, K = y % 100, J = Math.floor(y / 100);
+
+            let h;
+            if (calendar === 'gregorian') { h = (q + Math.floor(13*(m+1)/5) + K + Math.floor(K/4) + Math.floor(J/4) + 5*J); } 
+            else { h = (q + Math.floor(13*(m+1)/5) + K + Math.floor(K/4) + 5 - J) % 7; } // Julian formula corrected
+            
+            const days = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+            return days[((h % 7) + 7) % 7];
+        }
+
+        function validateDate(day, month, year) {
+            if (isNaN(day) || isNaN(month) || isNaN(year)) return "Please fill in all fields with valid numbers.";
+            if (month < 1 || month > 12) return "Month must be between 1 and 12.";
+            
+            // Note: `new Date(year, month, 0)` is tricky with year 0 or negative years in some JS engines.
+            // A more robust way for this specific check:
+            const isLeap = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+            const daysInMonth = [31, isLeap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+            if (day < 1 || day > daysInMonth[month-1]) {
+                const monthName = new Date(2000, month - 1).toLocaleString('default', { month: 'long' });
+                return `${monthName} in year ${year} only has ${daysInMonth[month-1]} days.`;
+            }
+            return null;
+        }
+
+        function showError(message) { errorMessage.textContent = message; errorMessage.style.display = 'block'; }
+        function hideError() { errorMessage.style.display = 'none'; }
+        
+        function updateUI(result) {
+            resultDate.textContent = result.dateString;
+            resultDay.textContent = result.dayString;
+            resultCalendar.textContent = result.calendarString;
+            actionButtons.forEach(btn => btn.disabled = false);
+            updateShareLinks(result);
+        }
+
+        function clearForm() {
+            dayInput.value = '';
+            monthSelect.value = '';
+            yearInput.value = '';
+            hideError();
+            resultDate.textContent = "Enter a date to begin";
+            resultDay.textContent = "--";
+            resultCalendar.textContent = "Gregorian Calendar";
+            setCalendarOption('gregorian');
+            actionButtons.forEach(btn => btn.disabled = true);
+            lastResult = null;
+        }
+
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        }
+        
+        function copyResult() {
+            if (!lastResult) return;
+            const textToCopy = `${lastResult.dateString} was a ${lastResult.dayString} (${lastResult.calendarString}).`;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                showToast('Result copied to clipboard!');
+            }).catch(err => {
+                showToast('Could not copy text.');
+                console.error('Clipboard error:', err);
+            });
+        }
+        function downloadFile(content, filename, contentType) {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([content], {type: contentType}));
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+        function saveAsTxt() { if (lastResult) downloadFile(`Date: ${lastResult.dateString}\nDay: ${lastResult.dayString}\nCalendar: ${lastResult.calendarString}`, 'day_of_week.txt', 'text/plain'); }
+        function saveAsCsv() { if (lastResult) downloadFile(`Date,Day,Calendar\n"${lastResult.dateString}","${lastResult.dayString}","${lastResult.calendarString}"`, 'day_of_week.csv', 'text/csv;charset=utf-8;'); }
+        function saveAsPdf() {
+            if (!lastResult) return;
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFontSize(18); doc.text("Day of the Week Calculation", 105, 20, { align: 'center' });
+            doc.setFontSize(12);
+            doc.text(`Date: ${lastResult.dateString}`, 20, 40);
+            doc.text(`Day of the Week: ${lastResult.dayString}`, 20, 50);
+            doc.text(`Calendar System: ${lastResult.calendarString}`, 20, 60);
+            doc.save('day_of_week.pdf');
+        }
+        function updateShareLinks(result) {
+            const text = encodeURIComponent(`I found out that ${result.dateString} was a ${result.dayString}!`);
+            const url = encodeURIComponent(window.location.href);
+            document.getElementById('share-twitter').href = `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
+            document.getElementById('share-facebook').href = `https://www.facebook.com/sharer/sharer.php?u=${url}"e=${text}`;
+            document.getElementById('share-linkedin').href = `https://www.linkedin.com/shareArticle?mini=true&url=${url}&title=Day of the Week Calculator&summary=${text}`;
+        }
+        function copyShareLink() {
+            navigator.clipboard.writeText(window.location.href).then(() => showToast('Shareable link copied!'));
+        }
+        
+        function initializeApp() {
+            document.getElementById('copyright-year').textContent = new Date().getFullYear();
+            // Removed auto-population of today's date to allow placeholders to be visible initially.
+        }
+
+        initializeApp();
+    });
+    </script>
+</body>
+</html>

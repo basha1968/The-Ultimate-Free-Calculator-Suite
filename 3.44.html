@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Mathematics Time Calculator</title>
+
+    <!-- Dependencies for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        /* CSS Variables for Theming (Light/Dark Mode) */
+        :root {
+            --bg-color: #f8f9fa;
+            --text-color: #212529;
+            --primary-color: #3f51b5; /* Indigo */
+            --secondary-color: #6c757d;
+            --accent-color: #ff4081; /* Pink */
+            --border-color: #dee2e6;
+            --card-bg: #ffffff;
+            --input-bg: #ffffff;
+            --input-border: #ced4da;
+            --shadow: 0 4px 12px rgba(0,0,0,0.07);
+            --error-color: #dc3545;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1d24;
+            --text-color: #e8eaed;
+            --primary-color: #7986cb; /* Lighter Indigo */
+            --secondary-color: #90a4ae;
+            --accent-color: #f06292; /* Lighter Pink */
+            --border-color: #42454a;
+            --card-bg: #242730;
+            --input-bg: #2c303a;
+            --input-border: #52565e;
+            --shadow: 0 4px 15px rgba(0,0,0,0.3);
+            --error-color: #e57373;
+        }
+
+        /* General & Layout */
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            transition: background-color 0.3s, color 0.3s;
+            font-size: 16px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 420px 1fr 280px;
+            gap: 25px;
+        }
+
+        h1, h2, h3 { color: var(--primary-color); }
+        h1 { border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
+        h3 { border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-top:0;}
+
+        .card { background-color: var(--card-bg); border-radius: 8px; padding: 25px; box-shadow: var(--shadow); border: 1px solid var(--border-color); }
+
+        /* Column Structure */
+        #controls-column, #results-column, #actions-column { display: flex; flex-direction: column; gap: 25px; }
+
+        /* Header & Theme Toggle */
+        header { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; }
+        .theme-switch-wrapper { display: flex; align-items: center; }
+        .theme-switch { display: inline-block; height: 24px; position: relative; width: 50px; }
+        .theme-switch input { display: none; }
+        .slider { background-color: var(--secondary-color); bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; border-radius: 24px; }
+        .slider:before { background-color: #fff; bottom: 4px; content: ""; height: 16px; left: 4px; position: absolute; transition: .4s; width: 16px; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary-color); }
+        input:checked + .slider:before { transform: translateX(26px); }
+        .theme-label { font-size: 0.9em; margin: 0 8px; }
+
+        /* Form Controls */
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9em; }
+        .input-group { display: flex; align-items: center; gap: 10px; }
+        input[type="text"], select, input[type="number"] { width: 100%; padding: 10px; border: 1px solid var(--input-border); border-radius: 4px; background-color: var(--input-bg); color: var(--text-color); font-size: 1rem; }
+        select { -webkit-appearance: none; appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236c757d%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px top 50%; background-size: 10px; padding-right: 30px;}
+        .operator-select { font-size: 1.5em; font-weight: bold; text-align: center; max-width: 80px; }
+        #am-pm-toggle-1, #am-pm-toggle-2 { max-width: 70px; }
+        .hidden { display: none; }
+        .format-toggle-group { display: flex; gap: 10px; background: var(--bg-color); border-radius: 6px; padding: 5px; margin-bottom: 15px;}
+        .format-toggle-group button { flex-grow: 1; padding: 8px; border: none; background: transparent; cursor: pointer; border-radius: 4px; font-weight: 600; color: var(--secondary-color);}
+        .format-toggle-group button.active { background: var(--card-bg); color: var(--primary-color); box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+        
+        /* Result Display */
+        #result-display-wrapper { text-align: center; }
+        #result-display { font-size: 2.5em; font-weight: bold; color: var(--accent-color); margin-top: 10px; margin-bottom: 10px; word-wrap: break-word; }
+        #result-in-seconds { font-size: 1em; color: var(--secondary-color); }
+        #error-message { color: var(--error-color); font-weight: bold; margin-top: 15px; min-height: 24px;}
+        
+        /* History Log */
+        #history-log { list-style: none; padding: 0; max-height: 300px; overflow-y: auto; }
+        #history-log li { padding: 10px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        #history-log li:last-child { border-bottom: none; }
+        .history-controls { display: flex; justify-content: space-between; align-items: center; }
+
+        /* Action Buttons */
+        .btn { display: block; width: 100%; padding: 12px; margin-bottom: 10px; font-size: 1rem; font-weight: bold; text-align: center; text-decoration: none; cursor: pointer; border: none; border-radius: 4px; transition: opacity 0.2s; }
+        .btn:last-child { margin-bottom: 0; }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-secondary { background-color: var(--secondary-color); color: white; }
+        .btn:hover { opacity: 0.85; }
+
+        /* --- MONETIZATION PLACEHOLDERS --- */
+        .ad-placeholder { min-height: 250px; width: 100%; background-color: var(--card-bg); border: 2px dashed var(--border-color); display: flex; align-items: center; justify-content: center; text-align: center; padding: 10px; color: var(--secondary-color); font-weight: bold; border-radius: 8px; }
+        .ad-placeholder p { margin: 0; }
+        
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .container { grid-template-columns: 400px 1fr; }
+            #actions-column { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; }
+            #actions-column > * { flex: 1 1 250px; }
+        }
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+        }
+
+        /* Print Styles */
+        @media print {
+            body { background-color: #fff; color: #000; }
+            #controls-column, #actions-column, header, .ad-placeholder, .btn, .history-controls { display: none; }
+            .container, .card { all: unset; display: block; }
+            #printable-results { display: block !important; page-break-inside: avoid;}
+        }
+        #printable-results { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Mathematics Time Calculator</h1>
+            <div class="theme-switch-wrapper">
+                <span class="theme-label">Light</span>
+                <label class="theme-switch" for="theme-checkbox">
+                    <input type="checkbox" id="theme-checkbox" />
+                    <div class="slider"></div>
+                </label>
+                <span class="theme-label">Dark</span>
+            </div>
+        </header>
+
+        <!-- Column 1: Controls -->
+        <div id="controls-column">
+            <div class="card">
+                <div class="format-toggle-group">
+                    <button id="format-hms" class="active">HH:MM:SS</button>
+                    <button id="format-units">Units</button>
+                </div>
+
+                <form id="time-form">
+                    <div class="form-group">
+                        <label for="operand-1">Time 1</label>
+                        <div class="input-group">
+                            <input type="text" id="operand-1" placeholder="HH:MM:SS" required>
+                            <select id="time-unit-1" class="hidden">
+                                <option value="h">Hours</option><option value="m">Minutes</option><option value="s" selected>Seconds</option><option value="d">Days</option><option value="w">Weeks</option>
+                            </select>
+                            <select id="am-pm-toggle-1"><option value="AM">AM</option><option value="PM">PM</option></select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="operator">Operation</label>
+                        <select id="operator" class="operator-select">
+                            <option value="+">+</option><option value="-">-</option><option value="*">*</option><option value="/">/</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="operand-2">Time 2 / Number</label>
+                        <div class="input-group">
+                            <input type="text" id="operand-2" placeholder="HH:MM:SS" required>
+                             <select id="time-unit-2" class="hidden">
+                                <option value="h">Hours</option><option value="m">Minutes</option><option value="s" selected>Seconds</option><option value="d">Days</option><option value="w">Weeks</option>
+                            </select>
+                            <select id="am-pm-toggle-2"><option value="AM">AM</option><option value="PM">PM</option></select>
+                        </div>
+                    </div>
+                </form>
+
+                 <div id="error-message"></div>
+            </div>
+        </div>
+        
+        <!-- Column 2: Results & History -->
+        <div id="results-column">
+            <div class="card" id="main-result-card">
+                 <h3>Result</h3>
+                 <div id="result-display-wrapper">
+                     <div id="result-display">00:00:00</div>
+                     <div id="result-in-seconds"></div>
+                 </div>
+                 <div id="printable-results"></div>
+            </div>
+             <div class="card">
+                <div class="history-controls">
+                     <h3>Calculation History</h3>
+                    <button id="clear-history-btn" class="btn btn-secondary" style="width: auto; padding: 5px 10px; margin: 0;">Clear</button>
+                </div>
+                <ul id="history-log">
+                    <!-- History items will be populated here -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- Column 3: Actions & Monetization -->
+        <div id="actions-column">
+            <div class="card">
+                <h3>Actions</h3>
+                <button id="printBtn" class="btn btn-secondary">Print Results</button>
+                <button id="savePdfBtn" class="btn btn-secondary">Save as PDF</button>
+                <button id="saveCsvBtn" class="btn btn-secondary">Save as CSV</button>
+                <button id="saveTxtBtn" class="btn btn-secondary">Save as TXT</button>
+            </div>
+             <div class="card">
+                <h3>Share</h3>
+                <button id="shareLinkBtn" class="btn btn-primary">Copy Shareable Link</button>
+                <a id="emailLinkBtn" href="#" class="btn btn-primary" style="margin-top: 10px;">Share via Email</a>
+            </div>
+
+            <div class="ad-placeholder">
+                <!-- =============================== -->
+                <!-- YLLIX AD CODE SLOT              -->
+                <!-- Replace this div with your Yllix ad script -->
+                <!-- =============================== -->
+                <p>Yllix Ad Space<br>(Responsive)</p>
+            </div>
+            <div class="ad-placeholder">
+                <!-- =============================== -->
+                <!-- ADSTERRA AD CODE SLOT           -->
+                <!-- Replace this div with your Adsterra ad script -->
+                <!-- =============================== -->
+                <p>Adsterra Ad Space<br>(Responsive)</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const S_IN_MIN = 60, S_IN_HOUR = 3600, S_IN_DAY = 86400, S_IN_WEEK = 604800;
+        const UNIT_TO_S = { w: S_IN_WEEK, d: S_IN_DAY, h: S_IN_HOUR, m: S_IN_MIN, s: 1 };
+        
+        const elements = {
+            form: document.getElementById('time-form'),
+            operand1: document.getElementById('operand-1'), operand2: document.getElementById('operand-2'),
+            unit1: document.getElementById('time-unit-1'), unit2: document.getElementById('time-unit-2'),
+            ampm1: document.getElementById('am-pm-toggle-1'), ampm2: document.getElementById('am-pm-toggle-2'),
+            operator: document.getElementById('operator'),
+            resultDisplay: document.getElementById('result-display'),
+            resultInSeconds: document.getElementById('result-in-seconds'),
+            printableResults: document.getElementById('printable-results'),
+            errorMessage: document.getElementById('error-message'),
+            historyLog: document.getElementById('history-log'),
+            clearHistoryBtn: document.getElementById('clear-history-btn'),
+            themeCheckbox: document.getElementById('theme-checkbox'),
+            formatHmsBtn: document.getElementById('format-hms'), formatUnitsBtn: document.getElementById('format-units'),
+            printBtn: document.getElementById('printBtn'), savePdfBtn: document.getElementById('savePdfBtn'),
+            saveCsvBtn: document.getElementById('saveCsvBtn'), saveTxtBtn: document.getElementById('saveTxtBtn'),
+            shareLinkBtn: document.getElementById('shareLinkBtn'), emailLinkBtn: document.getElementById('emailLinkBtn'),
+        };
+
+        let is24HourFormat = true; // Default to HMS which implies 24h
+        let currentResultSeconds = 0;
+        let history = [];
+
+        function parseTimeToSeconds(inputStr, unit, ampm) {
+            inputStr = inputStr.trim();
+            if (!inputStr) return 0;
+
+            let totalSeconds = 0;
+            // Case 1: HH:MM:SS format
+            if (inputStr.includes(':')) {
+                const parts = inputStr.split(':').map(p => parseInt(p, 10));
+                let [h = 0, m = 0, s = 0] = parts;
+
+                if (parts.some(isNaN)) throw new Error("Invalid time format. Use HH:MM:SS.");
+                if (!is24HourFormat) {
+                    if (h === 12) h = (ampm === 'AM') ? 0 : 12;
+                    else if (ampm === 'PM') h += 12;
+                }
+                totalSeconds = h * S_IN_HOUR + m * S_IN_MIN + s;
+            } 
+            // Case 2: Unit-based input (e.g. 2d 5h)
+            else if (isNaN(inputStr)) {
+                 const regex = /(\d+\.?\d*)\s*(w|d|h|m|s)/ig;
+                 let match;
+                 while ((match = regex.exec(inputStr)) !== null) {
+                     totalSeconds += parseFloat(match[1]) * UNIT_TO_S[match[2].toLowerCase()];
+                 }
+                 if(totalSeconds === 0) throw new Error("Invalid unit format. Use e.g., '2d 5h'.");
+            }
+            // Case 3: Simple number input
+            else {
+                totalSeconds = parseFloat(inputStr) * UNIT_TO_S[unit];
+            }
+
+            if (isNaN(totalSeconds)) throw new Error("Invalid input value.");
+            return totalSeconds;
+        }
+
+        function formatSecondsToHMS(totalSeconds) {
+            if (isNaN(totalSeconds)) return "Invalid Time";
+            const sign = totalSeconds < 0 ? "-" : "";
+            totalSeconds = Math.abs(totalSeconds);
+            const h = Math.floor(totalSeconds / S_IN_HOUR);
+            const m = Math.floor((totalSeconds % S_IN_HOUR) / S_IN_MIN);
+            const s = Math.floor(totalSeconds % S_IN_MIN);
+            return `${sign}${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+        
+        function formatSecondsToMixedUnits(totalSeconds) {
+            if (isNaN(totalSeconds)) return "Invalid Time";
+             const sign = totalSeconds < 0 ? "-" : "";
+             totalSeconds = Math.abs(totalSeconds);
+             if (totalSeconds < 1) return "0 seconds";
+
+            const weeks = Math.floor(totalSeconds / S_IN_WEEK);
+            let rem = totalSeconds % S_IN_WEEK;
+            const days = Math.floor(rem / S_IN_DAY);
+            rem %= S_IN_DAY;
+            const hours = Math.floor(rem / S_IN_HOUR);
+            rem %= S_IN_HOUR;
+            const minutes = Math.floor(rem / S_IN_MIN);
+            const seconds = Math.floor(rem % S_IN_MIN);
+
+            return sign + [
+                weeks && `${weeks}w`, days && `${days}d`, hours && `${hours}h`, 
+                minutes && `${minutes}m`, seconds && `${seconds}s`
+            ].filter(Boolean).join(' ') || "0 seconds";
+        }
+        
+        function calculate() {
+            try {
+                elements.errorMessage.textContent = '';
+                const op = elements.operator.value;
+                const isMulDiv = op === '*' || op === '/';
+
+                const sec1 = parseTimeToSeconds(elements.operand1.value, elements.unit1.value, elements.ampm1.value);
+                let sec2;
+                if(isMulDiv) {
+                    sec2 = parseFloat(elements.operand2.value);
+                    if (isNaN(sec2)) throw new Error("Operand 2 must be a number for * or /.");
+                    if(op === '/' && sec2 === 0) throw new Error("Cannot divide by zero.");
+                } else {
+                     sec2 = parseTimeToSeconds(elements.operand2.value, elements.unit2.value, elements.ampm2.value);
+                }
+
+                let result;
+                switch (op) {
+                    case '+': result = sec1 + sec2; break;
+                    case '-': result = sec1 - sec2; break;
+                    case '*': result = sec1 * sec2; break;
+                    case '/': result = sec1 / sec2; break;
+                }
+                currentResultSeconds = result;
+
+                const displayResult = isMulDiv && op ==='/' && !is24HourFormat? result.toFixed(2) : formatSecondsToHMS(result);
+
+                elements.resultDisplay.textContent = displayResult;
+                elements.resultInSeconds.textContent = `(${result.toLocaleString()} seconds)`;
+                
+                addToHistory(sec1, op, sec2, result);
+                updatePrintableResults(sec1, op, sec2, result);
+                generateShareLinks();
+            } catch (e) {
+                elements.errorMessage.textContent = e.message;
+            }
+        }
+
+        function addToHistory(s1, op, s2, res) {
+            const entry = {
+                t1: formatSecondsToMixedUnits(s1),
+                op: op,
+                t2: (op === '*' || op === '/') ? s2 : formatSecondsToMixedUnits(s2),
+                res: formatSecondsToMixedUnits(res)
+            };
+            history.unshift(entry);
+            if (history.length > 20) history.pop(); // Keep history size manageable
+            renderHistory();
+            localStorage.setItem('timeCalcHistory', JSON.stringify(history));
+        }
+
+        function renderHistory() {
+            elements.historyLog.innerHTML = history.map(item => `
+                <li>
+                    <span>${item.t1} ${item.op} ${item.t2}</span>
+                    <strong>= ${item.res}</strong>
+                </li>`
+            ).join('');
+        }
+        
+        function updateUIForFormat(isHMS) {
+            is24HourFormat = isHMS;
+            const useUnits = !isHMS;
+            
+            elements.operand1.placeholder = isHMS ? 'HH:MM:SS' : 'e.g., 2d 5h';
+            elements.operand2.placeholder = isHMS ? 'HH:MM:SS' : 'e.g., 10m 30s';
+            
+            [elements.ampm1, elements.ampm2, elements.unit1, elements.unit2].forEach(el => el.classList.toggle('hidden', isHMS));
+            
+            // Re-evaluate what's visible based on operation as well
+            updateUIForOperator();
+            
+            elements.formatHmsBtn.classList.toggle('active', isHMS);
+            elements.formatUnitsBtn.classList.toggle('active', !isHMS);
+            calculate();
+        }
+
+        function updateUIForOperator() {
+            const op = elements.operator.value;
+            const isMulDiv = op === '*' || op === '/';
+            const useUnits = !is24HourFormat;
+            
+            elements.operand2.placeholder = isMulDiv ? "Enter a number" : (is24HourFormat ? 'HH:MM:SS' : 'e.g., 10m 30s');
+            elements.unit2.classList.toggle('hidden', isMulDiv || is24HourFormat);
+            elements.ampm2.classList.toggle('hidden', isMulDiv || is24HourFormat);
+        }
+
+        // --- Export & Share ---
+        function generateExportContent(format) {
+            const title = "Time Calculation Result";
+            const mainResLine = `Result: ${elements.resultDisplay.textContent} (${currentResultSeconds.toLocaleString()} seconds)`;
+            if(format === 'txt') {
+                 return `${title}\n=======================\n${mainResLine}\n\nHistory:\n${history.map(h => `${h.t1} ${h.op} ${h.t2} = ${h.res}`).join('\n')}`;
+            }
+            if(format === 'csv') {
+                let csv = "Operand1,Operation,Operand2,Result\n";
+                history.forEach(h => csv += `"${h.t1}","${h.op}","${h.t2}","${h.res}"\n`);
+                return csv;
+            }
+        }
+        
+        function updatePrintableResults(s1,op,s2,res) {
+             elements.printableResults.innerHTML = `
+                <h2>Calculation Summary</h2>
+                <p><strong>Operand 1:</strong> ${formatSecondsToMixedUnits(s1)}</p>
+                <p><strong>Operation:</strong> ${op}</p>
+                <p><strong>Operand 2:</strong> ${(op === '*' || op === '/') ? s2 : formatSecondsToMixedUnits(s2)}</p>
+                <hr>
+                <p style="font-size: 1.2em"><strong>Result: ${formatSecondsToMixedUnits(res)}</strong></p>
+                <p><em>(${res.toLocaleString()} seconds)</em></p>
+             `;
+        }
+        
+        function generateShareLinks() {
+            const params = new URLSearchParams({
+                op1: elements.operand1.value,
+                op2: elements.operand2.value,
+                opr: elements.operator.value,
+                fmt: is24HourFormat ? 'hms' : 'units',
+                u1: elements.unit1.value,
+                u2: elements.unit2.value,
+            });
+            const url = `${location.origin}${location.pathname}?${params.toString()}`;
+            elements.emailLinkBtn.href = `mailto:?subject=Time Calculation&body=Check out this calculation:%0A${generateExportContent('txt').replace(/\n/g, '%0A')}%0A${url}`;
+            
+            elements.shareLinkBtn.onclick = () => navigator.clipboard.writeText(url).then(() => {
+                elements.shareLinkBtn.textContent = 'Copied!';
+                setTimeout(() => { elements.shareLinkBtn.textContent = 'Copy Shareable Link'; }, 2000);
+            });
+        }
+        
+        function loadStateFromURL() {
+            const p = new URLSearchParams(window.location.search);
+            if(p.has('fmt')) updateUIForFormat(p.get('fmt') === 'hms');
+            if(p.has('op1')) elements.operand1.value = p.get('op1');
+            if(p.has('op2')) elements.operand2.value = p.get('op2');
+            if(p.has('opr')) elements.operator.value = p.get('opr');
+            if(p.has('u1')) elements.unit1.value = p.get('u1');
+            if(p.has('u2')) elements.unit2.value = p.get('u2');
+        }
+
+        function triggerDownload(content, filename, mimeType) {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([content], { type: mimeType }));
+            a.download = filename;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }
+
+        // --- Event Listeners ---
+        elements.form.addEventListener('input', calculate);
+        elements.operator.addEventListener('change', () => {
+            updateUIForOperator();
+            calculate();
+        });
+        
+        elements.clearHistoryBtn.addEventListener('click', () => {
+            history = [];
+            localStorage.removeItem('timeCalcHistory');
+            renderHistory();
+        });
+
+        elements.themeCheckbox.addEventListener('change', (e) => {
+            const theme = e.target.checked ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('timeCalcTheme', theme);
+        });
+
+        elements.formatHmsBtn.addEventListener('click', () => updateUIForFormat(true));
+        elements.formatUnitsBtn.addEventListener('click', () => updateUIForFormat(false));
+
+        elements.printBtn.addEventListener('click', () => window.print());
+        elements.saveTxtBtn.addEventListener('click', () => triggerDownload(generateExportContent('txt'), 'time-calculation.txt', 'text/plain;charset=utf-8'));
+        elements.saveCsvBtn.addEventListener('click', () => triggerDownload(generateExportContent('csv'), 'time-calculation.csv', 'text/csv;charset=utf-8'));
+        elements.savePdfBtn.addEventListener('click', () => {
+             const { jsPDF } = window.jspdf;
+             const doc = new jsPDF('p', 'mm', 'a4');
+             updatePrintableResults(
+                parseTimeToSeconds(elements.operand1.value, elements.unit1.value, elements.ampm1.value),
+                elements.operator.value,
+                parseTimeToSeconds(elements.operand2.value, elements.unit2.value, elements.ampm2.value),
+                currentResultSeconds
+             ); // Ensure it's up to date
+             html2canvas(document.getElementById('main-result-card'), { 
+                backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--card-bg'), 
+                scale: 2 
+             }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const {width, height} = doc.internal.pageSize;
+                const imgProps = doc.getImageProperties(imgData);
+                const pdfWidth = width-20;
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                doc.addImage(imgData, 'PNG', 10, 10, pdfWidth, pdfHeight);
+                doc.save('time-calculation.pdf');
+             });
+        });
+
+
+        // --- Init ---
+        function init() {
+            const savedTheme = localStorage.getItem('timeCalcTheme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                elements.themeCheckbox.checked = savedTheme === 'dark';
+            }
+            const savedHistory = localStorage.getItem('timeCalcHistory');
+            if (savedHistory) {
+                history = JSON.parse(savedHistory);
+                renderHistory();
+            }
+            
+            loadStateFromURL();
+            updateUIForFormat(elements.formatHmsBtn.classList.contains('active'));
+            calculate();
+        }
+
+        init();
+    });
+    </script>
+</body>
+</html>

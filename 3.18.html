@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Golf Handicap Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        :root {
+            --primary: #2e8b57;
+            --primary-dark: #1f6e4a;
+            --secondary: #f8f9fa;
+            --accent: #ffd700;
+            --light: #ffffff;
+            --dark: #1a3c27;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --border-radius: 10px;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        .dark-mode {
+            --primary: #3cb371;
+            --primary-dark: #2e8b57;
+            --secondary: #1a3c27;
+            --accent: #ffd700;
+            --light: #1a3c27;
+            --dark: #f8f9fa;
+            --gray: #adb5bd;
+            --light-gray: #2d4a38;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--secondary);
+            color: var(--dark);
+            line-height: 1.6;
+            transition: var(--transition);
+            background-image: linear-gradient(to bottom right, #e6f4ea, #d1e8d2);
+            min-height: 100vh;
+        }
+
+        .dark-mode body {
+            background-color: var(--secondary);
+            background-image: linear-gradient(to bottom right, #1a3c27, #2d4a38);
+        }
+        
+        .dark-mode .input-section, 
+        .dark-mode .result-section,
+        .dark-mode .export-section,
+        .dark-mode .ad-section,
+        .dark-mode .result-details,
+        .dark-mode .rounds-table tr:nth-child(even) {
+            background-color: var(--light-gray);
+            color: var(--dark);
+        }
+
+        .dark-mode input {
+            background-color: #2d4a38;
+            color: var(--dark);
+            border-color: var(--gray);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 2px solid var(--primary);
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            background: var(--primary);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .dark-mode .logo-text {
+            color: var(--primary);
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .theme-toggle {
+            background: var(--light-gray);
+            border: none;
+            border-radius: 30px;
+            width: 60px;
+            height: 30px;
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 0 5px;
+        }
+        
+        .dark-mode .theme-toggle {
+            background: #2d4a38;
+        }
+
+        .theme-toggle::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--primary);
+            transition: transform 0.3s ease;
+        }
+
+        .theme-toggle.dark::after {
+            transform: translateX(30px);
+        }
+
+        .help-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+        .help-btn:hover {
+            background-color: var(--primary-dark);
+        }
+
+
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 992px) {
+            .calculator-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .input-section, .result-section {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            box-shadow: var(--shadow);
+        }
+
+        .section-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--light-gray);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary);
+        }
+        
+        .dark-mode .section-title {
+             border-bottom-color: #2d4a38;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-group .info-icon {
+            color: var(--gray);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .tooltiptext {
+            visibility: hidden;
+            width: 250px;
+            background-color: var(--dark);
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -125px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .info-icon:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(46, 139, 87, 0.2);
+        }
+
+        .add-round-btn, .calculate-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .add-round-btn:hover, .calculate-btn:hover {
+            background: var(--primary-dark);
+        }
+        
+        .calculate-btn {
+            margin-top: 20px;
+            padding: 15px 25px;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            margin-bottom: 25px;
+            text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .handicap-value {
+            font-size: 42px;
+            font-weight: 700;
+            margin: 15px 0;
+        }
+
+        .result-details {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            color: var(--dark);
+            box-shadow: var(--shadow);
+        }
+        
+        .dark-mode .detail-row {
+            border-bottom: 1px solid #2d4a38;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: 500;
+        }
+
+        .detail-value {
+            font-weight: 600;
+        }
+
+        .rounds-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        .rounds-table th {
+            background-color: var(--primary);
+            color: white;
+            text-align: left;
+            padding: 12px 10px;
+        }
+
+        .rounds-table td {
+            padding: 10px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .dark-mode .rounds-table td {
+            border-bottom-color: #2d4a38;
+        }
+
+        .rounds-table tr:nth-child(even) {
+            background-color: var(--secondary);
+        }
+
+        .rounds-table .delete-btn {
+            background: none;
+            border: none;
+            color: #e74c3c;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .export-section, .ad-section {
+            margin-top: 30px;
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            box-shadow: var(--shadow);
+        }
+
+        .export-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary);
+        }
+
+        .export-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .export-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 15px;
+            background: var(--light-gray);
+            border: 1px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+        
+        .dark-mode .export-btn {
+            background: #2d4a38;
+            border-color: #2d4a38;
+        }
+
+        .export-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 40px;
+            border-top: 2px solid var(--primary);
+            color: var(--gray);
+            font-size: 14px;
+        }
+
+        .error {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: var(--accent);
+            color: var(--dark);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .help-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .help-content {
+            background: white;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 600px;
+            padding: 30px;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .dark-mode .help-content {
+            background: var(--light-gray);
+        }
+
+        .close-help {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .method-info {
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--light-gray);
+            border-radius: var(--border-radius);
+        }
+        
+        .dark-mode .method-info {
+             background: #2d4a38;
+        }
+
+        .method-info h4 {
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        @media print {
+             .controls, .input-section, .export-section, .ad-section, footer, .calculate-btn {
+                display: none !important;
+            }
+            .calculator-grid {
+                grid-template-columns: 1fr;
+            }
+            body {
+                background: white;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-golf-ball-tee"></i>
+                </div>
+                <span class="logo-text">Pro Golf Handicap Calculator</span>
+            </div>
+            <div class="controls">
+                <button class="help-btn" id="helpBtn"><i class="fas fa-question-circle"></i> Help</button>
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode"></button>
+            </div>
+        </header>
+
+        <div class="calculator-grid">
+            <div class="input-section">
+                <h2 class="section-title"><i class="fas fa-edit"></i> Enter Round Details</h2>
+
+                <div class="input-group">
+                    <label for="courseRating">Course Rating <span class="info-icon"><i class="fas fa-info-circle"></i><span class="tooltiptext">The difficulty of a course for a scratch golfer (e.g., 72.0). Range: 55-85.</span></span></label>
+                    <input type="number" id="courseRating" placeholder="e.g., 72.0" step="0.1" min="55" max="85">
+                    <div class="error" id="courseRatingError">Please enter a valid course rating (55-85).</div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="slopeRating">Slope Rating <span class="info-icon"><i class="fas fa-info-circle"></i><span class="tooltiptext">The relative difficulty for a bogey golfer (e.g., 113). Range: 55-155.</span></span></label>
+                    <input type="number" id="slopeRating" placeholder="e.g., 113" step="1" min="55" max="155">
+                    <div class="error" id="slopeRatingError">Please enter a valid slope rating (55-155).</div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="grossScore">Adjusted Gross Score <span class="info-icon"><i class="fas fa-info-circle"></i><span class="tooltiptext">Your total strokes adjusted for maximum hole score. Range: 50-200.</span></span></label>
+                    <input type="number" id="grossScore" placeholder="e.g., 85" step="1" min="50" max="200">
+                    <div class="error" id="grossScoreError">Please enter a valid score (50-200).</div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="pccAdjustment">PCC Adjustment <span class="info-icon"><i class="fas fa-info-circle"></i><span class="tooltiptext">Playing Conditions Calculation (usually 0 or ±1). Range: -3 to 3.</span></span></label>
+                    <input type="number" id="pccAdjustment" placeholder="e.g., 0" step="1" min="-3" max="3" value="0">
+                    <div class="error" id="pccError">Please enter a valid PCC adjustment (-3 to 3).</div>
+                </div>
+                
+                <button class="add-round-btn" id="addRoundBtn"><i class="fas fa-plus-circle"></i> Add Round</button>
+                
+                <h3 class="section-title" style="margin-top: 30px;"><i class="fas fa-history"></i> Your Rounds (Last 20)</h3>
+                <div style="overflow-x: auto;">
+                    <table class="rounds-table">
+                        <thead>
+                            <tr>
+                                <th>Course Rating</th>
+                                <th>Slope</th>
+                                <th>Score</th>
+                                <th>PCC</th>
+                                <th>Differential</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="roundsTableBody">
+                            <!-- Rounds will be added here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <button class="calculate-btn" id="calculateBtn"><i class="fas fa-calculator"></i> Calculate Handicap</button>
+            </div>
+
+            <div class="result-section">
+                <h2 class="section-title"><i class="fas fa-chart-line"></i> Handicap Results</h2>
+
+                <div class="result-card" id="resultCard" style="display: none;">
+                    <div class="result-title"><i class="fas fa-trophy"></i> Your Golf Handicap Index</div>
+                    <div class="handicap-value" id="handicapValue">0.0</div>
+                    <div class="result-method" id="resultMethod">Based on 0 rounds</div>
+                </div>
+
+                <div class="result-details" id="resultDetails" style="display: none;">
+                    <div class="detail-row">
+                        <span class="detail-label">Calculation Method:</span>
+                        <span class="detail-value" id="methodValue">World Handicap System</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Rounds Used:</span>
+                        <span class="detail-value" id="roundsUsed">0 of 0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Best Differentials Avg:</span>
+                        <span class="detail-value" id="bestDifferentials">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Date Calculated:</span>
+                        <span class="detail-value" id="dateValue">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="export-section">
+            <h2 class="export-title"><i class="fas fa-share-square"></i> Export & Share</h2>
+            <div class="export-options">
+                <button class="export-btn" id="printBtn"><i class="fas fa-print"></i> Print</button>
+                <button class="export-btn" id="pdfBtn"><i class="fas fa-file-pdf"></i> PDF</button>
+                <button class="export-btn" id="csvBtn"><i class="fas fa-file-csv"></i> CSV</button>
+                <button class="export-btn" id="textBtn"><i class="fas fa-file-alt"></i> Text</button>
+                <button class="export-btn" id="twitterBtn"><i class="fab fa-twitter"></i> Twitter</button>
+                <button class="export-btn" id="facebookBtn"><i class="fab fa-facebook"></i> Facebook</button>
+            </div>
+        </div>
+
+        <footer>
+            <p>Professional Golf Handicap Calculator v2.1 | WHS Compliant</p>
+            <p>© 2024 Golf Handicap Pro. All calculations are performed client-side for security.</p>
+        </footer>
+    </div>
+
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notificationText">Notification</span>
+    </div>
+
+    <div class="help-modal" id="helpModal">
+        <div class="help-content">
+            <span class="close-help" id="closeHelp">×</span>
+            <h3><i class="fas fa-question-circle"></i> Golf Handicap Help</h3>
+            <p>This professional golf handicap calculator uses the official World Handicap System (WHS) formula.</p>
+            
+            <div class="method-info">
+                <h4>Handicap Index Calculation</h4>
+                <p>A Handicap Index is calculated from the lowest Score Differentials in a player’s scoring record. If a player's scoring record contains at least 20 Score Differentials, the Handicap Index is the average of the lowest 8 Score Differentials.</p>
+                <p><b>Score Differential</b> = (113 / Slope Rating) x (Adjusted Gross Score - Course Rating - PCC Adjustment)</p>
+                <p><b>Number of Differentials Used:</b></p>
+                <ul>
+                    <li>3-5 rounds: Lowest 1 differential, with adjustment</li>
+                    <li>6-8 rounds: Average of lowest 2 differentials</li>
+                    <li>9-11 rounds: Average of lowest 3 differentials</li>
+                    <li>12-14 rounds: Average of lowest 4 differentials</li>
+                    <li>15-16 rounds: Average of lowest 5 differentials</li>
+                    <li>17-18 rounds: Average of lowest 6 differentials</li>
+                    <li>19 rounds: Average of lowest 7 differentials</li>
+                    <li>20 rounds: Average of lowest 8 differentials</li>
+                </ul>
+            </div>
+            
+            <h4>Instructions:</h4>
+            <ol>
+                <li>Enter the Course Rating, Slope Rating, your Adjusted Gross Score, and any PCC Adjustment for a round.</li>
+                <li>Click "Add Round" to add it to your list. You need at least 3 rounds to calculate an official index.</li>
+                <li>Click "Calculate Handicap" to see your WHS-compliant Handicap Index.</li>
+                <li>Export or share your results using the buttons at the bottom.</li>
+            </ol>
+            
+            <p><strong>Note:</strong> All data is stored and calculated locally in your browser for privacy. Nothing is sent to a server.</p>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // DOM Elements
+        const themeToggle = document.getElementById('themeToggle');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const addRoundBtn = document.getElementById('addRoundBtn');
+        const notification = document.getElementById('notification');
+        const notificationText = document.getElementById('notificationText');
+        const helpBtn = document.getElementById('helpBtn');
+        const helpModal = document.getElementById('helpModal');
+        const closeHelp = document.getElementById('closeHelp');
+        const roundsTableBody = document.getElementById('roundsTableBody');
+        
+        // Input Elements
+        const courseRatingInput = document.getElementById('courseRating');
+        const slopeRatingInput = document.getElementById('slopeRating');
+        const grossScoreInput = document.getElementById('grossScore');
+        const pccAdjustmentInput = document.getElementById('pccAdjustment');
+        
+        // Result Elements
+        const resultCard = document.getElementById('resultCard');
+        const resultDetails = document.getElementById('resultDetails');
+        const handicapValue = document.getElementById('handicapValue');
+        const roundsUsed = document.getElementById('roundsUsed');
+        const bestDifferentials = document.getElementById('bestDifferentials');
+        const dateValue = document.getElementById('dateValue');
+        const resultMethod = document.getElementById('resultMethod');
+        
+        // Export Buttons
+        const printBtn = document.getElementById('printBtn');
+        const pdfBtn = document.getElementById('pdfBtn');
+        const csvBtn = document.getElementById('csvBtn');
+        const textBtn = document.getElementById('textBtn');
+        const twitterBtn = document.getElementById('twitterBtn');
+        const facebookBtn = document.getElementById('facebookBtn');
+        
+        // State
+        let rounds = [];
+        let currentHandicap = 0.0;
+        
+        // --- Event Listeners ---
+
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            themeToggle.classList.toggle('dark');
+        });
+        
+        helpBtn.addEventListener('click', () => { helpModal.style.display = 'flex'; });
+        closeHelp.addEventListener('click', () => { helpModal.style.display = 'none'; });
+        window.addEventListener('click', (e) => {
+            if (e.target === helpModal) {
+                helpModal.style.display = 'none';
+            }
+        });
+        
+        addRoundBtn.addEventListener('click', () => {
+            if (validateRoundInputs()) {
+                addRound();
+                resetInputs();
+                showNotification('Round added successfully!');
+            }
+        });
+        
+        calculateBtn.addEventListener('click', () => {
+            if (rounds.length < 3) {
+                showNotification('Please add at least 3 rounds to calculate a handicap.', 'error');
+                return;
+            }
+            calculateHandicap();
+            showNotification('Handicap calculated successfully!');
+        });
+
+        // --- Core Functions ---
+
+        function validateRoundInputs() {
+            let isValid = true;
+            
+            const validate = (input, errorEl, min, max) => {
+                const value = parseFloat(input.value);
+                errorEl.style.display = 'none';
+                if (input.value.trim() === '' || isNaN(value) || value < min || value > max) {
+                    errorEl.style.display = 'block';
+                    return false;
+                }
+                return true;
+            };
+
+            isValid &= validate(courseRatingInput, document.getElementById('courseRatingError'), 55, 85);
+            isValid &= validate(slopeRatingInput, document.getElementById('slopeRatingError'), 55, 155);
+            isValid &= validate(grossScoreInput, document.getElementById('grossScoreError'), 50, 200);
+            isValid &= validate(pccAdjustmentInput, document.getElementById('pccError'), -3, 3);
+            
+            return Boolean(isValid);
+        }
+        
+        function addRound() {
+            const courseRating = parseFloat(courseRatingInput.value);
+            const slopeRating = parseInt(slopeRatingInput.value, 10);
+            const grossScore = parseInt(grossScoreInput.value, 10);
+            const pcc = parseInt(pccAdjustmentInput.value, 10) || 0;
+            
+            const round = {
+                id: Date.now(),
+                courseRating,
+                slopeRating,
+                grossScore,
+                pcc,
+                differential: parseFloat(calculateDifferential(courseRating, slopeRating, grossScore, pcc))
+            };
+            
+            rounds.unshift(round);
+            if (rounds.length > 20) {
+                rounds.pop(); // Keep only the last 20 rounds
+            }
+            
+            updateRoundsTable();
+        }
+        
+        function calculateDifferential(courseRating, slopeRating, grossScore, pcc) {
+            return ((113 / slopeRating) * (grossScore - courseRating - pcc)).toFixed(1);
+        }
+        
+        function updateRoundsTable() {
+            roundsTableBody.innerHTML = '';
+            rounds.forEach(round => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${round.courseRating.toFixed(1)}</td>
+                    <td>${round.slopeRating}</td>
+                    <td>${round.grossScore}</td>
+                    <td>${round.pcc}</td>
+                    <td><b>${round.differential.toFixed(1)}</b></td>
+                    <td>
+                        <button class="delete-btn" data-id="${round.id}" aria-label="Delete round">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                roundsTableBody.appendChild(row);
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const id = parseInt(e.currentTarget.dataset.id, 10);
+                    rounds = rounds.filter(round => round.id !== id);
+                    updateRoundsTable();
+                    resultCard.style.display = 'none';
+                    resultDetails.style.display = 'none';
+                    showNotification('Round removed!');
+                });
+            });
+        }
+        
+        function resetInputs() {
+            courseRatingInput.value = '';
+            slopeRatingInput.value = '';
+            grossScoreInput.value = '';
+            pccAdjustmentInput.value = '0';
+            courseRatingInput.focus();
+        }
+
+        function calculateHandicap() {
+            const sortedDifferentials = [...rounds].map(r => r.differential).sort((a, b) => a - b);
+            const numRounds = rounds.length;
+            let differentialsToUseCount = 0;
+            let adjustment = 0;
+
+            if (numRounds >= 20) differentialsToUseCount = 8;
+            else if (numRounds === 19) differentialsToUseCount = 7;
+            else if (numRounds >= 17) differentialsToUseCount = 6;
+            else if (numRounds >= 15) differentialsToUseCount = 5;
+            else if (numRounds >= 12) differentialsToUseCount = 4;
+            else if (numRounds >= 9) differentialsToUseCount = 3;
+            else if (numRounds >= 6) differentialsToUseCount = 2;
+            else if (numRounds >= 3) {
+                differentialsToUseCount = 1;
+                if (numRounds === 3) adjustment = -2.0;
+                if (numRounds === 4) adjustment = -1.0;
+                if (numRounds === 5) adjustment = -1.0;
+            } else {
+                 return; // Not enough rounds
+            }
+
+            const bestDiffs = sortedDifferentials.slice(0, differentialsToUseCount);
+            const average = bestDiffs.reduce((sum, val) => sum + val, 0) / differentialsToUseCount;
+            
+            currentHandicap = (average + adjustment).toFixed(1);
+            
+            updateResultsUI(differentialsToUseCount, numRounds, average);
+        }
+        
+        function updateResultsUI(diffsUsed, totalRounds, avgDiff) {
+            resultCard.style.display = 'block';
+            resultDetails.style.display = 'block';
+
+            handicapValue.textContent = currentHandicap;
+            roundsUsed.textContent = `${diffsUsed} of ${totalRounds}`;
+            bestDifferentials.textContent = avgDiff.toFixed(2);
+            resultMethod.textContent = `Based on ${totalRounds} rounds`;
+            dateValue.textContent = new Date().toLocaleString();
+        }
+        
+        function showNotification(message, type = 'success') {
+            notificationText.textContent = message;
+            notification.style.background = type === 'error' ? '#e74c3c' : 'var(--accent)';
+            notification.style.color = 'var(--dark)';
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // --- Export Functions ---
+
+        printBtn.addEventListener('click', () => window.print());
+
+        pdfBtn.addEventListener('click', () => {
+            if (rounds.length === 0) {
+                showNotification('Add some rounds before exporting.', 'error');
+                return;
+            }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(20);
+            doc.text("Golf Handicap Report", 14, 22);
+            doc.setFontSize(12);
+            doc.text(`Handicap Index: ${currentHandicap}`, 14, 32);
+            doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 42);
+
+            const tableData = rounds.map(r => [
+                r.courseRating.toFixed(1),
+                r.slopeRating,
+                r.grossScore,
+                r.pcc,
+                r.differential.toFixed(1)
+            ]);
+            
+            doc.autoTable({
+                startY: 50,
+                head: [['Course Rating', 'Slope', 'Score', 'PCC', 'Differential']],
+                body: tableData,
+                theme: 'striped',
+                headStyles: { fillColor: [46, 139, 87] }
+            });
+
+            doc.save('golf_handicap_report.pdf');
+        });
+
+        function downloadFile(filename, content, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        csvBtn.addEventListener('click', () => {
+            if (rounds.length === 0) {
+                showNotification('Add some rounds before exporting.', 'error');
+                return;
+            }
+            let csvContent = "Course Rating,Slope,Score,PCC,Differential\n";
+            rounds.forEach(r => {
+                csvContent += `${r.courseRating.toFixed(1)},${r.slopeRating},${r.grossScore},${r.pcc},${r.differential.toFixed(1)}\n`;
+            });
+            downloadFile('golf_handicap.csv', csvContent, 'text/csv;charset=utf-8;');
+        });
+        
+        textBtn.addEventListener('click', () => {
+            if (rounds.length === 0) {
+                showNotification('Add some rounds before exporting.', 'error');
+                return;
+            }
+            let textContent = `Golf Handicap Report\n`;
+            textContent += `=======================\n`;
+            textContent += `Handicap Index: ${currentHandicap}\n`;
+            textContent += `Date: ${new Date().toLocaleString()}\n\n`;
+            textContent += `Rounds Data:\n`;
+            rounds.forEach(r => {
+                textContent += ` - CR: ${r.courseRating.toFixed(1)}, Slope: ${r.slopeRating}, Score: ${r.grossScore}, PCC: ${r.pcc}, Diff: ${r.differential.toFixed(1)}\n`;
+            });
+            downloadFile('golf_handicap.txt', textContent, 'text/plain;charset=utf-8;');
+        });
+        
+        twitterBtn.addEventListener('click', () => {
+            const text = `I just calculated my golf handicap: ${currentHandicap}! Check out this awesome calculator.`;
+            const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        });
+        
+        facebookBtn.addEventListener('click', () => {
+            const url = 'https://www.facebook.com/sharer/sharer.php';
+            const params = new URLSearchParams({
+                u: window.location.href,
+                quote: `My current golf handicap is ${currentHandicap}! Calculated using the Pro Golf Handicap Calculator.`
+            });
+            window.open(`${url}?${params.toString()}`, '_blank');
+        });
+
+    });
+    </script>
+</body>
+</html>

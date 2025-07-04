@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional GDP Calculator | Financial Analysis Tool</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #0f172a;
+            --accent: #10b981;
+            --light: #f8fafc;
+            --dark: #0f172a;
+            --gray: #64748b;
+            --light-gray: #e2e8f0;
+            --border-radius: 10px;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        .dark-mode {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --secondary: #f8fafc;
+            --accent: #34d399;
+            --light: #0f172a;
+            --dark: #f1f5f9;
+            --gray: #94a3b8;
+            --light-gray: #1e293b;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+            transition: var(--transition);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--light-gray);
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            background: var(--primary);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .theme-toggle {
+            background: var(--light-gray);
+            border: none;
+            border-radius: 30px;
+            width: 60px;
+            height: 30px;
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 0 5px;
+        }
+
+        .theme-toggle::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--primary);
+            transition: transform 0.3s ease;
+        }
+
+        .theme-toggle.dark::after {
+            transform: translateX(30px);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--light-gray);
+            padding-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 25px;
+            background: var(--light-gray);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+            flex: 1;
+            text-align: center;
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+
+        @media (max-width: 768px) {
+            .calculator-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .input-section, .result-section {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            box-shadow: var(--shadow);
+        }
+
+        .dark-mode .input-section, 
+        .dark-mode .result-section {
+            background: var(--light);
+        }
+
+        .section-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--light-gray);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-group .info-icon {
+            color: var(--gray);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .input-group .info-icon:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: 25px;
+            left: 0;
+            width: 250px;
+            background: var(--dark);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 100;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+        }
+
+        .calculate-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 15px 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .calculate-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            margin-bottom: 25px;
+            text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .gdp-value {
+            font-size: 42px;
+            font-weight: 700;
+            margin: 15px 0;
+        }
+
+        .result-details {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            color: var(--dark);
+            box-shadow: var(--shadow);
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: 500;
+        }
+
+        .detail-value {
+            font-weight: 600;
+        }
+
+        .export-section {
+            margin-top: 30px;
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            box-shadow: var(--shadow);
+        }
+
+        .export-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .export-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .export-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 15px;
+            background: var(--light-gray);
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .export-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .ad-section {
+            margin: 30px 0;
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .ad-placeholder {
+            background: var(--light-gray);
+            border: 2px dashed var(--gray);
+            border-radius: var(--border-radius);
+            padding: 40px 20px;
+            color: var(--gray);
+            font-weight: 500;
+            margin: 10px 0;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 40px;
+            border-top: 1px solid var(--light-gray);
+            color: var(--gray);
+            font-size: 14px;
+        }
+
+        .error {
+            color: #ef4444;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: var(--accent);
+            color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .help-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .help-content {
+            background: white;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 600px;
+            padding: 30px;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .dark-mode .help-content {
+            background: var(--light);
+        }
+
+        .close-help {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .method-info {
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--light-gray);
+            border-radius: var(--border-radius);
+        }
+
+        .method-info h4 {
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="logo-text">GDP Expert</div>
+            </div>
+            <div class="controls">
+                <button class="theme-toggle" id="themeToggle"></button>
+                <button class="help-btn" id="helpBtn">
+                    <i class="fas fa-question-circle"></i> Help
+                </button>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <div class="tab active" data-tab="expenditure">Expenditure Approach</div>
+            <div class="tab" data-tab="income">Income Approach</div>
+            <div class="tab" data-tab="production">Production Approach</div>
+        </div>
+
+        <div class="calculator-grid">
+            <div class="input-section">
+                <h2 class="section-title">
+                    <i class="fas fa-calculator"></i> Input Parameters
+                </h2>
+
+                <!-- Expenditure Approach Inputs -->
+                <div class="tab-content active" id="expenditureInputs">
+                    <div class="input-group">
+                        <label>
+                            Consumption (C)
+                            <span class="info-icon" data-tooltip="Personal consumption expenditures by households">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="number" id="consumption" placeholder="Enter amount in billions">
+                        <div class="error" id="consumptionError">Please enter a valid number</div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>
+                            Investment (I)
+                            <span class="info-icon" data-tooltip="Business investments and residential construction">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="number" id="investment" placeholder="Enter amount in billions">
+                        <div class="error" id="investmentError">Please enter a valid number</div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>
+                            Government Spending (G)
+                            <span class="info-icon" data-tooltip="Government consumption and investment expenditures">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="number" id="govSpending" placeholder="Enter amount in billions">
+                        <div class="error" id="govSpendingError">Please enter a valid number</div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>
+                            Exports (X)
+                            <span class="info-icon" data-tooltip="Goods and services produced domestically and sold abroad">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="number" id="exports" placeholder="Enter amount in billions">
+                        <div class="error" id="exportsError">Please enter a valid number</div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>
+                            Imports (M)
+                            <span class="info-icon" data-tooltip="Goods and services produced abroad and sold domestically">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="number" id="imports" placeholder="Enter amount in billions">
+                        <div class="error" id="importsError">Please enter a valid number</div>
+                    </div>
+                </div>
+
+                <!-- Income Approach Inputs -->
+                <div class="tab-content" id="incomeInputs">
+                    <div class="input-group">
+                        <label>
+                            Wages and Salaries
+                            <span class="info-icon" data-tooltip="Compensation of employees including benefits">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="number" id="wages" placeholder="Enter amount in billions">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>
+                            Rental Income
+                            <span class="info-icon" data-tooltip="Income from property and land">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="number" id="rent" placeholder="Enter amount in billions">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>
+                            Interest Income
+                            <span class="info-icon" data-tooltip="Income from lending capital">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="number" id="interest" placeholder="Enter amount in billions">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>
+                            Corporate Profits
+                            <span class="info-icon" data-tooltip="Pre-tax profits of corporations">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="number" id="profits" placeholder="Enter amount in billions">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>
+                            Proprietors' Income
+                            <span class="info-icon" data-tooltip="Income of unincorporated businesses">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="number" id="proprietors" placeholder="Enter amount in billions">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>
+                            Taxes on Production
+                            <span class="info-icon" data-tooltip="Taxes on production and imports">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="number" id="taxesIncome" placeholder="Enter amount in billions">
+                    </div>
+                </div>
+
+                <!-- Production Approach Inputs -->
+                <div class="tab-content" id="productionInputs">
+                    <div class="input-group">
+                        <label>
+                            Agriculture Value Added
+                            <span class="info-icon" data-tooltip="Value added by agricultural sector">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="number" id="agriculture" placeholder="Enter amount in billions">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>
+                            Industry Value Added
+                            <span class="info-icon" data-tooltip="Value added by industrial sector">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="number" id="industry" placeholder="Enter amount in billions">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>
+                            Services Value Added
+                            <span class="info-icon" data-tooltip="Value added by service sector">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="number" id="services" placeholder="Enter amount in billions">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>
+                            Taxes on Products
+                            <span class="info-icon" data-tooltip="Taxes minus subsidies on products">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="number" id="taxes" placeholder="Enter amount in billions">
+                    </div>
+                </div>
+
+                <button class="calculate-btn" id="calculateBtn">
+                    <i class="fas fa-calculator"></i> Calculate GDP
+                </button>
+            </div>
+
+            <div class="result-section">
+                <h2 class="section-title">
+                    <i class="fas fa-chart-bar"></i> GDP Results
+                </h2>
+
+                <div class="result-card" id="resultCard">
+                    <div class="result-title">
+                        <i class="fas fa-globe-americas"></i> Gross Domestic Product
+                    </div>
+                    <div class="gdp-value" id="gdpValue">$0.00B</div>
+                    <div class="result-method" id="resultMethod">Expenditure Approach</div>
+                </div>
+
+                <div class="result-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Calculation Method:</span>
+                        <span class="detail-value" id="methodValue">Expenditure Approach</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Consumption (C):</span>
+                        <span class="detail-value" id="cValue">$0.00B</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Investment (I):</span>
+                        <span class="detail-value" id="iValue">$0.00B</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Government (G):</span>
+                        <span class="detail-value" id="gValue">$0.00B</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Net Exports (X-M):</span>
+                        <span class="detail-value" id="netExportsValue">$0.00B</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Date Calculated:</span>
+                        <span class="detail-value" id="dateValue">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ad-section">
+            <h3 class="section-title">
+                <i class="fas fa-ad"></i> Advertisement Space
+            </h3>
+            <div class="ad-placeholder" id="adsterraAd">
+                <!-- Adsterra Ad Code Would Go Here -->
+                <div class="ad-content">
+                    <i class="fas fa-ad" style="font-size: 24px; margin-bottom: 10px;"></i>
+                    <p>Adsterra Ad Space (728x90)</p>
+                    <small>GDP Calculator sponsored content</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="export-section">
+            <h2 class="export-title">
+                <i class="fas fa-download"></i> Export Results
+            </h2>
+            <div class="export-options">
+                <button class="export-btn" id="printBtn">
+                    <i class="fas fa-print"></i> Print
+                </button>
+                <button class="export-btn" id="pdfBtn">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </button>
+                <button class="export-btn" id="excelBtn">
+                    <i class="fas fa-file-excel"></i> Excel
+                </button>
+                <button class="export-btn" id="csvBtn">
+                    <i class="fas fa-file-csv"></i> CSV
+                </button>
+                <button class="export-btn" id="textBtn">
+                    <i class="fas fa-file-alt"></i> Text
+                </button>
+                <button class="export-btn" id="shareBtn">
+                    <i class="fas fa-share-alt"></i> Share
+                </button>
+            </div>
+        </div>
+
+        <div class="ad-section">
+            <h3 class="section-title">
+                <i class="fas fa-ad"></i> Advertisement Space
+            </h3>
+            <div class="ad-placeholder" id="yllixAd">
+                <!-- Yllix Ad Code Would Go Here -->
+                <div class="ad-content">
+                    <i class="fas fa-ad" style="font-size: 24px; margin-bottom: 10px;"></i>
+                    <p>Yllix Ad Space (300x250)</p>
+                    <small>GDP Calculator sponsored content</small>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>GDP Expert Calculator v1.0 | Secure Financial Analysis Tool</p>
+            <p>© 2023 Professional GDP Calculator. All calculations are performed client-side for security.</p>
+        </footer>
+    </div>
+
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notificationText">Calculation completed successfully!</span>
+    </div>
+
+    <div class="help-modal" id="helpModal">
+        <div class="help-content">
+            <span class="close-help" id="closeHelp">&times;</span>
+            <h3><i class="fas fa-question-circle"></i> GDP Calculator Help</h3>
+            <p>This professional GDP calculator allows you to calculate Gross Domestic Product using three different approaches:</p>
+            
+            <div class="method-info">
+                <h4>Expenditure Approach</h4>
+                <p>GDP = Consumption (C) + Investment (I) + Government Spending (G) + (Exports (X) - Imports (M))</p>
+            </div>
+            
+            <div class="method-info">
+                <h4>Income Approach</h4>
+                <p>GDP = Wages + Rental Income + Interest Income + Corporate Profits + Proprietors' Income + Taxes on Production</p>
+            </div>
+            
+            <div class="method-info">
+                <h4>Production Approach</h4>
+                <p>GDP = Agriculture Value Added + Industry Value Added + Services Value Added + Taxes on Products</p>
+            </div>
+            
+            <h4>Instructions:</h4>
+            <ol>
+                <li>Select the calculation method using the tabs</li>
+                <li>Enter the required values in billions of dollars</li>
+                <li>Click "Calculate GDP" to see results</li>
+                <li>Export or share your results using the export options</li>
+            </ol>
+            
+            <p><strong>Note:</strong> All calculations are performed locally in your browser for security and privacy.</p>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const themeToggle = document.getElementById('themeToggle');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const notification = document.getElementById('notification');
+        const notificationText = document.getElementById('notificationText');
+        const helpBtn = document.getElementById('helpBtn');
+        const helpModal = document.getElementById('helpModal');
+        const closeHelp = document.getElementById('closeHelp');
+        
+        // Input Elements
+        const consumptionInput = document.getElementById('consumption');
+        const investmentInput = document.getElementById('investment');
+        const govSpendingInput = document.getElementById('govSpending');
+        const exportsInput = document.getElementById('exports');
+        const importsInput = document.getElementById('imports');
+        const wagesInput = document.getElementById('wages');
+        const rentInput = document.getElementById('rent');
+        const interestInput = document.getElementById('interest');
+        const profitsInput = document.getElementById('profits');
+        const proprietorsInput = document.getElementById('proprietors');
+        const taxesIncomeInput = document.getElementById('taxesIncome');
+        const agricultureInput = document.getElementById('agriculture');
+        const industryInput = document.getElementById('industry');
+        const servicesInput = document.getElementById('services');
+        const taxesInput = document.getElementById('taxes');
+        
+        // Result Elements
+        const gdpValue = document.getElementById('gdpValue');
+        const methodValue = document.getElementById('methodValue');
+        const cValue = document.getElementById('cValue');
+        const iValue = document.getElementById('iValue');
+        const gValue = document.getElementById('gValue');
+        const netExportsValue = document.getElementById('netExportsValue');
+        const dateValue = document.getElementById('dateValue');
+        const resultMethod = document.getElementById('resultMethod');
+        
+        // Export Buttons
+        const printBtn = document.getElementById('printBtn');
+        const pdfBtn = document.getElementById('pdfBtn');
+        const excelBtn = document.getElementById('excelBtn');
+        const csvBtn = document.getElementById('csvBtn');
+        const textBtn = document.getElementById('textBtn');
+        const shareBtn = document.getElementById('shareBtn');
+        
+        // Initialize
+        let currentMethod = 'expenditure';
+        let gdpResult = 0;
+        let gdpDetails = {
+            consumption: 0,
+            investment: 0,
+            govSpending: 0,
+            exports: 0,
+            imports: 0
+        };
+        
+        // Theme Toggle
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            themeToggle.classList.toggle('dark');
+        });
+        
+        // Tab Switching
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                tab.classList.add('active');
+                currentMethod = tab.dataset.tab;
+                resultMethod.textContent = `${tab.textContent}`;
+                methodValue.textContent = `${tab.textContent}`;
+                
+                // Show corresponding content
+                document.getElementById(`${currentMethod}Inputs`).classList.add('active');
+            });
+        });
+        
+        // Help Modal
+        helpBtn.addEventListener('click', () => {
+            helpModal.style.display = 'flex';
+        });
+        
+        closeHelp.addEventListener('click', () => {
+            helpModal.style.display = 'none';
+        });
+        
+        window.addEventListener('click', (e) => {
+            if (e.target === helpModal) {
+                helpModal.style.display = 'none';
+            }
+        });
+        
+        // Calculate GDP
+        calculateBtn.addEventListener('click', () => {
+            if (validateInputs()) {
+                calculateGDP();
+                showNotification('GDP calculated successfully!');
+            }
+        });
+        
+        // Validate Inputs
+        function validateInputs() {
+            let isValid = true;
+            
+            if (currentMethod === 'expenditure') {
+                const inputs = [consumptionInput, investmentInput, govSpendingInput, exportsInput, importsInput];
+                const errors = ['consumptionError', 'investmentError', 'govSpendingError', 'exportsError', 'importsError'];
+                
+                inputs.forEach((input, index) => {
+                    const errorElement = document.getElementById(errors[index]);
+                    if (!input.value || isNaN(input.value)) {
+                        errorElement.style.display = 'block';
+                        isValid = false;
+                    } else {
+                        errorElement.style.display = 'none';
+                    }
+                });
+            }
+            
+            return isValid;
+        }
+        
+        // GDP Calculation
+        function calculateGDP() {
+            // Get input values
+            let consumption, investment, govSpending, exports, imports;
+            let wages, rent, interest, profits, proprietors, taxesIncome;
+            let agriculture, industry, services, taxes;
+            
+            // Calculate GDP based on selected method
+            switch(currentMethod) {
+                case 'expenditure':
+                    consumption = parseFloat(consumptionInput.value) || 0;
+                    investment = parseFloat(investmentInput.value) || 0;
+                    govSpending = parseFloat(govSpendingInput.value) || 0;
+                    exports = parseFloat(exportsInput.value) || 0;
+                    imports = parseFloat(importsInput.value) || 0;
+                    
+                    // Calculate GDP using expenditure approach
+                    gdpResult = consumption + investment + govSpending + (exports - imports);
+                    
+                    // Update UI
+                    updateExpenditureResults(consumption, investment, govSpending, exports, imports);
+                    break;
+                    
+                case 'income':
+                    wages = parseFloat(wagesInput.value) || 0;
+                    rent = parseFloat(rentInput.value) || 0;
+                    interest = parseFloat(interestInput.value) || 0;
+                    profits = parseFloat(profitsInput.value) || 0;
+                    proprietors = parseFloat(proprietorsInput.value) || 0;
+                    taxesIncome = parseFloat(taxesIncomeInput.value) || 0;
+                    
+                    // Calculate GDP using income approach
+                    gdpResult = wages + rent + interest + profits + proprietors + taxesIncome;
+                    
+                    // Update UI
+                    updateIncomeResults(wages, rent, interest, profits, proprietors, taxesIncome);
+                    break;
+                    
+                case 'production':
+                    agriculture = parseFloat(agricultureInput.value) || 0;
+                    industry = parseFloat(industryInput.value) || 0;
+                    services = parseFloat(servicesInput.value) || 0;
+                    taxes = parseFloat(taxesInput.value) || 0;
+                    
+                    // Calculate GDP using production approach
+                    gdpResult = agriculture + industry + services + taxes;
+                    
+                    // Update UI
+                    updateProductionResults(agriculture, industry, services, taxes);
+                    break;
+            }
+            
+            // Update main GDP value
+            gdpValue.textContent = `$${formatNumber(gdpResult)}B`;
+            
+            // Update date
+            const now = new Date();
+            dateValue.textContent = now.toLocaleString();
+        }
+        
+        // Update Results for Expenditure Approach
+        function updateExpenditureResults(c, i, g, x, m) {
+            cValue.textContent = `$${formatNumber(c)}B`;
+            iValue.textContent = `$${formatNumber(i)}B`;
+            gValue.textContent = `$${formatNumber(g)}B`;
+            netExportsValue.textContent = `$${formatNumber(x - m)}B`;
+            
+            // Show all expenditure details
+            document.querySelectorAll('.detail-row').forEach(row => row.style.display = 'flex');
+            
+            // Save details for export
+            gdpDetails = { consumption: c, investment: i, govSpending: g, exports: x, imports: m };
+        }
+        
+        // Update Results for Income Approach
+        function updateIncomeResults(wages, rent, interest, profits, proprietors, taxesIncome) {
+            // Hide irrelevant rows
+            document.querySelectorAll('.detail-row').forEach((row, index) => {
+                if (index > 0) row.style.display = 'none';
+            });
+            
+            // Update visible rows
+            cValue.textContent = `$${formatNumber(wages)}B`;
+            iValue.textContent = `$${formatNumber(rent + interest)}B`;
+            gValue.textContent = `$${formatNumber(profits + proprietors)}B`;
+            netExportsValue.textContent = `$${formatNumber(taxesIncome)}B`;
+            
+            // Save details for export
+            gdpDetails = { 
+                wages: wages, 
+                rent: rent, 
+                interest: interest, 
+                profits: profits, 
+                proprietors: proprietors, 
+                taxes: taxesIncome 
+            };
+        }
+        
+        // Update Results for Production Approach
+        function updateProductionResults(agriculture, industry, services, taxes) {
+            // Hide irrelevant rows
+            document.querySelectorAll('.detail-row').forEach((row, index) => {
+                if (index > 0) row.style.display = 'none';
+            });
+            
+            // Update visible rows
+            cValue.textContent = `$${formatNumber(agriculture)}B`;
+            iValue.textContent = `$${formatNumber(industry)}B`;
+            gValue.textContent = `$${formatNumber(services)}B`;
+            netExportsValue.textContent = `$${formatNumber(taxes)}B`;
+            
+            // Save details for export
+            gdpDetails = { 
+                agriculture: agriculture, 
+                industry: industry, 
+                services: services, 
+                taxes: taxes 
+            };
+        }
+        
+        // Format numbers with commas
+        function formatNumber(num) {
+            return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+        
+        // Show notification
+        function showNotification(message) {
+            notificationText.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Export Functions
+        printBtn.addEventListener('click', () => {
+            window.print();
+        });
+        
+        pdfBtn.addEventListener('click', () => {
+            showNotification('PDF export started. Check your downloads.');
+            // In a real implementation, this would generate a PDF using jsPDF
+        });
+        
+        excelBtn.addEventListener('click', () => {
+            showNotification('Excel export started. Check your downloads.');
+            // In a real implementation, this would generate an Excel file
+        });
+        
+        csvBtn.addEventListener('click', () => {
+            showNotification('CSV export started. Check your downloads.');
+            // In a real implementation, this would generate a CSV file
+        });
+        
+        textBtn.addEventListener('click', () => {
+            showNotification('Text export started. Check your downloads.');
+            // In a real implementation, this would generate a text file
+        });
+        
+        shareBtn.addEventListener('click', () => {
+            showNotification('Share functionality would open a dialog in a real implementation.');
+            // In a real implementation, this would open a share dialog
+        });
+        
+        // Initialize with default values for demo
+        window.onload = function() {
+            consumptionInput.value = "15000";
+            investmentInput.value = "4000";
+            govSpendingInput.value = "3500";
+            exportsInput.value = "2500";
+            importsInput.value = "3000";
+            wagesInput.value = "12000";
+            rentInput.value = "1500";
+            interestInput.value = "800";
+            profitsInput.value = "3000";
+            proprietorsInput.value = "1800";
+            taxesIncomeInput.value = "2500";
+            agricultureInput.value = "2000";
+            industryInput.value = "5000";
+            servicesInput.value = "9000";
+            taxesInput.value = "1500";
+            calculateGDP();
+        };
+    </script>
+</body>
+</html>

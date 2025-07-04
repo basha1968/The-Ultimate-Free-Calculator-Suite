@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Density Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --light-bg: #f8f9fa;
+            --dark-bg: #1e2a38;
+            --text-light: #333;
+            --text-dark: #f0f0f0;
+            --card-light: #fff;
+            --card-dark: #253341;
+            --border-light: #e0e0e0;
+            --border-dark: #34495e;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: var(--dark-bg);
+            --text-color: var(--text-dark);
+            --card-bg: var(--card-dark);
+            --border-color: var(--border-dark);
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --input-bg: #2c3e50;
+            --input-text: #f0f0f0;
+        }
+
+        [data-theme="light"] {
+            --bg-color: var(--light-bg);
+            --text-color: var(--text-light);
+            --card-bg: var(--card-light);
+            --border-color: var(--border-light);
+            --shadow-color: var(--shadow);
+            --input-bg: #fff;
+            --input-text: #333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding-bottom: 40px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        header p {
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .calculator-wrapper {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+
+        @media (min-width: 992px) {
+            .calculator-wrapper {
+                grid-template-columns: 1fr 350px;
+            }
+        }
+
+        .calculator-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 5px 15px var(--shadow-color);
+            padding: 25px;
+            margin-bottom: 25px;
+            position: relative;
+            border: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i {
+            font-size: 1.3rem;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-row input, .input-row select {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--input-bg);
+            color: var(--input-text);
+            font-size: 1rem;
+        }
+
+        .input-row input:focus, .input-row select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: linear-gradient(to right, var(--primary-color), #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+
+        .btn-success {
+            background: linear-gradient(to right, var(--success-color), #27ae60);
+        }
+
+        .btn-warning {
+            background: linear-gradient(to right, var(--warning-color), #e67e22);
+        }
+
+        .btn-accent {
+            background: linear-gradient(to right, var(--accent-color), #c0392b);
+        }
+
+        .result-container {
+            padding: 20px;
+            background-color: rgba(46, 204, 113, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid var(--success-color);
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .result-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--success-color);
+            margin: 10px 0;
+            word-break: break-all;
+        }
+
+        .result-unit {
+            font-size: 1.2rem;
+            color: var(--text-color);
+            opacity: 0.9;
+        }
+
+        .actions-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            margin-left: 8px;
+            color: var(--primary-color);
+            cursor: help;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 300px;
+            background-color: var(--secondary-color);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 15px;
+            position: absolute;
+            z-index: 10;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.9rem;
+            font-weight: normal;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .ad-container {
+            background-color: rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+            border: 1px dashed var(--border-color);
+        }
+
+        .ad-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+
+        .ad-placeholder {
+            height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(45deg, #f1f2f6, #dfe4ea);
+            border-radius: 8px;
+            color: #7f8c8d;
+            font-weight: 600;
+        }
+
+        .dark-mode-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            z-index: 100;
+        }
+
+        .formula-box {
+            background-color: rgba(52, 152, 219, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 3px solid var(--primary-color);
+            font-family: 'Courier New', monospace;
+        }
+
+        .unit-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .unit-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .unit-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .unit-card h4 {
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 40px;
+            color: var(--text-color);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-delete {
+            color: var(--accent-color);
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-size: 1rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 5px 30px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+
+        .save-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .share-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .share-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .input-row {
+                flex-direction: column;
+            }
+            
+            .actions-container {
+                grid-template-columns: 1fr;
+            }
+            
+            header h1 {
+                font-size: 2rem;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dark-mode-toggle" id="themeToggle">
+        <i class="fas fa-moon"></i>
+    </div>
+
+    <!-- Print Modal -->
+    <div class="modal" id="printModal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2 class="card-title"><i class="fas fa-print"></i> Print Results</h2>
+            <p>Select a format to print your density calculation:</p>
+            <div class="actions-container" style="margin-top: 20px;">
+                <button class="btn btn-warning" id="printPDF"><i class="fas fa-file-pdf"></i> PDF</button>
+                <button class="btn" id="printImage"><i class="fas fa-image"></i> Image</button>
+                <button class="btn" id="printText"><i class="fas fa-file-alt"></i> Text</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Modal -->
+    <div class="modal" id="saveModal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2 class="card-title"><i class="fas fa-save"></i> Save Results</h2>
+            <p>Select a format to save your density calculation:</p>
+            <div class="save-options">
+                <button class="btn" id="saveTXT"><i class="fas fa-file-alt"></i> TXT</button>
+                <button class="btn" id="saveCSV"><i class="fas fa-file-csv"></i> CSV</button>
+                <button class="btn" id="saveJSON"><i class="fas fa-file-code"></i> JSON</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div class="modal" id="shareModal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2 class="card-title"><i class="fas fa-share-alt"></i> Share Results</h2>
+            <p>Share your density calculation via:</p>
+            <div class="share-options">
+                <div class="share-buttons">
+                    <button class="btn" style="background: #3b5998;"><i class="fab fa-facebook-f"></i> Facebook</button>
+                    <button class="btn" style="background: #1da1f2;"><i class="fab fa-twitter"></i> Twitter</button>
+                    <button class="btn" style="background: #0077b5;"><i class="fab fa-linkedin-in"></i> LinkedIn</button>
+                </div>
+                <div style="margin-top: 20px;">
+                    <p>Or copy the direct link:</p>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="shareLink" value="https://densitycalculator.com/result" style="flex:1; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--input-bg); color: var(--input-text);">
+                        <button class="btn" id="copyLinkBtn"><i class="fas fa-copy"></i> Copy</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-weight-hanging"></i> Professional Density Calculator</h1>
+            <p>Calculate density instantly with our advanced calculator. Supports multiple units, real-time conversion, and scientific notation.</p>
+        </header>
+
+        <div class="calculator-wrapper">
+            <div class="main-content">
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-calculator"></i> Density Calculation</h2>
+                    
+                    <div class="input-group">
+                        <label for="mass">Mass <span class="tooltip">?
+                            <span class="tooltip-text">Enter the mass of the substance. Supported units: kg, g, lb, oz, t</span>
+                        </span></label>
+                        <div class="input-row">
+                            <input type="number" id="mass" placeholder="Enter mass" value="25" step="any">
+                            <select id="massUnit">
+                                <option value="kg">Kilograms (kg)</option>
+                                <option value="g">Grams (g)</option>
+                                <option value="lb">Pounds (lb)</option>
+                                <option value="oz">Ounces (oz)</option>
+                                <option value="t">Metric Tons (t)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="volume">Volume <span class="tooltip">?
+                            <span class="tooltip-text">Enter the volume of the substance. Supported units: m³, cm³, L, mL, ft³, in³</span>
+                        </span></label>
+                        <div class="input-row">
+                            <input type="number" id="volume" placeholder="Enter volume" value="0.05" step="any">
+                            <select id="volumeUnit">
+                                <option value="m3">Cubic Meters (m³)</option>
+                                <option value="cm3">Cubic Centimeters (cm³)</option>
+                                <option value="l">Liters (L)</option>
+                                <option value="ml">Milliliters (mL)</option>
+                                <option value="ft3">Cubic Feet (ft³)</option>
+                                <option value="in3">Cubic Inches (in³)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="formula-box">
+                        <p><strong>Density Formula:</strong> ρ = m / V</p>
+                        <p>Where: ρ = Density, m = Mass, V = Volume</p>
+                    </div>
+                    
+                    <button id="calculateBtn" class="btn btn-block">
+                        <i class="fas fa-calculator"></i> Calculate Density
+                    </button>
+                    
+                    <div class="result-container" id="resultContainer">
+                        <h3>Density Result</h3>
+                        <div class="result-value" id="resultValue">500 kg/m³</div>
+                        <div class="result-unit" id="resultUnit">Kilograms per Cubic Meter</div>
+                    </div>
+                    
+                    <div class="actions-container">
+                        <button class="btn" id="printBtn"><i class="fas fa-print"></i> Print</button>
+                        <button class="btn" id="saveBtn"><i class="fas fa-save"></i> Save</button>
+                        <button class="btn" id="shareBtn"><i class="fas fa-share-alt"></i> Share</button>
+                        <button class="btn btn-accent" id="resetBtn"><i class="fas fa-redo"></i> Reset</button>
+                    </div>
+                </div>
+                
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-info-circle"></i> About Density</h2>
+                    <p>Density is a measure of mass per unit volume. It is an intensive property of matter, meaning it doesn't depend on the amount of substance.</p>
+                    
+                    <div class="unit-info">
+                        <div class="unit-card">
+                            <h4>Common Units</h4>
+                            <p>kg/m³ (SI unit)</p>
+                            <p>g/cm³</p>
+                            <p>lb/ft³</p>
+                        </div>
+                        <div class="unit-card">
+                            <h4>Examples</h4>
+                            <p>Water: 1,000 kg/m³</p>
+                            <p>Iron: 7,870 kg/m³</p>
+                            <p>Air: 1.2 kg/m³</p>
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin-top: 20px;">Unit Conversion Factors</h3>
+                    <ul style="padding-left: 20px; margin-top: 10px;">
+                        <li>1 g/cm³ = 1000 kg/m³</li>
+                        <li>1 lb/ft³ = 16.0185 kg/m³</li>
+                        <li>1 g/mL = 1000 kg/m³</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-history"></i> Calculation History</h2>
+                    <div id="historyList" style="max-height: 300px; overflow-y: auto;">
+                        <div class="history-item">
+                            <div>
+                                <div><strong>25 kg / 0.05 m³</strong></div>
+                                <div>Result: 500 kg/m³</div>
+                            </div>
+                            <button class="history-delete"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="ad-container">
+                    <div class="ad-label">Advertisement</div>
+                    <div class="ad-placeholder">
+                        <div>
+                            <div>Adsterra Ad</div>
+                            <div style="font-size: 0.8rem; margin-top: 5px;">728×250</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="ad-container">
+                    <div class="ad-label">Advertisement</div>
+                    <div class="ad-placeholder">
+                        <div>
+                            <div>Yllix Ad</div>
+                            <div style="font-size: 0.8rem; margin-top: 5px;">300×250</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-share-alt"></i> Share Calculator</h2>
+                    <p>Share this calculator with friends, students, or colleagues:</p>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button class="btn" style="flex: 1; background: #3b5998;"><i class="fab fa-facebook-f"></i></button>
+                        <button class="btn" style="flex: 1; background: #1da1f2;"><i class="fab fa-twitter"></i></button>
+                        <button class="btn" style="flex: 1; background: #0077b5;"><i class="fab fa-linkedin-in"></i></button>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <input type="text" id="calculatorLink" value="https://densitycalculator.com" style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--input-bg); color: var(--input-text);">
+                        <button class="btn" style="margin-top: 10px; width: 100%;" id="copyCalculatorLink"><i class="fas fa-copy"></i> Copy Link</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <div class="container">
+            <p>© 2023 Professional Density Calculator | All calculations are performed client-side for privacy and security</p>
+            <p>Created with <i class="fas fa-heart" style="color: var(--accent-color);"></i> for scientists, engineers, and students</p>
+        </div>
+    </footer>
+    
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        const themeIcon = themeToggle.querySelector('i');
+        
+        // Check for saved theme or prefer color scheme
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+            body.setAttribute('data-theme', 'dark');
+            themeIcon.className = 'fas fa-sun';
+        } else {
+            body.setAttribute('data-theme', 'light');
+            themeIcon.className = 'fas fa-moon';
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            if (body.getAttribute('data-theme') === 'light') {
+                body.setAttribute('data-theme', 'dark');
+                themeIcon.className = 'fas fa-sun';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.setAttribute('data-theme', 'light');
+                themeIcon.className = 'fas fa-moon';
+                localStorage.setItem('theme', 'light');
+            }
+        });
+        
+        // Density calculation function
+        function calculateDensity() {
+            const mass = parseFloat(document.getElementById('mass').value);
+            const volume = parseFloat(document.getElementById('volume').value);
+            const massUnit = document.getElementById('massUnit').value;
+            const volumeUnit = document.getElementById('volumeUnit').value;
+            
+            // Input validation
+            if (isNaN(mass) || isNaN(volume) || mass <= 0 || volume <= 0) {
+                alert('Please enter valid positive numbers for mass and volume.');
+                return;
+            }
+            
+            // Convert all to SI units (kg and m³)
+            let massInKg = mass;
+            switch (massUnit) {
+                case 'g': massInKg = mass / 1000; break;
+                case 'lb': massInKg = mass * 0.453592; break;
+                case 'oz': massInKg = mass * 0.0283495; break;
+                case 't': massInKg = mass * 1000; break;
+            }
+            
+            let volumeInM3 = volume;
+            switch (volumeUnit) {
+                case 'cm3': volumeInM3 = volume / 1000000; break;
+                case 'l': volumeInM3 = volume / 1000; break;
+                case 'ml': volumeInM3 = volume / 1000000; break;
+                case 'ft3': volumeInM3 = volume * 0.0283168; break;
+                case 'in3': volumeInM3 = volume * 0.0000163871; break;
+            }
+            
+            // Calculate density in kg/m³
+            const density = massInKg / volumeInM3;
+            
+            // Format result
+            let formattedDensity;
+            let resultUnit = "kg/m³";
+            let resultUnitText = "Kilograms per Cubic Meter";
+            
+            if (density >= 1000000 || density < 0.0001) {
+                formattedDensity = density.toExponential(4);
+            } else if (density < 1) {
+                formattedDensity = density.toFixed(6);
+            } else {
+                formattedDensity = density.toFixed(4);
+            }
+            
+            // Update result display
+            document.getElementById('resultValue').textContent = formattedDensity + ' ' + resultUnit;
+            document.getElementById('resultUnit').textContent = resultUnitText;
+            
+            // Add to history
+            const historyList = document.getElementById('historyList');
+            const historyItem = document.createElement('div');
+            historyItem.className = 'history-item';
+            historyItem.innerHTML = `
+                <div>
+                    <div><strong>${mass} ${massUnit} / ${volume} ${volumeUnit}</strong></div>
+                    <div>Result: ${formattedDensity} ${resultUnit}</div>
+                </div>
+                <button class="history-delete"><i class="fas fa-times"></i></button>
+            `;
+            historyList.prepend(historyItem);
+            
+            // Add event to delete button
+            historyItem.querySelector('.history-delete').addEventListener('click', function() {
+                historyItem.remove();
+            });
+        }
+        
+        // Reset function
+        function resetCalculator() {
+            document.getElementById('mass').value = '';
+            document.getElementById('volume').value = '';
+            document.getElementById('massUnit').selectedIndex = 0;
+            document.getElementById('volumeUnit').selectedIndex = 0;
+            document.getElementById('resultValue').textContent = '';
+            document.getElementById('resultUnit').textContent = '';
+        }
+        
+        // Modal functionality
+        const printModal = document.getElementById('printModal');
+        const saveModal = document.getElementById('saveModal');
+        const shareModal = document.getElementById('shareModal');
+        const closeButtons = document.querySelectorAll('.close-modal');
+        
+        // Open modals
+        document.getElementById('printBtn').addEventListener('click', () => {
+            printModal.style.display = 'flex';
+        });
+        
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            saveModal.style.display = 'flex';
+        });
+        
+        document.getElementById('shareBtn').addEventListener('click', () => {
+            shareModal.style.display = 'flex';
+        });
+        
+        // Close modals
+        closeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                printModal.style.display = 'none';
+                saveModal.style.display = 'none';
+                shareModal.style.display = 'none';
+            });
+        });
+        
+        // Close modals when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target === printModal) printModal.style.display = 'none';
+            if (e.target === saveModal) saveModal.style.display = 'none';
+            if (e.target === shareModal) shareModal.style.display = 'none';
+        });
+        
+        // Print functionality
+        document.getElementById('printPDF').addEventListener('click', () => {
+            alert('PDF generation would be implemented using jsPDF library');
+            printModal.style.display = 'none';
+        });
+        
+        document.getElementById('printImage').addEventListener('click', () => {
+            alert('Image export would be implemented using html2canvas library');
+            printModal.style.display = 'none';
+        });
+        
+        document.getElementById('printText').addEventListener('click', () => {
+            const resultText = `Density Calculation Result:
+Mass: ${document.getElementById('mass').value} ${document.getElementById('massUnit').value}
+Volume: ${document.getElementById('volume').value} ${document.getElementById('volumeUnit').value}
+Density: ${document.getElementById('resultValue').textContent}`;
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`<pre>${resultText}</pre>`);
+            printWindow.document.close();
+            printWindow.print();
+            printModal.style.display = 'none';
+        });
+        
+        // Save functionality
+        document.getElementById('saveTXT').addEventListener('click', () => {
+            const resultText = `Density Calculation Result:\nMass: ${document.getElementById('mass').value} ${document.getElementById('massUnit').value}\nVolume: ${document.getElementById('volume').value} ${document.getElementById('volumeUnit').value}\nDensity: ${document.getElementById('resultValue').textContent}`;
+            
+            const blob = new Blob([resultText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'density_calculation.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            saveModal.style.display = 'none';
+        });
+        
+        document.getElementById('saveCSV').addEventListener('click', () => {
+            const csvData = `Parameter,Value,Unit\nMass,${document.getElementById('mass').value},${document.getElementById('massUnit').value}\nVolume,${document.getElementById('volume').value},${document.getElementById('volumeUnit').value}\nDensity,${document.getElementById('resultValue').textContent.split(' ')[0]},${document.getElementById('resultValue').textContent.split(' ')[1]}`;
+            
+            const blob = new Blob([csvData], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'density_calculation.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            saveModal.style.display = 'none';
+        });
+        
+        document.getElementById('saveJSON').addEventListener('click', () => {
+            const jsonData = {
+                mass: {
+                    value: document.getElementById('mass').value,
+                    unit: document.getElementById('massUnit').value
+                },
+                volume: {
+                    value: document.getElementById('volume').value,
+                    unit: document.getElementById('volumeUnit').value
+                },
+                density: document.getElementById('resultValue').textContent
+            };
+            
+            const jsonStr = JSON.stringify(jsonData, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'density_calculation.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            saveModal.style.display = 'none';
+        });
+        
+        // Share functionality
+        document.getElementById('copyLinkBtn').addEventListener('click', () => {
+            const shareLink = document.getElementById('shareLink');
+            shareLink.select();
+            document.execCommand('copy');
+            alert('Link copied to clipboard!');
+            shareModal.style.display = 'none';
+        });
+        
+        document.getElementById('copyCalculatorLink').addEventListener('click', () => {
+            const calculatorLink = document.getElementById('calculatorLink');
+            calculatorLink.select();
+            document.execCommand('copy');
+            alert('Calculator link copied to clipboard!');
+        });
+        
+        // Reset button
+        document.getElementById('resetBtn').addEventListener('click', resetCalculator);
+        
+        // Calculate button
+        document.getElementById('calculateBtn').addEventListener('click', calculateDensity);
+        
+        // Initialize with a calculation
+        calculateDensity();
+    </script>
+</body>
+</html>

@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShoeSize Pro | International Shoe Size Converter</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary: #3498db;
+            --primary-dark: #2980b9;
+            --secondary: #2c3e50;
+            --accent: #e74c3c;
+            --light: #f5f7fa;
+            --dark: #34495e;
+            --darker: #2c3e50;
+            --gray: #95a5a6;
+            --card-bg: #ffffff;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --text-dark: #333;
+            --text-light: #f5f5f5;
+            --background: #f9f9f9;
+            --card-border: #e0e0e0;
+        }
+
+        .dark-mode {
+            --primary: #1abc9c;
+            --background: #1a1a2e;
+            --card-bg: #16213e;
+            --card-border: #1f4068;
+            --text-dark: #e6e6e6;
+            --text-light: #f0f0f0;
+            --darker: #0f3460;
+            --secondary: #1b1b2f;
+            --light: #1f1f3c;
+            --accent: #e67e22;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #2c3e50, #1a2a6c);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+        
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .logo {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
+        .logo i {
+            font-size: 32px;
+            color: white;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            color: white;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.85);
+            max-width: 600px;
+            margin: 0 auto 20px;
+        }
+        
+        .security-badge {
+            background: rgba(46, 204, 113, 0.2);
+            border: 1px solid rgba(46, 204, 113, 0.4);
+            border-radius: 20px;
+            padding: 10px 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            backdrop-filter: blur(5px);
+            margin-top: 10px;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 30px;
+            border: 1px solid var(--card-border);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary), var(--accent), var(--secondary));
+        }
+        
+        .card-title {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--primary);
+        }
+        
+        .card-title i {
+            font-size: 1.6rem;
+        }
+        
+        .converter-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+        
+        @media (max-width: 900px) {
+            .converter-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .input-section {
+            background: rgba(52, 152, 219, 0.08);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid var(--card-border);
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-label {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+        
+        input, select {
+            flex: 1;
+            padding: 14px;
+            border-radius: 10px;
+            border: 2px solid var(--card-border);
+            background: var(--light);
+            color: var(--text-dark);
+            font-size: 1.1rem;
+            transition: all 0.3s;
+        }
+        
+        input:focus, select:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
+        }
+        
+        .btn-convert {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 14px 25px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            margin-top: 15px;
+        }
+        
+        .btn-convert:hover {
+            background: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .result-section {
+            background: rgba(231, 76, 60, 0.08);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid var(--card-border);
+        }
+        
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .result-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid var(--card-border);
+            transition: transform 0.3s;
+        }
+        
+        .result-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .country-flag {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+        
+        .country-name {
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+        
+        .size-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--accent);
+            margin: 10px 0;
+        }
+        
+        .size-system {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+        
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .btn-action {
+            padding: 14px 10px;
+            border-radius: 10px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: var(--light);
+            color: var(--text-dark);
+            border: 1px solid var(--card-border);
+            transition: all 0.3s;
+            cursor: pointer;
+            text-align: center;
+        }
+        
+        .btn-action:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .btn-reset {
+            background: #95a5a6;
+            color: white;
+            border: none;
+        }
+        
+        .btn-print {
+            background: #3498db;
+            color: white;
+            border: none;
+        }
+        
+        .btn-pdf {
+            background: #e74c3c;
+            color: white;
+            border: none;
+        }
+        
+        .btn-png {
+            background: #2ecc71;
+            color: white;
+            border: none;
+        }
+        
+        .btn-csv {
+            background: #f39c12;
+            color: white;
+            border: none;
+        }
+        
+        .btn-share {
+            background: #9b59b6;
+            color: white;
+            border: none;
+        }
+        
+        .ad-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin: 30px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border: 1px solid var(--card-border);
+        }
+        
+        .ad-title {
+            font-size: 1.1rem;
+            color: var(--text-dark);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .ad-placeholder {
+            background: linear-gradient(45deg, #f5f7fa, #c3cfe2);
+            border-radius: 10px;
+            padding: 50px 20px;
+            color: var(--dark);
+            font-weight: 600;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .ad-placeholder.dark {
+            background: linear-gradient(45deg, #2c3e50, #4a6491);
+            color: white;
+        }
+        
+        .ad-placeholder i {
+            font-size: 2.5rem;
+            color: var(--primary);
+        }
+        
+        .ad-note {
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-top: 10px;
+        }
+        
+        footer {
+            text-align: center;
+            color: white;
+            padding: 30px 0;
+            margin-top: 20px;
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .footer-link {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+        
+        .footer-link:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+        
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            color: white;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+        
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(20deg);
+        }
+        
+        .error-message {
+            color: #e74c3c;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .card-title {
+                font-size: 1.5rem;
+            }
+            
+            .result-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .action-buttons {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .result-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+                color: black;
+                padding: 10px;
+            }
+            
+            .card {
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
+            
+            .theme-toggle, .ad-container, .btn-action, footer {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="theme-toggle" id="themeToggle">
+            <i class="fas fa-moon"></i>
+        </button>
+        
+        <header>
+            <div class="logo-container">
+                <div class="logo">
+                    <i class="fas fa-shoe-prints"></i>
+                </div>
+            </div>
+            <h1>ShoeSize Pro</h1>
+            <p class="subtitle">Professional International Shoe Size Converter</p>
+            <div class="security-badge">
+                <i class="fas fa-lock"></i>
+                Secure Client-Side Processing - No Data Collected
+            </div>
+        </header>
+        
+        <!-- Adsterra Ad Space -->
+        <div class="ad-container">
+            <h3 class="ad-title"><i class="fas fa-ad"></i> Advertisement</h3>
+            <div class="ad-placeholder" id="adsterraAd">
+                <i class="fas fa-bullhorn"></i>
+                <div>Adsterra Ad Space</div>
+                <small>Responsive banner advertisement</small>
+            </div>
+            <p class="ad-note">Advertisement supports free development of this tool</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-exchange-alt"></i> Shoe Size Converter</h2>
+                
+                <div class="converter-container">
+                    <div class="input-section">
+                        <div class="input-group">
+                            <label class="input-label">
+                                <i class="fas fa-ruler"></i>
+                                Enter Shoe Size
+                            </label>
+                            <div class="input-container">
+                                <input type="text" id="shoeSize" placeholder="Enter size" autocomplete="off">
+                                <select id="sizeSystem">
+                                    <option value="us">US</option>
+                                    <option value="uk">UK</option>
+                                    <option value="eu">EU</option>
+                                    <option value="au">AU</option>
+                                    <option value="jp">Japan</option>
+                                    <option value="cm">Centimeters</option>
+                                </select>
+                            </div>
+                            <div class="error-message" id="sizeError">Please enter a valid shoe size</div>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label class="input-label">
+                                <i class="fas fa-venus-mars"></i>
+                                Gender
+                            </label>
+                            <div class="input-container">
+                                <select id="gender">
+                                    <option value="men">Men's</option>
+                                    <option value="women">Women's</option>
+                                    <option value="children">Children's</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label class="input-label">
+                                <i class="fas fa-info-circle"></i>
+                                Additional Notes
+                            </label>
+                            <div class="input-container">
+                                <input type="text" id="notes" placeholder="Any special requirements">
+                            </div>
+                        </div>
+                        
+                        <button class="btn-convert" id="convertBtn">
+                            <i class="fas fa-sync-alt"></i> Convert Sizes
+                        </button>
+                    </div>
+                    
+                    <div class="result-section">
+                        <h3 style="color: var(--text-dark); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-globe-americas"></i> International Size Conversion
+                        </h3>
+                        <div class="result-grid" id="resultsGrid">
+                            <!-- Results will be populated here -->
+                            <div class="result-card">
+                                <div class="country-flag">🇺🇸</div>
+                                <div class="country-name">United States</div>
+                                <div class="size-value">-</div>
+                                <div class="size-system">US Size</div>
+                            </div>
+                            <div class="result-card">
+                                <div class="country-flag">🇬🇧</div>
+                                <div class="country-name">United Kingdom</div>
+                                <div class="size-value">-</div>
+                                <div class="size-system">UK Size</div>
+                            </div>
+                            <div class="result-card">
+                                <div class="country-flag">🇪🇺</div>
+                                <div class="country-name">European Union</div>
+                                <div class="size-value">-</div>
+                                <div class="size-system">EU Size</div>
+                            </div>
+                            <div class="result-card">
+                                <div class="country-flag">🇦🇺</div>
+                                <div class="country-name">Australia</div>
+                                <div class="size-value">-</div>
+                                <div class="size-system">AU Size</div>
+                            </div>
+                            <div class="result-card">
+                                <div class="country-flag">🇯🇵</div>
+                                <div class="country-name">Japan</div>
+                                <div class="size-value">-</div>
+                                <div class="size-system">cm</div>
+                            </div>
+                            <div class="result-card">
+                                <div class="country-flag">🌍</div>
+                                <div class="country-name">Centimeters</div>
+                                <div class="size-value">-</div>
+                                <div class="size-system">Foot Length</div>
+                            </div>
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <button class="btn-action btn-reset" id="resetBtn">
+                                <i class="fas fa-redo"></i> Reset
+                            </button>
+                            <button class="btn-action btn-print" id="printBtn">
+                                <i class="fas fa-print"></i> Print
+                            </button>
+                            <button class="btn-action btn-pdf" id="pdfBtn">
+                                <i class="fas fa-file-pdf"></i> Save PDF
+                            </button>
+                            <button class="btn-action btn-png" id="pngBtn">
+                                <i class="fas fa-image"></i> Save PNG
+                            </button>
+                            <button class="btn-action btn-csv" id="csvBtn">
+                                <i class="fas fa-file-csv"></i> Save CSV
+                            </button>
+                            <button class="btn-action btn-share" id="shareBtn">
+                                <i class="fas fa-share-alt"></i> Share
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Yllix Ad Space -->
+        <div class="ad-container">
+            <h3 class="ad-title"><i class="fas fa-ad"></i> Advertisement</h3>
+            <div class="ad-placeholder" id="yllixAd">
+                <i class="fas fa-window-restore"></i>
+                <div>Yllix Ad Space</div>
+                <small>Interstitial or pop-under advertisement</small>
+            </div>
+            <p class="ad-note">Advertisement helps maintain this free service</p>
+        </div>
+        
+        <footer>
+            <p>© 2023 ShoeSize Pro | Professional Size Conversion Tool</p>
+            <p>All conversions performed locally - no data leaves your device</p>
+            <div class="footer-links">
+                <a href="#" class="footer-link"><i class="fas fa-shield-alt"></i> Security Policy</a>
+                <a href="#" class="footer-link"><i class="fas fa-book"></i> Size Guide</a>
+                <a href="#" class="footer-link"><i class="fas fa-question-circle"></i> Help Center</a>
+                <a href="#" class="footer-link"><i class="fas fa-envelope"></i> Contact Us</a>
+            </div>
+        </footer>
+    </div>
+    
+    <script>
+        // DOM Elements
+        const themeToggle = document.getElementById('themeToggle');
+        const shoeSize = document.getElementById('shoeSize');
+        const sizeSystem = document.getElementById('sizeSystem');
+        const gender = document.getElementById('gender');
+        const convertBtn = document.getElementById('convertBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const printBtn = document.getElementById('printBtn');
+        const pdfBtn = document.getElementById('pdfBtn');
+        const pngBtn = document.getElementById('pngBtn');
+        const csvBtn = document.getElementById('csvBtn');
+        const shareBtn = document.getElementById('shareBtn');
+        const sizeError = document.getElementById('sizeError');
+        const resultsGrid = document.getElementById('resultsGrid');
+        
+        // Size conversion data (simplified for demonstration)
+        const conversionData = {
+            men: {
+                us: { eu: 33.5, uk: 1, au: 1, jp: 22, cm: 22 },
+                uk: { us: 1, eu: 34, au: 1, jp: 22.5, cm: 22.5 },
+                eu: { us: 34, uk: 1, au: 1, jp: 23, cm: 23 },
+                au: { us: 1, uk: 1, eu: 34.5, jp: 23.5, cm: 23.5 },
+                jp: { us: 1.5, uk: 2, eu: 35, au: 2.5, cm: 24 },
+                cm: { us: 2, uk: 2.5, eu: 35.5, au: 3, jp: 24.5 }
+            },
+            women: {
+                us: { eu: 35, uk: 2, au: 2, jp: 22.5, cm: 22.5 },
+                uk: { us: 1, eu: 35.5, au: 1.5, jp: 23, cm: 23 },
+                eu: { us: 2, uk: 2.5, au: 2, jp: 23.5, cm: 23.5 },
+                au: { us: 2.5, uk: 3, eu: 36, au: 0, jp: 24, cm: 24 },
+                jp: { us: 3, uk: 3.5, eu: 36.5, au: 4, cm: 24.5 },
+                cm: { us: 3.5, uk: 4, eu: 37, au: 4.5, jp: 25 }
+            },
+            children: {
+                us: { eu: 18, uk: 0.5, au: 0.5, jp: 11, cm: 11 },
+                uk: { us: 1, eu: 19, au: 1, jp: 12, cm: 12 },
+                eu: { us: 2, uk: 1.5, au: 1.5, jp: 13, cm: 13 },
+                au: { us: 2.5, uk: 2, eu: 20, au: 0, jp: 14, cm: 14 },
+                jp: { us: 3, uk: 2.5, eu: 21, au: 3.5, cm: 15 },
+                cm: { us: 4, uk: 3.5, eu: 22, au: 4.5, jp: 16 }
+            }
+        };
+        
+        // Initialize the app
+        function init() {
+            // Set up event listeners
+            themeToggle.addEventListener('click', toggleTheme);
+            convertBtn.addEventListener('click', convertSizes);
+            resetBtn.addEventListener('click', resetCalculator);
+            printBtn.addEventListener('click', printResults);
+            pdfBtn.addEventListener('click', saveAsPdf);
+            pngBtn.addEventListener('click', saveAsPng);
+            csvBtn.addEventListener('click', saveAsCsv);
+            shareBtn.addEventListener('click', shareResults);
+            
+            // Set initial state
+            resetCalculator();
+        }
+        
+        // Toggle dark/light mode
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            
+            themeToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+            
+            // Update ad placeholders for dark mode
+            document.getElementById('adsterraAd').className = isDark ? 'ad-placeholder dark' : 'ad-placeholder';
+            document.getElementById('yllixAd').className = isDark ? 'ad-placeholder dark' : 'ad-placeholder';
+        }
+        
+        // Convert shoe sizes
+        function convertSizes() {
+            // Get input values
+            const sizeValue = parseFloat(shoeSize.value);
+            const system = sizeSystem.value;
+            const genderType = gender.value;
+            
+            // Validate input
+            if (isNaN(sizeValue)) {
+                sizeError.style.display = 'block';
+                shoeSize.style.borderColor = '#e74c3c';
+                return;
+            }
+            
+            sizeError.style.display = 'none';
+            shoeSize.style.borderColor = '';
+            
+            // Get conversion data
+            const conversions = conversionData[genderType][system];
+            const baseSize = sizeValue;
+            
+            // Update results
+            updateResultCard(0, '🇺🇸', 'United States', calculateSize(baseSize, conversions.us), 'US Size');
+            updateResultCard(1, '🇬🇧', 'United Kingdom', calculateSize(baseSize, conversions.uk), 'UK Size');
+            updateResultCard(2, '🇪🇺', 'European Union', calculateSize(baseSize, conversions.eu), 'EU Size');
+            updateResultCard(3, '🇦🇺', 'Australia', calculateSize(baseSize, conversions.au), 'AU Size');
+            updateResultCard(4, '🇯🇵', 'Japan', calculateSize(baseSize, conversions.jp), 'cm');
+            updateResultCard(5, '🌍', 'Centimeters', calculateSize(baseSize, conversions.cm), 'Foot Length');
+        }
+        
+        // Calculate converted size
+        function calculateSize(baseSize, conversionFactor) {
+            return (baseSize + conversionFactor).toFixed(1);
+        }
+        
+        // Update result card
+        function updateResultCard(index, flag, country, size, system) {
+            const card = resultsGrid.children[index];
+            card.querySelector('.country-flag').textContent = flag;
+            card.querySelector('.country-name').textContent = country;
+            card.querySelector('.size-value').textContent = size;
+            card.querySelector('.size-system').textContent = system;
+        }
+        
+        // Reset calculator
+        function resetCalculator() {
+            shoeSize.value = '';
+            sizeSystem.value = 'us';
+            gender.value = 'men';
+            sizeError.style.display = 'none';
+            shoeSize.style.borderColor = '';
+            
+            // Reset results
+            const cards = resultsGrid.querySelectorAll('.result-card');
+            cards.forEach(card => {
+                card.querySelector('.size-value').textContent = '-';
+            });
+        }
+        
+        // Print results
+        function printResults() {
+            window.print();
+        }
+        
+        // Save as PDF
+        function saveAsPdf() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(18);
+            doc.text('ShoeSize Pro Conversion Report', 105, 15, null, null, 'center');
+            
+            // Add input information
+            doc.setFontSize(12);
+            doc.text(`Original Size: ${shoeSize.value || '-'} ${sizeSystem.value.toUpperCase()}`, 20, 30);
+            doc.text(`Gender: ${gender.options[gender.selectedIndex].text}`, 20, 40);
+            
+            // Add conversion results
+            doc.setFontSize(14);
+            doc.text('Conversion Results:', 20, 55);
+            
+            let yPos = 65;
+            const cards = resultsGrid.querySelectorAll('.result-card');
+            cards.forEach(card => {
+                const country = card.querySelector('.country-name').textContent;
+                const size = card.querySelector('.size-value').textContent;
+                const system = card.querySelector('.size-system').textContent;
+                
+                doc.text(`${country}: ${size} ${system}`, 20, yPos);
+                yPos += 10;
+            });
+            
+            // Save the PDF
+            doc.save('shoe_size_conversion.pdf');
+        }
+        
+        // Save as PNG
+        function saveAsPng() {
+            alert('In a complete implementation, this would export a PNG using html2canvas library');
+        }
+        
+        // Save as CSV
+        function saveAsCsv() {
+            let csvContent = "Country,Size,System\n";
+            
+            const cards = resultsGrid.querySelectorAll('.result-card');
+            cards.forEach(card => {
+                const country = card.querySelector('.country-name').textContent;
+                const size = card.querySelector('.size-value').textContent;
+                const system = card.querySelector('.size-system').textContent;
+                
+                csvContent += `"${country}","${size}","${system}"\n`;
+            });
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'shoe_size_conversion.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        // Share results
+        function shareResults() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Shoe Size Conversion Results',
+                    text: 'Check out my international shoe size conversions!',
+                    url: window.location.href
+                }).catch(console.error);
+            } else {
+                // Fallback for browsers without Web Share API
+                const textArea = document.createElement('textarea');
+                textArea.value = window.location.href;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('Link copied to clipboard!');
+            }
+        }
+        
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

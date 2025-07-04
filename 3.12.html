@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Dice Roller Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --accent: #e74c3c;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --light-bg: #f8f9fa;
+            --dark-bg: #1e2a38;
+            --text-light: #333;
+            --text-dark: #f0f0f0;
+            --card-light: #fff;
+            --card-dark: #253341;
+            --border-light: #e0e0e0;
+            --border-dark: #34495e;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: var(--dark-bg);
+            --text-color: var(--text-dark);
+            --card-bg: var(--card-dark);
+            --border-color: var(--border-dark);
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --input-bg: #2c3e50;
+            --input-text: #f0f0f0;
+        }
+
+        [data-theme="light"] {
+            --bg-color: var(--light-bg);
+            --text-color: var(--text-light);
+            --card-bg: var(--card-light);
+            --border-color: var(--border-light);
+            --shadow-color: var(--shadow);
+            --input-bg: #fff;
+            --input-text: #333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding-bottom: 40px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 25px 0;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        header h1 {
+            font-size: 2.4rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .calculator-wrapper {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+
+        @media (min-width: 992px) {
+            .calculator-wrapper {
+                grid-template-columns: 1fr 350px;
+            }
+        }
+
+        .calculator-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 5px 15px var(--shadow-color);
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--primary);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .dice-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .dice-option {
+            padding: 15px 10px;
+            text-align: center;
+            border-radius: 8px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .dice-option:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .dice-option.selected {
+            background: linear-gradient(to bottom, var(--primary), #2980b9);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .dice-option i {
+            display: block;
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-row input, .input-row select {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--input-bg);
+            color: var(--input-text);
+            font-size: 1rem;
+        }
+
+        .input-row input:focus, .input-row select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: linear-gradient(to bottom, var(--primary), #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+
+        .btn-success {
+            background: linear-gradient(to bottom, var(--success), #27ae60);
+        }
+
+        .btn-warning {
+            background: linear-gradient(to bottom, var(--warning), #e67e22);
+        }
+
+        .btn-accent {
+            background: linear-gradient(to bottom, var(--accent), #c0392b);
+        }
+
+        .history-container {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            background: var(--input-bg);
+        }
+
+        .history-item {
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-container {
+            padding: 20px;
+            background-color: rgba(52, 152, 219, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .result-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 10px 0;
+        }
+
+        .actions-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .ad-container {
+            background-color: rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 25px 0;
+            border: 1px dashed var(--border-color);
+        }
+
+        .ad-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+
+        .ad-placeholder {
+            height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(45deg, #f1f2f6, #dfe4ea);
+            border-radius: 8px;
+            color: #7f8c8d;
+            font-weight: 600;
+        }
+
+        .dark-mode-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            z-index: 100;
+        }
+
+        .dice-animation {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            min-height: 100px;
+            flex-wrap: wrap;
+        }
+
+        .die {
+            width: 70px;
+            height: 70px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border: 1px solid #ddd;
+            position: relative;
+        }
+
+        .dice-rolling {
+            animation: roll 0.8s ease-out;
+        }
+
+        @keyframes roll {
+            0% { transform: rotate(0deg) scale(1); opacity: 0.5; }
+            50% { transform: rotate(180deg) scale(1.2); opacity: 1; }
+            100% { transform: rotate(360deg) scale(1); opacity: 1; }
+        }
+
+        .dice-point {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #333;
+            border-radius: 50%;
+        }
+
+        .share-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .share-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .share-btn:hover {
+            transform: translateY(-3px);
+        }
+
+        .facebook { background: #3b5998; }
+        .twitter { background: #1da1f2; }
+        .email { background: #dd4b39; }
+        .link { background: #6c757d; }
+
+        .export-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .export-btn {
+            padding: 10px 20px;
+            border-radius: 50px;
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            border: none;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 0 10px;
+            margin-top: 40px;
+            color: var(--text-color);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .error-message {
+            color: var(--accent);
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .modifier-controls {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .modifier-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .dice-option {
+                padding: 12px 8px;
+            }
+            
+            .dice-option i {
+                font-size: 2rem;
+            }
+            
+            header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .dice-animation {
+                gap: 10px;
+            }
+            
+            .die {
+                width: 60px;
+                height: 60px;
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body data-theme="light">
+    <div class="dark-mode-toggle" id="themeToggle">
+        <i class="fas fa-moon"></i>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>
+                <i class="fas fa-dice"></i> 
+                Professional Dice Roller Calculator
+            </h1>
+            <p>Cryptographically secure dice rolls with advanced features</p>
+        </header>
+
+        <div class="calculator-wrapper">
+            <div class="main-content">
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-dice-d20"></i> Dice Roller</h2>
+                    
+                    <div class="dice-selector">
+                        <div class="dice-option" data-dice="4">
+                            <i class="fas fa-dice-d4"></i>
+                            <span>d4</span>
+                        </div>
+                        <div class="dice-option selected" data-dice="6">
+                            <i class="fas fa-dice-d6"></i>
+                            <span>d6</span>
+                        </div>
+                        <div class="dice-option" data-dice="8">
+                            <i class="fas fa-dice-d8"></i>
+                            <span>d8</span>
+                        </div>
+                        <div class="dice-option" data-dice="10">
+                            <i class="fas fa-dice-d10"></i>
+                            <span>d10</span>
+                        </div>
+                        <div class="dice-option" data-dice="12">
+                            <i class="fas fa-dice-d12"></i>
+                            <span>d12</span>
+                        </div>
+                        <div class="dice-option" data-dice="20">
+                            <i class="fas fa-dice-d20"></i>
+                            <span>d20</span>
+                        </div>
+                        <div class="dice-option" data-dice="100">
+                            <i class="fas fa-dice"></i>
+                            <span>d100</span>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="diceCount">Number of Dice <span class="error-message" id="countError">Must be between 1-20</span></label>
+                        <div class="input-row">
+                            <input type="number" id="diceCount" value="1" min="1" max="20">
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="modifier">Modifier <span class="error-message" id="modifierError">Must be between -100 and 100</span></label>
+                        <div class="modifier-controls">
+                            <div class="modifier-btn" id="modifierMinus">-</div>
+                            <input type="number" id="modifier" value="0" min="-100" max="100" class="input-row" style="flex: 1;">
+                            <div class="modifier-btn" id="modifierPlus">+</div>
+                        </div>
+                    </div>
+                    
+                    <div class="actions-container">
+                        <button id="rollBtn" class="btn btn-block">
+                            <i class="fas fa-dice"></i> Roll Dice
+                        </button>
+                        <button id="clearBtn" class="btn btn-warning">
+                            <i class="fas fa-redo"></i> Clear
+                        </button>
+                        <button id="clearHistoryBtn" class="btn btn-accent">
+                            <i class="fas fa-trash"></i> Clear History
+                        </button>
+                    </div>
+                    
+                    <div class="dice-animation" id="diceAnimation">
+                        <div class="die">?</div>
+                    </div>
+                    
+                    <div class="result-container">
+                        <h3>Roll Result</h3>
+                        <div class="result-value" id="diceResult">0</div>
+                        <div class="result-unit">Total: <span id="diceTotal">0</span> (Rolls: <span id="diceRolls">0</span>)</div>
+                    </div>
+                </div>
+                
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-history"></i> Roll History</h2>
+                    <div class="history-container" id="diceHistory">
+                        <div class="history-empty">No rolls yet. Roll some dice to see history here.</div>
+                    </div>
+                </div>
+                
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-share-alt"></i> Export & Share</h2>
+                    
+                    <div class="export-options">
+                        <button class="export-btn" id="printBtn">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                        <button class="export-btn" id="pdfBtn">
+                            <i class="fas fa-file-pdf"></i> PDF
+                        </button>
+                        <button class="export-btn" id="txtBtn">
+                            <i class="fas fa-file-alt"></i> TXT
+                        </button>
+                        <button class="export-btn" id="csvBtn">
+                            <i class="fas fa-file-csv"></i> CSV
+                        </button>
+                        <button class="export-btn" id="pngBtn">
+                            <i class="fas fa-image"></i> PNG
+                        </button>
+                    </div>
+                    
+                    <div class="share-container">
+                        <div class="share-btn facebook" title="Share on Facebook">
+                            <i class="fab fa-facebook-f"></i>
+                        </div>
+                        <div class="share-btn twitter" title="Share on Twitter">
+                            <i class="fab fa-twitter"></i>
+                        </div>
+                        <div class="share-btn email" title="Share via Email">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="share-btn link" title="Copy Link">
+                            <i class="fas fa-link"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="ad-container">
+                    <div class="ad-label">Advertisement</div>
+                    <div class="ad-placeholder">
+                        <i class="fas fa-ad" style="font-size: 2rem; margin-right: 10px;"></i>
+                        Premium Gaming Tools
+                        <div class="ad-lazy-load" style="display: none;">Adsterra Ad Code</div>
+                    </div>
+                </div>
+                
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-lock"></i> Security Features</h2>
+                    <ul style="margin: 15px 0 15px 20px;">
+                        <li>Cryptographically secure RNG</li>
+                        <li>Client-side processing only</li>
+                        <li>No user data collection</li>
+                        <li>Input validation & sanitization</li>
+                        <li>HTTPS encryption support</li>
+                    </ul>
+                </div>
+                
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-info-circle"></i> About This Tool</h2>
+                    <p>This professional dice roller uses cryptographically secure random number generation to ensure fair and unbiased results for:</p>
+                    <ul style="margin: 15px 0 15px 20px;">
+                        <li>Tabletop gaming (RPGs, board games)</li>
+                        <li>Statistical simulations</li>
+                        <li>Educational purposes</li>
+                        <li>Decision making</li>
+                    </ul>
+                    <p>All calculations happen in your browser - no data is sent to any server.</p>
+                </div>
+                
+                <div class="ad-container">
+                    <div class="ad-label">Advertisement</div>
+                    <div class="ad-placeholder">
+                        <i class="fas fa-ad" style="font-size: 2rem; margin-right: 10px;"></i>
+                        Dice & Board Games
+                        <div class="ad-lazy-load" style="display: none;">Yllix Ad Code</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Professional Dice Roller Calculator &copy; 2023 | Secure, Fair, and Ad-Supported</p>
+            <p>All dice rolls generated with cryptographically secure random numbers</p>
+        </footer>
+    </div>
+
+    <script>
+        // Initialize variables and DOM elements
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const themeToggle = document.getElementById('themeToggle');
+            const diceOptions = document.querySelectorAll('.dice-option');
+            const diceCountInput = document.getElementById('diceCount');
+            const modifierInput = document.getElementById('modifier');
+            const modifierPlus = document.getElementById('modifierPlus');
+            const modifierMinus = document.getElementById('modifierMinus');
+            const rollBtn = document.getElementById('rollBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+            const diceAnimation = document.getElementById('diceAnimation');
+            const diceResult = document.getElementById('diceResult');
+            const diceTotal = document.getElementById('diceTotal');
+            const diceRolls = document.getElementById('diceRolls');
+            const diceHistory = document.getElementById('diceHistory');
+            const countError = document.getElementById('countError');
+            const modifierError = document.getElementById('modifierError');
+            const body = document.body;
+            
+            // Dice state
+            let currentDice = 6;
+            let rollHistory = JSON.parse(sessionStorage.getItem('diceRollHistory')) || [];
+            
+            // Initialize theme
+            let isDarkMode = localStorage.getItem('darkMode') === 'true';
+            setTheme(isDarkMode);
+            updateHistoryDisplay();
+            
+            // Theme toggle functionality
+            themeToggle.addEventListener('click', () => {
+                isDarkMode = !isDarkMode;
+                setTheme(isDarkMode);
+                localStorage.setItem('darkMode', isDarkMode);
+            });
+            
+            // Dice selection
+            diceOptions.forEach(dice => {
+                dice.addEventListener('click', () => {
+                    diceOptions.forEach(d => d.classList.remove('selected'));
+                    dice.classList.add('selected');
+                    currentDice = parseInt(dice.dataset.dice);
+                });
+            });
+            
+            // Modifier controls
+            modifierPlus.addEventListener('click', () => {
+                modifierInput.value = parseInt(modifierInput.value) + 1;
+                validateModifier();
+            });
+            
+            modifierMinus.addEventListener('click', () => {
+                modifierInput.value = parseInt(modifierInput.value) - 1;
+                validateModifier();
+            });
+            
+            // Input validation
+            diceCountInput.addEventListener('input', validateCount);
+            modifierInput.addEventListener('input', validateModifier);
+            
+            // Roll button
+            rollBtn.addEventListener('click', rollDice);
+            
+            // Clear buttons
+            clearBtn.addEventListener('click', clearDiceResults);
+            clearHistoryBtn.addEventListener('click', clearHistory);
+            
+            // Export buttons
+            document.getElementById('printBtn').addEventListener('click', printResults);
+            document.getElementById('pdfBtn').addEventListener('click', exportPDF);
+            document.getElementById('txtBtn').addEventListener('click', exportTXT);
+            document.getElementById('csvBtn').addEventListener('click', exportCSV);
+            document.getElementById('pngBtn').addEventListener('click', exportPNG);
+            
+            // Share buttons
+            document.querySelector('.share-btn.facebook').addEventListener('click', shareFacebook);
+            document.querySelector('.share-btn.twitter').addEventListener('click', shareTwitter);
+            document.querySelector('.share-btn.email').addEventListener('click', shareEmail);
+            document.querySelector('.share-btn.link').addEventListener('click', copyLink);
+            
+            // Set theme function
+            function setTheme(isDark) {
+                body.setAttribute('data-theme', isDark ? 'dark' : 'light');
+                themeToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+            }
+            
+            // Validate dice count input
+            function validateCount() {
+                const value = parseInt(diceCountInput.value);
+                if (isNaN(value) || value < 1 || value > 20) {
+                    countError.style.display = 'block';
+                    rollBtn.disabled = true;
+                    return false;
+                }
+                countError.style.display = 'none';
+                rollBtn.disabled = false;
+                return true;
+            }
+            
+            // Validate modifier input
+            function validateModifier() {
+                const value = parseInt(modifierInput.value);
+                if (isNaN(value)) {
+                    modifierInput.value = 0;
+                    return true;
+                }
+                if (value < -100 || value > 100) {
+                    modifierError.style.display = 'block';
+                    rollBtn.disabled = true;
+                    return false;
+                }
+                modifierError.style.display = 'none';
+                rollBtn.disabled = false;
+                return true;
+            }
+            
+            // Roll dice with cryptographically secure RNG
+            function rollDice() {
+                if (!validateCount() || !validateModifier()) return;
+                
+                const count = parseInt(diceCountInput.value);
+                const modifier = parseInt(modifierInput.value);
+                const rolls = [];
+                let total = modifier;
+                
+                // Clear animation container
+                diceAnimation.innerHTML = '';
+                
+                // Generate rolls with crypto RNG
+                const values = new Uint32Array(count);
+                crypto.getRandomValues(values);
+                
+                // Generate rolls
+                for (let i = 0; i < count; i++) {
+                    // Convert to range [1, dice sides]
+                    const roll = Math.floor(values[i] / 0x100000000 * currentDice) + 1;
+                    rolls.push(roll);
+                    total += roll;
+                    
+                    // Create die element with animation
+                    const die = document.createElement('div');
+                    die.className = 'die dice-rolling';
+                    die.textContent = '?'; // Show question mark during roll
+                    diceAnimation.appendChild(die);
+                    
+                    // Update die after animation
+                    setTimeout(() => {
+                        die.textContent = roll;
+                        die.classList.remove('dice-rolling');
+                    }, 800);
+                }
+                
+                // Update results
+                diceResult.textContent = rolls.join(', ');
+                diceTotal.textContent = total;
+                diceRolls.textContent = rolls.join(', ');
+                
+                // Add to history
+                addToHistory(rolls, total, modifier);
+            }
+            
+            // Clear dice results
+            function clearDiceResults() {
+                diceAnimation.innerHTML = '<div class="die">?</div>';
+                diceResult.textContent = '0';
+                diceTotal.textContent = '0';
+                diceRolls.textContent = '0';
+            }
+            
+            // Clear history
+            function clearHistory() {
+                rollHistory = [];
+                sessionStorage.removeItem('diceRollHistory');
+                updateHistoryDisplay();
+            }
+            
+            // Add roll to history
+            function addToHistory(rolls, total, modifier) {
+                const now = new Date();
+                const timestamp = now.toLocaleTimeString();
+                const historyItem = {
+                    dice: `d${currentDice}`,
+                    rolls: rolls,
+                    total: total,
+                    modifier: modifier,
+                    time: timestamp
+                };
+                
+                rollHistory.unshift(historyItem);
+                if (rollHistory.length > 50) rollHistory.pop();
+                
+                sessionStorage.setItem('diceRollHistory', JSON.stringify(rollHistory));
+                updateHistoryDisplay();
+            }
+            
+            // Update history display
+            function updateHistoryDisplay() {
+                diceHistory.innerHTML = '';
+                
+                if (rollHistory.length === 0) {
+                    diceHistory.innerHTML = '<div class="history-empty">No rolls yet. Roll some dice to see history here.</div>';
+                    return;
+                }
+                
+                rollHistory.forEach(item => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    historyItem.innerHTML = `
+                        <div>
+                            <strong>${item.dice}</strong> 
+                            <span>${item.rolls.join(', ')}</span>
+                            ${item.modifier !== 0 ? `<span>(${item.modifier > 0 ? '+' : ''}${item.modifier})</span>` : ''}
+                        </div>
+                        <div>
+                            <strong>${item.total}</strong>
+                            <span>${item.time}</span>
+                        </div>
+                    `;
+                    diceHistory.appendChild(historyItem);
+                });
+            }
+            
+            // Print results
+            function printResults() {
+                // Hide ads for printing
+                document.querySelectorAll('.ad-container').forEach(ad => {
+                    ad.style.display = 'none';
+                });
+                
+                window.print();
+                
+                // Show ads again after printing
+                setTimeout(() => {
+                    document.querySelectorAll('.ad-container').forEach(ad => {
+                        ad.style.display = 'block';
+                    });
+                }, 500);
+            }
+            
+            // Export to PDF
+            function exportPDF() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                doc.setFontSize(18);
+                doc.text('Dice Roll Results', 10, 10);
+                
+                doc.setFontSize(12);
+                doc.text(`Dice: d${currentDice}`, 10, 20);
+                doc.text(`Rolls: ${diceRolls.textContent}`, 10, 30);
+                doc.text(`Modifier: ${modifierInput.value}`, 10, 40);
+                doc.text(`Total: ${diceTotal.textContent}`, 10, 50);
+                
+                if (rollHistory.length > 0) {
+                    doc.text('Roll History:', 10, 70);
+                    let y = 80;
+                    rollHistory.forEach(item => {
+                        doc.text(`${item.time} - ${item.dice}: ${item.rolls.join(', ')} ${item.modifier !== 0 ? `(${item.modifier > 0 ? '+' : ''}${item.modifier})` : ''} = ${item.total}`, 10, y);
+                        y += 10;
+                    });
+                }
+                
+                doc.save('dice-roll-results.pdf');
+            }
+            
+            // Export to TXT
+            function exportTXT() {
+                let content = '=== Dice Roll Results ===\n\n';
+                content += `Dice: d${currentDice}\n`;
+                content += `Rolls: ${diceRolls.textContent}\n`;
+                content += `Modifier: ${modifierInput.value}\n`;
+                content += `Total: ${diceTotal.textContent}\n\n`;
+                
+                if (rollHistory.length > 0) {
+                    content += '=== Roll History ===\n';
+                    rollHistory.forEach(item => {
+                        content += `${item.time} - ${item.dice}: ${item.rolls.join(', ')} ${item.modifier !== 0 ? `(${item.modifier > 0 ? '+' : ''}${item.modifier})` : ''} = ${item.total}\n`;
+                    });
+                }
+                
+                const blob = new Blob([content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'dice-roll-results.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+            
+            // Export to CSV
+            function exportCSV() {
+                let content = 'Timestamp,Dice,Rolls,Modifier,Total\n';
+                
+                // Add current roll
+                content += `"${new Date().toLocaleTimeString()}","d${currentDice}","${diceRolls.textContent}","${modifierInput.value}","${diceTotal.textContent}"\n`;
+                
+                // Add history
+                rollHistory.forEach(item => {
+                    content += `"${item.time}","${item.dice}","${item.rolls.join(',')}","${item.modifier}","${item.total}"\n`;
+                });
+                
+                const blob = new Blob([content], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'dice-roll-results.csv';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+            
+            // Export to PNG
+            function exportPNG() {
+                html2canvas(document.querySelector('.calculator-card:first-child')).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = 'dice-roll-result.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                });
+            }
+            
+            // Share on Facebook
+            function shareFacebook() {
+                const url = encodeURIComponent(window.location.href);
+                const text = encodeURIComponent(`I rolled ${diceTotal.textContent} with ${diceCountInput.value}d${currentDice}!`);
+                window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`, '_blank');
+            }
+            
+            // Share on Twitter
+            function shareTwitter() {
+                const text = encodeURIComponent(`Just rolled ${diceTotal.textContent} with ${diceCountInput.value}d${currentDice}! Try this dice roller: `);
+                const url = encodeURIComponent(window.location.href);
+                window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+            }
+            
+            // Share via Email
+            function shareEmail() {
+                const subject = encodeURIComponent('My Dice Roll Result');
+                const body = encodeURIComponent(`I rolled ${diceTotal.textContent} with ${diceCountInput.value}d${currentDice}!\n\nTry it yourself: ${window.location.href}`);
+                window.location.href = `mailto:?subject=${subject}&body=${body}`;
+            }
+            
+            // Copy link to clipboard
+            function copyLink() {
+                navigator.clipboard.writeText(window.location.href);
+                alert('Link copied to clipboard!');
+            }
+            
+            // Lazy load ads
+            function lazyLoadAds() {
+                setTimeout(() => {
+                    document.querySelectorAll('.ad-lazy-load').forEach(ad => {
+                        ad.style.display = 'block';
+                        // In a real implementation, you would insert ad code here
+                    });
+                }, 2000);
+            }
+            
+            // Initialize
+            lazyLoadAds();
+            validateCount();
+            validateModifier();
+        });
+    </script>
+</body>
+</html>

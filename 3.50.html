@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Voltage Drop Calculator</title>
+    <!-- Privacy Headers -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+
+    <!-- Dependencies for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --text-color: #1e3a5a;
+            --primary-color: #3b82f6; /* Blue */
+            --secondary-color: #64748b;
+            --accent-color: #f59e0b; /* Amber for results */
+            --border-color: #cbd5e1;
+            --card-bg: #ffffff;
+            --input-bg: #f8fafc;
+            --shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            --error-color: #ef4444;
+            --success-color: #22c55e;
+            --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        [data-theme="dark"] {
+            --bg-color: #1e293b;
+            --text-color: #e2e8f0;
+            --primary-color: #60a5fa; /* Lighter Blue */
+            --secondary-color: #94a3b8;
+            --accent-color: #fcd34d; /* Lighter Amber */
+            --border-color: #475569;
+            --card-bg: #334155;
+            --input-bg: #475569;
+            --shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            --error-color: #fca5a5;
+            --success-color: #86efac;
+        }
+
+        /* General & Layout */
+        *, *::before, *::after { box-sizing: border-box; }
+        body { margin: 0; font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-color); line-height: 1.6; transition: background-color 0.2s, color 0.2s; }
+        .container { max-width: 1400px; margin: 2rem auto; padding: 1rem; }
+        h1, h2 { color: var(--primary-color); }
+        h1 { margin:0; }
+        .card { background-color: var(--card-bg); border-radius: 12px; padding: 1.5rem 2rem; box-shadow: var(--shadow); }
+
+        /* App Layout */
+        .app-header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 2rem; }
+        .main-layout { display: grid; grid-template-columns: 1fr 340px; gap: 2rem; }
+        
+        /* Input Form */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+        .input-group { display: flex; }
+        input[type="number"], select { width: 100%; padding: 0.8rem; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--input-bg); color: var(--text-color); font-size: 1rem; }
+        .input-group input { border-radius: 6px 0 0 6px; border-right: none; }
+        .input-group-text { padding: 0.8rem; background: var(--bg-color); border: 1px solid var(--border-color); border-left: none; border-radius: 0 6px 6px 0;}
+        .tooltip { cursor: help; color: var(--secondary-color); font-size: 0.8em; margin-left: 5px;}
+
+        /* Results Display */
+        #results-card h2 { margin-top:0; }
+        .result-item { padding: 1rem 0; border-bottom: 1px solid var(--border-color); }
+        .result-item:last-child { border-bottom: none; }
+        .result-item .label { font-weight: 600; }
+        .result-item .value { font-size: 2.2rem; font-weight: 700; text-align: right; color: var(--accent-color); }
+        .result-item .percent { font-size: 1.5rem; }
+        .result-pass, .result-fail { padding: 0.5rem 1rem; text-align: center; border-radius: 6px; margin-top: 1rem; }
+        .result-pass { background-color: var(--success-color); color: var(--bg-color); }
+        .result-fail { background-color: var(--error-color); color: white; }
+
+        /* Actions & Ads */
+        .sidebar { display:flex; flex-direction:column; gap:2rem;}
+        .btn-group button { margin-bottom: 0.8rem; }
+        .btn { display: flex; align-items:center; justify-content:center; width:100%; text-align:center; padding: 0.8rem; border-radius: 6px; cursor: pointer; font-weight: 600; text-decoration:none; border:2px solid; }
+        .btn-primary { background-color: var(--primary-color); color: white; border-color:var(--primary-color);}
+        .btn-secondary { background-color: transparent; color: var(--primary-color); border-color:var(--primary-color); }
+        .ad-placeholder { min-height: 250px; border: 2px dashed var(--border-color); display: flex; align-items: center; justify-content: center; text-align:center; padding: 1rem; color: var(--secondary-color); border-radius: 12px; }
+
+        @media (max-width: 1024px) { .main-layout { grid-template-columns: 1fr; } }
+        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+
+        /* Print Styles */
+        @media print {
+            body { background: #fff !important; color: #000 !important; font-size: 12pt; }
+            .sidebar, .app-header { display: none; }
+            .main-layout, .card { all: unset; display: block; }
+            #printable-report { display: block !important; box-shadow: none; border: 1px solid #ccc; padding: 1rem; }
+        }
+        #printable-report { display: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header class="app-header">
+        <h1>Voltage Drop Calculator</h1>
+        <button id="theme-toggle" title="Toggle Dark/Light Mode" style="font-size:1.5rem; background:none; border:none; cursor:pointer; color:var(--text-color);">🌓</button>
+    </header>
+
+    <main class="main-layout">
+        <section class="main-content">
+             <div class="card">
+                <h2>Parameters</h2>
+                <form id="calc-form" class="form-grid">
+                    <div><label for="material">Conductor Material</label><select id="material"><option value="copper">Copper</option><option value="aluminum">Aluminum</option></select></div>
+                    <div><label for="wireSize">Wire Size (AWG)</label><select id="wireSize"></select></div>
+                    <div><label for="voltage">Nominal Voltage (V)</label><input type="number" id="voltage" value="120" step="1"></div>
+                    <div><label for="phase">Circuit Phase</label><select id="phase"><option value="1" selected>Single Phase</option><option value="3">Three Phase</option></select></div>
+                    <div>
+                        <label for="length">Circuit Length</label>
+                        <div class="input-group"><input type="number" id="length" value="100"><span class="input-group-text" id="lengthUnit">ft</span></div>
+                    </div>
+                     <div>
+                        <label for="current">Load Current (A)</label>
+                        <input type="number" id="current" value="15" step="0.1">
+                    </div>
+                    <div>
+                        <label>Units</label>
+                        <select id="units"><option value="imperial" selected>Imperial (AWG, ft)</option><option value="metric">Metric (mm², m)</option></select>
+                    </div>
+                </form>
+            </div>
+             <div class="card ad-placeholder">
+                <!-- =============================== -->
+                <!-- YLLIX AD CODE SLOT              -->
+                <!-- =============================== -->
+                <p>Yllix Ad Space</p>
+            </div>
+        </section>
+
+        <aside class="sidebar">
+            <div id="results-card" class="card">
+                 <h2>Results</h2>
+                 <div class="result-item"><span class="label">Voltage Drop</span><span class="value" id="vdValue">0 V</span></div>
+                 <div class="result-item"><span class="label">Percentage</span><span class="value percent" id="vdPercent">0%</span></div>
+                 <div class="result-item"><span class="label">End Voltage</span><span class="value" id="endVoltage">0 V</span></div>
+                 <div id="vdStatus"></div>
+                 <small style="text-align:center; display:block; margin-top:1.5rem; opacity:0.7;">NEC recommends max 3% drop.</small>
+            </div>
+             <div class="card btn-group">
+                <h2>Actions</h2>
+                <button id="printBtn" class="btn btn-secondary">Print Report</button>
+                <button id="savePdfBtn" class="btn btn-secondary">Save as PDF</button>
+                <button id="saveCsvBtn" class="btn btn-secondary">Save as CSV</button>
+                <button id="shareBtn" class="btn btn-primary">Share</button>
+            </div>
+            <div class="ad-placeholder">
+                <!-- =============================== -->
+                <!-- ADSTERRA AD CODE SLOT           -->
+                <!-- =============================== -->
+                <p>Adsterra Ad Space</p>
+            </div>
+        </aside>
+    </main>
+     <div id="printable-report"></div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- Data & State ---
+    const D = document;
+    // NEC Chapter 9, Table 8: Conductor Properties
+    const AWG_DATA = { // Resistance in Ohms/kFT for uncoated copper, area in kcmil
+        '14': { res: 3.14, area: 4.11 }, '12': { res: 1.98, area: 6.53 }, '10': { res: 1.24, area: 10.38 }, '8': { res: 0.778, area: 16.51 },
+        '6': { res: 0.491, area: 26.24 }, '4': { res: 0.308, area: 41.74 }, '3': { res: 0.245, area: 52.62 }, '2': { res: 0.194, area: 66.36 },
+        '1': { res: 0.154, area: 83.69 }, '1/0': { res: 0.122, area: 105.6 }, '2/0': { res: 0.0967, area: 133.1 },
+        '3/0': { res: 0.0766, area: 167.8 }, '4/0': { res: 0.0608, area: 211.6 },
+    };
+     const METRIC_SIZES = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50]; // mm²
+
+    let lastResult = {};
+    
+    // --- DOM Elements ---
+    const els = {
+        form: D.getElementById('calc-form'),
+        units: D.getElementById('units'),
+        wireSize: D.getElementById('wireSize'),
+        lengthUnit: D.getElementById('lengthUnit'),
+        vdValue: D.getElementById('vdValue'), vdPercent: D.getElementById('vdPercent'),
+        endVoltage: D.getElementById('endVoltage'), vdStatus: D.getElementById('vdStatus'),
+        themeToggle: D.getElementById('theme-toggle'),
+    };
+    
+    // --- Calculation Engine ---
+    const calculate = () => {
+        try {
+            const material = D.getElementById('material').value;
+            const wireSizeKey = D.getElementById('wireSize').value;
+            const voltage = parseFloat(D.getElementById('voltage').value);
+            const phase = parseInt(D.getElementById('phase').value, 10);
+            const current = parseFloat(D.getElementById('current').value);
+            let length = parseFloat(D.getElementById('length').value);
+
+            if (els.units.value === 'metric') length /= 0.3048; // Convert meters to feet for calc
+            
+            // Validate inputs
+            if (isNaN(voltage) || isNaN(current) || isNaN(length) || voltage <= 0 || current < 0 || length < 0) {
+                 throw new Error("Invalid input values.");
+            }
+            
+            // Get conductor resistance from table (Ohms / 1000 ft)
+            let resistance_per_1000ft;
+            if(els.units.value === 'imperial') {
+                 resistance_per_1000ft = AWG_DATA[wireSizeKey]?.res;
+            } else { // Approximate for metric
+                const kcmil = parseFloat(wireSizeKey) * 1.9735; // mm² to kcmil
+                 // Very rough approximation: Res ~ 1/Area. Use AWG8 as baseline.
+                 resistance_per_1000ft = AWG_DATA['8'].res * (AWG_DATA['8'].area / kcmil);
+            }
+
+            if (!resistance_per_1000ft) throw new Error("Wire size not found.");
+            if (material === 'aluminum') resistance_per_1000ft *= 1.64; // Approx. resistivity difference
+
+            // Voltage Drop Formula (based on NEC)
+            // VD = K * I * L * R, where K = 2 for 1-phase, sqrt(3) for 3-phase
+            const K = phase === 3 ? 1.732 : 2;
+            const voltageDrop = (K * resistance_per_1000ft * current * length) / 1000;
+            const vdPercent = (voltageDrop / voltage) * 100;
+            const endVoltage = voltage - voltageDrop;
+
+            lastResult = {
+                inputs: { material, wireSizeKey, voltage, phase, current, lengthFt: length, units: els.units.value },
+                outputs: { voltageDrop, vdPercent, endVoltage }
+            };
+
+            updateUI();
+        } catch(e) { console.error(e.message); /* Can add UI error feedback here */ }
+    };
+    
+    // --- UI & Event Handlers ---
+    const updateUI = () => {
+        const { voltageDrop, vdPercent, endVoltage } = lastResult.outputs;
+        els.vdValue.textContent = `${voltageDrop.toFixed(2)} V`;
+        els.vdPercent.textContent = `${vdPercent.toFixed(2)}%`;
+        els.endVoltage.textContent = `${endVoltage.toFixed(2)} V`;
+        
+        els.vdStatus.innerHTML = ''; // Clear status
+        if(vdPercent > 3){
+            els.vdStatus.className = 'result-fail';
+            els.vdStatus.textContent = "FAIL - Exceeds 3% recommendation";
+        } else {
+             els.vdStatus.className = 'result-pass';
+             els.vdStatus.textContent = "PASS";
+        }
+    };
+    
+    const updateUnitInterface = () => {
+        const isImperial = els.units.value === 'imperial';
+        els.wireSize.innerHTML = '';
+        if (isImperial) {
+            Object.keys(AWG_DATA).forEach(key => els.wireSize.add(new Option(key, key)));
+        } else {
+            METRIC_SIZES.forEach(val => els.wireSize.add(new Option(`${val} mm²`, val)));
+        }
+        els.lengthUnit.textContent = isImperial ? 'ft' : 'm';
+        calculate();
+    };
+
+    els.form.addEventListener('input', calculate);
+    els.units.addEventListener('change', updateUnitInterface);
+
+    // --- Actions (Print, Save, Share) ---
+    const generateSummary = (format = 'txt') => {
+        if (!lastResult.inputs) return "No calculation.";
+        const i = lastResult.inputs;
+        const o = lastResult.outputs;
+        const lenUnit = i.units === 'imperial' ? 'ft' : 'm';
+        const lengthOrig = i.units === 'imperial' ? i.lengthFt : i.lengthFt * 0.3048;
+
+        const data = {
+             '-- INPUTS --': '', 'Material': i.material, 'Wire Size': i.wireSizeKey + (i.units === 'imperial' ? ' AWG' : ' mm²'),
+             'Voltage': i.voltage + ' V', 'Phase': i.phase, 'Length': lengthOrig.toFixed(0) + ` ${lenUnit}`, 'Current': i.current + ' A',
+             '-- RESULTS --': '', 'Voltage Drop': `${o.voltageDrop.toFixed(2)} V`, 'Drop %': `${o.vdPercent.toFixed(2)}%`,
+             'End Voltage': `${o.endVoltage.toFixed(2)} V`,
+             'Recommendation': o.vdPercent > 3 ? 'FAIL (Exceeds 3%)' : 'PASS'
+        };
+
+        if(format === 'csv') return Object.entries(data).filter(([k,v])=>k.indexOf('--')===-1).map(([k,v])=>`"${k}","${v}"`).join('\n');
+        return Object.entries(data).map(([k,v])=> (k.indexOf('--')>-1? `\n${k}\n`: `${k}: ${v}`)).join('\n');
+    };
+    
+    D.getElementById('printBtn').onclick = () => {
+        const report = D.getElementById('printable-report');
+        const summaryHtml = `<h1>Voltage Drop Report</h1><pre>${generateSummary()}</pre><hr><small>Disclaimer: This calculator is for estimation only. Always consult a licensed electrician and local codes.</small>`;
+        report.innerHTML = summaryHtml.replace(/\n/g, '<br>');
+        window.print();
+    };
+
+    D.getElementById('savePdfBtn').onclick = () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.setFont('courier');
+        doc.text("Voltage Drop Calculation Report", 10, 10);
+        doc.text(generateSummary('txt'), 10, 20);
+        doc.save('voltage-drop-report.pdf');
+    };
+     D.getElementById('saveCsvBtn').onclick = () => {
+        const blob = new Blob([generateSummary('csv')], {type:'text/csv;charset=utf-8'});
+        const a=D.createElement('a'); a.href=URL.createObjectURL(blob); a.download='voltage-drop.csv'; a.click();
+    };
+     D.getElementById('shareBtn').onclick = async () => {
+        const shareData = { title: 'Voltage Drop Calculation', text: generateSummary('txt'), url: window.location.href };
+        try {
+            await (navigator.share ? navigator.share(shareData) : navigator.clipboard.writeText(shareData.text).then(() => alert('Results copied to clipboard!')));
+        } catch(e) { console.error(e); alert('Share failed.'); }
+    };
+    
+    // --- Initialization ---
+    const init = () => {
+        const savedTheme = localStorage.getItem('vdCalcTheme') || 'light';
+        D.documentElement.setAttribute('data-theme', savedTheme);
+        els.themeToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌓';
+
+        updateUnitInterface(); // Populate initial wire sizes
+        calculate();
+    };
+    els.themeToggle.onclick = () => {
+        const theme = D.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        D.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('vdCalcTheme', theme);
+        els.themeToggle.textContent = theme === 'dark' ? '☀️' : '🌓';
+    };
+
+    init();
+});
+</script>
+</body>
+</html>

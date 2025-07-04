@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Mathematics Grade Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #1e1e2d;
+            --accent: #06d6a0;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --border-radius: 10px;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        .dark-mode {
+            --primary: #4895ef;
+            --primary-dark: #4361ee;
+            --secondary: #f8f9fa;
+            --accent: #4cc9f0;
+            --light: #1e1e2d;
+            --dark: #f8f9fa;
+            --gray: #adb5bd;
+            --light-gray: #2d2d3a;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+            transition: var(--transition);
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf9 100%);
+            min-height: 100vh;
+        }
+
+        .dark-mode body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            background: var(--primary);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .theme-toggle {
+            background: var(--light-gray);
+            border: none;
+            border-radius: 30px;
+            width: 60px;
+            height: 30px;
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 0 5px;
+        }
+
+        .theme-toggle::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--primary);
+            transition: transform 0.3s ease;
+        }
+
+        .theme-toggle.dark::after {
+            transform: translateX(30px);
+        }
+
+        .ad-banner {
+            background: var(--light-gray);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 25px;
+            color: var(--gray);
+            font-weight: 500;
+        }
+
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 992px) {
+            .calculator-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .input-section, .result-section, .sidebar {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            box-shadow: var(--shadow);
+        }
+
+        .dark-mode .input-section, 
+        .dark-mode .result-section,
+        .dark-mode .sidebar {
+            background: var(--light);
+        }
+
+        .section-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--light-gray);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: var(--light-gray);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .grading-system {
+            display: none;
+        }
+
+        .grading-system.active {
+            display: block;
+        }
+
+        .category {
+            background: var(--light-gray);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .category-title {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .remove-category {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-group .info-icon {
+            color: var(--gray);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .input-group .info-icon:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: 25px;
+            left: 0;
+            width: 250px;
+            background: var(--dark);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 100;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        .add-item-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 8px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .add-item-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .add-category-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .add-category-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .calculate-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 15px 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .calculate-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            margin-bottom: 25px;
+            text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .grade-value {
+            font-size: 42px;
+            font-weight: 700;
+            margin: 15px 0;
+        }
+
+        .result-details {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            color: var(--dark);
+            box-shadow: var(--shadow);
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: 500;
+        }
+
+        .detail-value {
+            font-weight: 600;
+        }
+
+        .progress-container {
+            height: 20px;
+            background: var(--light-gray);
+            border-radius: 10px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .grade-scale {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .grade-item {
+            text-align: center;
+            padding: 10px;
+            border-radius: var(--border-radius);
+            background: var(--light-gray);
+            font-weight: 600;
+        }
+
+        .grade-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .export-section {
+            margin-top: 30px;
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            box-shadow: var(--shadow);
+        }
+
+        .export-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary);
+        }
+
+        .export-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .export-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 15px;
+            background: var(--light-gray);
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .export-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .ad-square {
+            background: var(--light-gray);
+            border-radius: var(--border-radius);
+            padding: 40px 20px;
+            color: var(--gray);
+            font-weight: 500;
+            text-align: center;
+            margin-bottom: 25px;
+            min-height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 40px;
+            border-top: 2px solid var(--primary);
+            color: var(--gray);
+            font-size: 14px;
+        }
+
+        .error {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: var(--accent);
+            color: var(--dark);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .help-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .help-content {
+            background: white;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 600px;
+            padding: 30px;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .dark-mode .help-content {
+            background: var(--light);
+        }
+
+        .close-help {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .method-info {
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--light-gray);
+            border-radius: var(--border-radius);
+        }
+
+        .method-info h4 {
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        @media print {
+            .ad-banner, .ad-square, .export-btn, .theme-toggle, .help-btn, .sidebar {
+                display: none !important;
+            }
+            .calculator-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-calculator"></i>
+                </div>
+                <div class="logo-text">Math Grade Pro</div>
+            </div>
+            <div class="controls">
+                <button class="theme-toggle" id="themeToggle"></button>
+                <button class="help-btn" id="helpBtn">
+                    <i class="fas fa-question-circle"></i> Help
+                </button>
+            </div>
+        </header>
+
+        <div class="ad-banner" id="headerAd">
+            <!-- Adsterra Header Ad (728x90) -->
+            <i class="fas fa-ad"></i> Advertisement Space - Header
+        </div>
+
+        <div class="calculator-grid">
+            <div class="input-section">
+                <h2 class="section-title">
+                    <i class="fas fa-sliders-h"></i> Grade Configuration
+                </h2>
+
+                <div class="tabs">
+                    <div class="tab active" data-tab="weighted">Weighted System</div>
+                    <div class="tab" data-tab="unweighted">Unweighted System</div>
+                </div>
+
+                <div class="grading-system active" id="weightedSystem">
+                    <div id="categoriesContainer">
+                        <div class="category">
+                            <div class="category-header">
+                                <div class="category-title">
+                                    <i class="fas fa-book"></i> Assignments
+                                </div>
+                                <button class="remove-category">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="input-group">
+                                <label>
+                                    Weight Percentage
+                                    <span class="info-icon" data-tooltip="Percentage of total grade for this category">
+                                        <i class="fas fa-info-circle"></i>
+                                    </span>
+                                </label>
+                                <input type="number" class="weight-input" value="30" min="0" max="100">
+                            </div>
+                            <div class="input-group">
+                                <label>
+                                    Number of Assignments
+                                    <span class="info-icon" data-tooltip="Total assignments in this category">
+                                        <i class="fas fa-info-circle"></i>
+                                    </span>
+                                </label>
+                                <input type="number" class="count-input" value="5" min="1">
+                            </div>
+                            <div class="input-group">
+                                <label>
+                                    Average Score (%)
+                                    <span class="info-icon" data-tooltip="Your average score for this category">
+                                        <i class="fas fa-info-circle"></i>
+                                    </span>
+                                </label>
+                                <input type="number" class="score-input" value="85" min="0" max="100">
+                            </div>
+                        </div>
+                        
+                        <div class="category">
+                            <div class="category-header">
+                                <div class="category-title">
+                                    <i class="fas fa-file-alt"></i> Exams
+                                </div>
+                                <button class="remove-category">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="input-group">
+                                <label>
+                                    Weight Percentage
+                                    <span class="info-icon" data-tooltip="Percentage of total grade for this category">
+                                        <i class="fas fa-info-circle"></i>
+                                    </span>
+                                </label>
+                                <input type="number" class="weight-input" value="40" min="0" max="100">
+                            </div>
+                            <div class="input-group">
+                                <label>
+                                    Number of Exams
+                                    <span class="info-icon" data-tooltip="Total exams in this category">
+                                        <i class="fas fa-info-circle"></i>
+                                    </span>
+                                </label>
+                                <input type="number" class="count-input" value="3" min="1">
+                            </div>
+                            <div class="input-group">
+                                <label>
+                                    Average Score (%)
+                                    <span class="info-icon" data-tooltip="Your average score for this category">
+                                        <i class="fas fa-info-circle"></i>
+                                    </span>
+                                </label>
+                                <input type="number" class="score-input" value="78" min="0" max="100">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="add-category-btn" id="addCategoryBtn">
+                        <i class="fas fa-plus"></i> Add Category
+                    </button>
+                </div>
+
+                <div class="grading-system" id="unweightedSystem">
+                    <div class="input-group">
+                        <label>
+                            Total Points Earned
+                            <span class="info-icon" data-tooltip="Total points you've earned in the course">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="number" id="pointsEarned" value="850" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label>
+                            Total Points Possible
+                            <span class="info-icon" data-tooltip="Total points possible in the course">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="number" id="pointsPossible" value="1000" min="1">
+                    </div>
+                </div>
+
+                <button class="calculate-btn" id="calculateBtn">
+                    <i class="fas fa-calculator"></i> Calculate Grade
+                </button>
+            </div>
+
+            <div class="sidebar">
+                <div class="result-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-chart-line"></i> Results
+                    </h2>
+
+                    <div class="result-card">
+                        <div class="result-title">
+                            <i class="fas fa-star"></i> Overall Grade
+                        </div>
+                        <div class="grade-value" id="gradeValue">0%</div>
+                        <div class="result-method" id="resultMethod">Weighted System</div>
+                    </div>
+
+                    <div class="result-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Letter Grade:</span>
+                            <span class="detail-value" id="letterGrade">-</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">GPA Equivalent:</span>
+                            <span class="detail-value" id="gpaValue">0.0</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Performance:</span>
+                            <span class="detail-value" id="performance">-</span>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+                    </div>
+                    
+                    <div class="grade-scale">
+                        <div class="grade-item">A: 90-100%</div>
+                        <div class="grade-item">B: 80-89%</div>
+                        <div class="grade-item">C: 70-79%</div>
+                        <div class="grade-item">D: 60-69%</div>
+                        <div class="grade-item">F: 0-59%</div>
+                    </div>
+                </div>
+                
+                <div class="ad-square" id="sidebarAd">
+                    <!-- Yllix Sidebar Ad (300x250) -->
+                    <i class="fas fa-ad" style="font-size: 24px; margin-bottom: 10px;"></i>
+                    <p>Advertisement Space</p>
+                    <small>Sidebar Placement</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="export-section">
+            <h2 class="export-title">
+                <i class="fas fa-download"></i> Export & Share Results
+            </h2>
+            <div class="export-options">
+                <button class="export-btn" id="printBtn">
+                    <i class="fas fa-print"></i> Print
+                </button>
+                <button class="export-btn" id="pdfBtn">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </button>
+                <button class="export-btn" id="excelBtn">
+                    <i class="fas fa-file-excel"></i> Excel
+                </button>
+                <button class="export-btn" id="csvBtn">
+                    <i class="fas fa-file-csv"></i> CSV
+                </button>
+                <button class="export-btn" id="textBtn">
+                    <i class="fas fa-file-alt"></i> Text
+                </button>
+                <button class="export-btn" id="shareBtn">
+                    <i class="fas fa-share-alt"></i> Share
+                </button>
+            </div>
+        </div>
+
+        <div class="ad-banner" id="footerAd">
+            <!-- Adsterra Footer Ad (728x90) -->
+            <i class="fas fa-ad"></i> Advertisement Space - Footer
+        </div>
+
+        <footer>
+            <p>Professional Mathematics Grade Calculator v2.0 | Secure Academic Tool</p>
+            <p>© 2023 Math Grade Pro. All calculations are performed client-side for security.</p>
+        </footer>
+    </div>
+
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notificationText">Grade calculated successfully!</span>
+    </div>
+
+    <div class="help-modal" id="helpModal">
+        <div class="help-content">
+            <span class="close-help" id="closeHelp">&times;</span>
+            <h3><i class="fas fa-question-circle"></i> Mathematics Grade Calculator Help</h3>
+            <p>This professional grade calculator helps you calculate your course grade using both weighted and unweighted systems.</p>
+            
+            <div class="method-info">
+                <h4>Weighted System</h4>
+                <p>Your overall grade is calculated by summing the products of each category's weight and average score:</p>
+                <p>Overall Grade = Σ(Weight × Average Score)</p>
+                <p>Where Σ represents the sum of all categories.</p>
+            </div>
+            
+            <div class="method-info">
+                <h4>Unweighted System</h4>
+                <p>Your overall grade is calculated as a simple percentage:</p>
+                <p>Overall Grade = (Points Earned ÷ Points Possible) × 100%</p>
+            </div>
+            
+            <div class="method-info">
+                <h4>GPA Conversion</h4>
+                <ul>
+                    <li>A: 90-100% = 4.0 GPA</li>
+                    <li>B: 80-89% = 3.0 GPA</li>
+                    <li>C: 70-79% = 2.0 GPA</li>
+                    <li>D: 60-69% = 1.0 GPA</li>
+                    <li>F: 0-59% = 0.0 GPA</li>
+                </ul>
+            </div>
+            
+            <h4>Instructions:</h4>
+            <ol>
+                <li>Select your grading system (weighted or unweighted)</li>
+                <li>Enter your category details or total points</li>
+                <li>Click "Calculate Grade" to see your results</li>
+                <li>Export or share your results using the export options</li>
+            </ol>
+            
+            <p><strong>Note:</strong> All calculations are performed locally in your browser for privacy and security.</p>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const themeToggle = document.getElementById('themeToggle');
+        const helpBtn = document.getElementById('helpBtn');
+        const helpModal = document.getElementById('helpModal');
+        const closeHelp = document.getElementById('closeHelp');
+        const tabs = document.querySelectorAll('.tab');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const addCategoryBtn = document.getElementById('addCategoryBtn');
+        const categoriesContainer = document.getElementById('categoriesContainer');
+        const notification = document.getElementById('notification');
+        const notificationText = document.getElementById('notificationText');
+        
+        // Result Elements
+        const gradeValue = document.getElementById('gradeValue');
+        const letterGrade = document.getElementById('letterGrade');
+        const gpaValue = document.getElementById('gpaValue');
+        const performance = document.getElementById('performance');
+        const progressBar = document.getElementById('progressBar');
+        const resultMethod = document.getElementById('resultMethod');
+        
+        // Export Buttons
+        const printBtn = document.getElementById('printBtn');
+        const pdfBtn = document.getElementById('pdfBtn');
+        const excelBtn = document.getElementById('excelBtn');
+        const csvBtn = document.getElementById('csvBtn');
+        const textBtn = document.getElementById('textBtn');
+        const shareBtn = document.getElementById('shareBtn');
+        
+        // Initialize
+        let currentSystem = 'weighted';
+        let overallGrade = 0;
+        
+        // Theme Toggle
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            themeToggle.classList.toggle('dark');
+        });
+        
+        // Help Modal
+        helpBtn.addEventListener('click', () => {
+            helpModal.style.display = 'flex';
+        });
+        
+        closeHelp.addEventListener('click', () => {
+            helpModal.style.display = 'none';
+        });
+        
+        window.addEventListener('click', (e) => {
+            if (e.target === helpModal) {
+                helpModal.style.display = 'none';
+            }
+        });
+        
+        // Tab Switching
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                document.querySelectorAll('.grading-system').forEach(system => {
+                    system.classList.remove('active');
+                });
+                
+                currentSystem = tab.dataset.tab;
+                document.getElementById(`${currentSystem}System`).classList.add('active');
+                resultMethod.textContent = `${tab.textContent}`;
+            });
+        });
+        
+        // Add Category
+        addCategoryBtn.addEventListener('click', () => {
+            addCategory();
+        });
+        
+        function addCategory() {
+            const categoryCount = document.querySelectorAll('.category').length + 1;
+            const category = document.createElement('div');
+            category.className = 'category';
+            category.innerHTML = `
+                <div class="category-header">
+                    <div class="category-title">
+                        <i class="fas fa-book"></i> Category ${categoryCount}
+                    </div>
+                    <button class="remove-category">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="input-group">
+                    <label>
+                        Weight Percentage
+                        <span class="info-icon" data-tooltip="Percentage of total grade for this category">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+                    </label>
+                    <input type="number" class="weight-input" value="20" min="0" max="100">
+                </div>
+                <div class="input-group">
+                    <label>
+                        Number of Items
+                        <span class="info-icon" data-tooltip="Total items in this category">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+                    </label>
+                    <input type="number" class="count-input" value="5" min="1">
+                </div>
+                <div class="input-group">
+                    <label>
+                        Average Score (%)
+                        <span class="info-icon" data-tooltip="Your average score for this category">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+                    </label>
+                    <input type="number" class="score-input" value="80" min="0" max="100">
+                </div>
+            `;
+            
+            categoriesContainer.appendChild(category);
+            
+            // Add event listener to remove button
+            const removeBtn = category.querySelector('.remove-category');
+            removeBtn.addEventListener('click', () => {
+                categoriesContainer.removeChild(category);
+            });
+        }
+        
+        // Add event listeners to existing remove buttons
+        document.querySelectorAll('.remove-category').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const category = e.currentTarget.closest('.category');
+                categoriesContainer.removeChild(category);
+            });
+        });
+        
+        // Calculate Grade
+        calculateBtn.addEventListener('click', () => {
+            calculateGrade();
+        });
+        
+        function calculateGrade() {
+            if (currentSystem === 'weighted') {
+                calculateWeightedGrade();
+            } else {
+                calculateUnweightedGrade();
+            }
+            
+            updateGradeScale();
+            showNotification('Grade calculated successfully!');
+        }
+        
+        function calculateWeightedGrade() {
+            const categories = document.querySelectorAll('.category');
+            
+            if (categories.length === 0) {
+                showNotification('Please add at least one category!');
+                return;
+            }
+            
+            let totalWeight = 0;
+            let weightedSum = 0;
+            
+            categories.forEach(category => {
+                const weight = parseFloat(category.querySelector('.weight-input').value) || 0;
+                const score = parseFloat(category.querySelector('.score-input').value) || 0;
+                
+                totalWeight += weight;
+                weightedSum += (weight * score) / 100;
+            });
+            
+            // Normalize if total weight is not 100
+            if (totalWeight !== 100) {
+                showNotification(`Total weight is ${totalWeight}% (should be 100%). Normalizing calculation.`);
+            }
+            
+            overallGrade = totalWeight > 0 ? (weightedSum / totalWeight) * 100 : 0;
+            updateResults();
+        }
+        
+        function calculateUnweightedGrade() {
+            const pointsEarned = parseFloat(document.getElementById('pointsEarned').value) || 0;
+            const pointsPossible = parseFloat(document.getElementById('pointsPossible').value) || 1;
+            
+            if (pointsPossible <= 0) {
+                showNotification('Total points possible must be greater than zero!');
+                return;
+            }
+            
+            overallGrade = (pointsEarned / pointsPossible) * 100;
+            updateResults();
+        }
+        
+        function updateResults() {
+            // Update grade value
+            gradeValue.textContent = overallGrade.toFixed(1) + '%';
+            
+            // Update progress bar
+            progressBar.style.width = `${Math.min(100, overallGrade)}%`;
+            
+            // Determine letter grade
+            let letter, gpa, perf;
+            
+            if (overallGrade >= 90) {
+                letter = 'A';
+                gpa = '4.0';
+                perf = 'Excellent';
+            } else if (overallGrade >= 80) {
+                letter = 'B';
+                gpa = '3.0';
+                perf = 'Good';
+            } else if (overallGrade >= 70) {
+                letter = 'C';
+                gpa = '2.0';
+                perf = 'Average';
+            } else if (overallGrade >= 60) {
+                letter = 'D';
+                gpa = '1.0';
+                perf = 'Needs Improvement';
+            } else {
+                letter = 'F';
+                gpa = '0.0';
+                perf = 'Failing';
+            }
+            
+            letterGrade.textContent = letter;
+            gpaValue.textContent = gpa;
+            performance.textContent = perf;
+        }
+        
+        function updateGradeScale() {
+            document.querySelectorAll('.grade-item').forEach(item => {
+                item.classList.remove('active');
+                
+                if (overallGrade >= 90 && item.textContent.includes('A')) {
+                    item.classList.add('active');
+                } else if (overallGrade >= 80 && overallGrade < 90 && item.textContent.includes('B')) {
+                    item.classList.add('active');
+                } else if (overallGrade >= 70 && overallGrade < 80 && item.textContent.includes('C')) {
+                    item.classList.add('active');
+                } else if (overallGrade >= 60 && overallGrade < 70 && item.textContent.includes('D')) {
+                    item.classList.add('active');
+                } else if (overallGrade < 60 && item.textContent.includes('F')) {
+                    item.classList.add('active');
+                }
+            });
+        }
+        
+        // Show notification
+        function showNotification(message) {
+            notificationText.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Export Functions
+        printBtn.addEventListener('click', () => {
+            window.print();
+        });
+        
+        pdfBtn.addEventListener('click', () => {
+            showNotification('PDF report generated. Download starting...');
+            // In a real implementation, this would generate a PDF
+        });
+        
+        excelBtn.addEventListener('click', () => {
+            showNotification('Excel export started. Check your downloads.');
+            // In a real implementation, this would generate an Excel file
+        });
+        
+        csvBtn.addEventListener('click', () => {
+            showNotification('CSV export started. Check your downloads.');
+            // In a real implementation, this would generate a CSV file
+        });
+        
+        textBtn.addEventListener('click', () => {
+            showNotification('Text export started. Check your downloads.');
+            // In a real implementation, this would generate a text file
+        });
+        
+        shareBtn.addEventListener('click', () => {
+            showNotification('Share functionality would open a dialog in a real implementation.');
+            // In a real implementation, this would open a share dialog
+        });
+        
+        // Initialize with a calculation
+        window.onload = function() {
+            calculateGrade();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Tire Size Calculator & Comparison Tool</title>
+    <!-- Caching Headers for Performance & Privacy -->
+    <meta http-equiv="Cache-Control" content="max-age=3600, public">
+
+    <!-- Dependencies for PDF/PNG Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #f1f5f9;
+            --text-color: #1e293b;
+            --primary-color: #ca8a04; /* Gold/Yellow */
+            --secondary-color: #475569;
+            --border-color: #cbd5e1;
+            --card-bg: #ffffff;
+            --input-bg: #f8fafc;
+            --shadow: 0 5px 15px rgba(0, 0, 0, 0.07);
+            --error-color: #dc2626;
+            --success-color: #16a34a;
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --text-color: #cbd5e1;
+            --primary-color: #facc15; /* Brighter Gold/Yellow */
+            --secondary-color: #94a3b8;
+            --border-color: #334155;
+            --card-bg: #1e293b;
+            --input-bg: #334155;
+            --shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            --error-color: #f87171;
+            --success-color: #4ade80;
+        }
+
+        /* General & Layout */
+        *, *::before, *::after { box-sizing: border-box; }
+        body { margin: 0; font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-color); line-height: 1.6; transition: all 0.2s; }
+        .container { max-width: 1600px; margin: 0 auto; padding: 20px; }
+        h1, h2 { color: var(--primary-color); }
+        .card { background-color: var(--card-bg); border-radius: 12px; padding: 25px; box-shadow: var(--shadow); border: 1px solid var(--border-color); margin-bottom: 25px; }
+
+        /* App Layout */
+        .app-header, .app-footer { text-align: center; margin-bottom: 20px; }
+        .app-main { display: grid; grid-template-columns: 1fr 350px; gap: 25px; }
+        .main-content, .sidebar { display: flex; flex-direction: column; gap: 25px; }
+        
+        /* Ad Placeholders */
+        .ad-placeholder { min-height: 90px; width: 100%; background-color: var(--card-bg); border: 2px dashed var(--border-color); display: flex; align-items: center; justify-content: center; text-align: center; padding: 10px; color: var(--secondary-color); font-weight: bold; border-radius: 8px; }
+        .ad-placeholder.sidebar { min-height: 280px; }
+
+        /* Form & Comparison Grid */
+        .comparison-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9em; }
+        .form-group input { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--input-bg); color: var(--text-color); font-size: 1.1rem; text-align: center; }
+        .tooltip { cursor: help; color: var(--secondary-color); font-size: 0.8em; margin-left: 5px;}
+        
+        /* Results Table */
+        .results-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .results-table td { padding: 10px; border-bottom: 1px solid var(--border-color); }
+        .results-table td:first-child { font-weight: 500; }
+        .results-table .diff { font-weight: bold; }
+        
+        /* Visualization */
+        .visualization-wrapper { height: 300px; }
+        #tire-visualization { width: 100%; height: 100%; }
+
+        /* Sidebar & Actions */
+        .action-card h2, .settings-card h2 { margin-top: 0; }
+        .btn-group button { margin-bottom: 10px; }
+        .btn { display: inline-block; width:100%; text-align:center; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; text-decoration:none; border:1px solid; }
+        .btn-primary { background-color: var(--primary-color); color: var(--bg-color); border-color:var(--primary-color);}
+        .btn-secondary { background-color: transparent; color: var(--primary-color); border-color:var(--primary-color); }
+        .settings-card .toggle-group { display: flex; background: var(--bg-color); border-radius: 6px; padding: 5px; }
+        .settings-card .toggle-btn { flex: 1; padding: 8px; background: transparent; border: none; cursor: pointer; border-radius: 4px; font-weight: 600; }
+        .settings-card .toggle-btn.active { background: var(--card-bg); color: var(--primary-color); box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+
+        /* Header Controls */
+        .header-controls { display:flex; justify-content:space-between; align-items:center; }
+        #theme-toggle { font-size: 1.5rem; cursor: pointer; background: none; border: none; color: var(--text-color);}
+        
+        @media (max-width: 1024px) {
+            .app-main { grid-template-columns: 1fr; }
+            .sidebar { margin-top: 25px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="app-header">
+            <div class="header-controls">
+                <h1>Advanced Tire Size Calculator</h1>
+                <button id="theme-toggle" title="Toggle Dark/Light Mode">🌓</button>
+            </div>
+             <div class="ad-placeholder header-ad">
+                <!-- =============================== -->
+                <!-- YLLIX / ADSTERRA HEADER AD SLOT -->
+                <!-- e.g., 728x90 Banner Ad Code -->
+                <!-- =============================== -->
+                <p>Header Ad Space (e.g., 728x90)</p>
+            </div>
+        </header>
+
+        <main class="app-main">
+            <div class="main-content">
+                <div class="card">
+                     <div class="comparison-grid" id="tire-inputs">
+                        <div class="tire-column">
+                            <h2>Original Tire</h2>
+                            <div class="form-group">
+                                <label for="tire1">Tire Size <span class="tooltip" title="e.g., 225/45R17 - Width/AspectRatioR-Rim">?</span></label>
+                                <input type="text" id="tire1" class="tire-input" value="225/45R17">
+                            </div>
+                            <table class="results-table" id="results1"></table>
+                        </div>
+                        <div class="tire-column">
+                            <h2>New Tire</h2>
+                             <div class="form-group">
+                                <label for="tire2">Tire Size</label>
+                                <input type="text" id="tire2" class="tire-input" value="245/40R18">
+                            </div>
+                            <table class="results-table" id="results2"></table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" id="printable-area">
+                    <h2>Visual Comparison & Differences</h2>
+                    <div class="visualization-wrapper">
+                        <svg id="tire-visualization" viewBox="0 0 600 300"></svg>
+                    </div>
+                    <table class="results-table" id="results-diff"></table>
+                </div>
+            </div>
+            
+            <aside class="sidebar">
+                <div class="card settings-card">
+                    <h2>Settings</h2>
+                    <label>Units</label>
+                    <div class="toggle-group" id="unit-toggle">
+                        <button class="toggle-btn active" data-unit="imperial">Imperial</button>
+                        <button class="toggle-btn" data-unit="metric">Metric</button>
+                    </div>
+                </div>
+
+                <div class="card action-card">
+                    <h2>Actions</h2>
+                     <div class="btn-group">
+                         <button id="printBtn" class="btn btn-secondary">Print Report</button>
+                         <button id="savePdfBtn" class="btn btn-secondary">Save as PDF</button>
+                         <button id="savePngBtn" class="btn btn-secondary">Save as PNG</button>
+                         <button id="saveCsvBtn" class="btn btn-secondary">Save as CSV</button>
+                         <button id="shareLinkBtn" class="btn btn-primary" style="margin-top:10px;">Copy Shareable Link</button>
+                     </div>
+                </div>
+
+                <div class="ad-placeholder sidebar">
+                    <!-- =============================== -->
+                    <!-- YLLIX / ADSTERRA SIDEBAR AD     -->
+                    <!-- e.g., 300x250 or 300x600 Ad Code -->
+                    <!-- =============================== -->
+                    <p>Sidebar Ad Space</p>
+                </div>
+            </aside>
+        </main>
+        
+        <footer class="app-footer">
+             <div class="ad-placeholder footer-ad">
+                 <!-- =============================== -->
+                <!-- YLLIX / ADSTERRA FOOTER AD SLOT -->
+                <!-- e.g., 728x90 Banner Ad Code -->
+                <!-- =============================== -->
+                <p>Footer Ad Space (e.g., 728x90)</p>
+            </div>
+        </footer>
+    </div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- UTILS & STATE ---
+    const D = document;
+    let tire1Results = {}, tire2Results = {};
+    let currentUnits = 'imperial';
+    
+    const els = {
+        inputs: D.querySelectorAll('.tire-input'),
+        results1: D.getElementById('results1'),
+        results2: D.getElementById('results2'),
+        resultsDiff: D.getElementById('results-diff'),
+        visualization: D.getElementById('tire-visualization'),
+        unitToggle: D.getElementById('unit-toggle'),
+        themeToggle: D.getElementById('theme-toggle'),
+    };
+    
+    // --- CORE CALCULATION ---
+    const parseTireString = (str) => {
+        const match = str.match(/(\d{3})\s*[\/x\s]\s*(\d{2})\s*[rRzZ]\s*(\d{2})/);
+        if (!match) return null;
+        return {
+            width: parseFloat(match[1]),
+            aspectRatio: parseFloat(match[2]),
+            rim: parseFloat(match[3]),
+        };
+    };
+
+    const calculateTire = (params) => {
+        if (!params) return null;
+        const { width, aspectRatio, rim } = params;
+        const sidewall_mm = width * (aspectRatio / 100);
+        const diameter_mm = (sidewall_mm * 2) + (rim * 25.4);
+        const circumference_mm = diameter_mm * Math.PI;
+        
+        return {
+            width_mm: width,
+            sidewall_mm: sidewall_mm,
+            diameter_mm: diameter_mm,
+            circumference_mm: circumference_mm,
+            revsPerKm: 1000000 / circumference_mm,
+            revsPerMile: (1000000 / circumference_mm) * 1.60934,
+        };
+    };
+    
+    // --- UI UPDATING ---
+    const updateAll = () => {
+        const params1 = parseTireString(D.getElementById('tire1').value);
+        const params2 = parseTireString(D.getElementById('tire2').value);
+
+        tire1Results = calculateTire(params1);
+        tire2Results = calculateTire(params2);
+        
+        renderResultsTable(els.results1, tire1Results);
+        renderResultsTable(els.results2, tire2Results);
+        renderDiffTable();
+        drawTires();
+    };
+
+    const renderResultsTable = (tableEl, results) => {
+        if (!results) { tableEl.innerHTML = '<tr><td colspan="2" style="color: var(--error-color);">Invalid Tire Size</td></tr>'; return; }
+        
+        const inch = (mm) => (mm / 25.4).toFixed(2);
+        const data = currentUnits === 'imperial'
+            ? [
+                ['Diameter', `${inch(results.diameter_mm)}"`],
+                ['Width', `${inch(results.width_mm)}"`],
+                ['Sidewall', `${inch(results.sidewall_mm)}"`],
+                ['Circumference', `${inch(results.circumference_mm)}"`],
+                ['Revs/Mile', results.revsPerMile.toFixed(0)]
+            ]
+            : [
+                ['Diameter', `${results.diameter_mm.toFixed(1)} mm`],
+                ['Width', `${results.width_mm.toFixed(0)} mm`],
+                ['Sidewall', `${results.sidewall_mm.toFixed(1)} mm`],
+                ['Circumference', `${results.circumference_mm.toFixed(0)} mm`],
+                ['Revs/Km', results.revsPerKm.toFixed(0)]
+            ];
+            
+        tableEl.innerHTML = data.map(([key, val]) => `<tr><td>${key}</td><td>${val}</td></tr>`).join('');
+    };
+
+    const renderDiffTable = () => {
+        if (!tire1Results || !tire2Results) { els.resultsDiff.innerHTML = ''; return; }
+        
+        const diffPercent = (val1, val2) => ((val2 - val1) / val1 * 100).toFixed(2);
+        const speedometerDiff = parseFloat(diffPercent(tire1Results.diameter_mm, tire2Results.diameter_mm));
+
+        let color = speedometerDiff > 3 || speedometerDiff < -3 ? 'var(--error-color)' : 'var(--success-color)';
+        if (isNaN(speedometerDiff)) color = 'var(--text-color)';
+        
+        const diffs = [
+            ['Diameter', `${diffPercent(tire1Results.diameter_mm, tire2Results.diameter_mm)}%`],
+            ['Circumference', `${diffPercent(tire1Results.circumference_mm, tire2Results.circumference_mm)}%`],
+            ['Speedometer Error', `<span style="color:${color}">${speedometerDiff}%</span>`],
+            ['When speedo reads 60mph', `Your actual speed will be <b>${(60 * (1 + speedometerDiff / 100)).toFixed(1)} mph</b>.`]
+        ];
+        els.resultsDiff.innerHTML = diffs.map(([key, val]) => `<tr><td>${key}</td><td>${val}</td></tr>`).join('');
+    };
+    
+    const drawTires = () => {
+        els.visualization.innerHTML = ''; // Clear SVG
+        if (!tire1Results || !tire2Results) return;
+
+        const maxDia = Math.max(tire1Results.diameter_mm, tire2Results.diameter_mm);
+        const scale = 250 / maxDia; // Scale to fit height
+        
+        const createTireSVG = (tire, x_offset) => {
+            const group = D.createElementNS('http://www.w3.org/2000/svg', 'g');
+            const dia = tire.diameter_mm * scale;
+            const width = tire.width_mm * scale;
+            const rimDia = (parseTireString(D.querySelector('.tire-input').value) || {rim:0}).rim * 25.4 * scale;
+            const y_offset = 280 - dia;
+            
+            // Tire
+            const tireRect = D.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            tireRect.setAttribute('x', x_offset); tireRect.setAttribute('y', y_offset);
+            tireRect.setAttribute('width', width); tireRect.setAttribute('height', dia);
+            tireRect.setAttribute('fill', 'var(--secondary-color)'); tireRect.setAttribute('rx', 10);
+            
+            // Rim
+            const rimRect = D.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rimRect.setAttribute('x', x_offset); rimRect.setAttribute('y', y_offset + (dia - rimDia) / 2);
+            rimRect.setAttribute('width', width); rimRect.setAttribute('height', rimDia);
+            rimRect.setAttribute('fill', 'var(--border-color)'); rimRect.setAttribute('rx', 5);
+            
+            group.appendChild(tireRect); group.appendChild(rimRect);
+            
+            // Diameter Label
+            const text = D.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', x_offset + width / 2); text.setAttribute('y', 295);
+            text.setAttribute('text-anchor', 'middle'); text.setAttribute('fill', 'var(--text-color)');
+            text.textContent = `${(tire.diameter_mm/25.4).toFixed(2)}"`;
+            group.appendChild(text);
+            
+            return group;
+        };
+        
+        els.visualization.appendChild(createTireSVG(tire1Results, 50));
+        els.visualization.appendChild(createTireSVG(tire2Results, 350));
+    };
+
+    // --- ACTIONS ---
+    const getShareLink = () => `${location.origin}${location.pathname}?tire1=${D.getElementById('tire1').value}&tire2=${D.getElementById('tire2').value}`;
+
+    D.getElementById('shareLinkBtn').onclick = (e) => {
+        navigator.clipboard.writeText(getShareLink()).then(() => {
+            e.target.textContent = 'Link Copied!';
+            setTimeout(() => e.target.textContent = 'Copy Shareable Link', 2000);
+        });
+    };
+    D.getElementById('printBtn').onclick = () => window.print();
+
+    const saveImage = (format) => {
+        html2canvas(D.getElementById('printable-area'), {
+            backgroundColor: D.documentElement.getAttribute('data-theme') === 'dark' ? '#0f172a' : '#f1f5f9'
+        }).then(canvas => {
+            if (format === 'pdf') {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                const imgData = canvas.toDataURL('image/png');
+                doc.addImage(imgData, 'PNG', 10, 10, 190, 0);
+                doc.save('tire-comparison.pdf');
+            } else {
+                const link = D.createElement('a');
+                link.download = `tire-comparison.${format}`;
+                link.href = canvas.toDataURL();
+                link.click();
+            }
+        });
+    };
+    D.getElementById('savePdfBtn').onclick = () => saveImage('pdf');
+    D.getElementById('savePngBtn').onclick = () => saveImage('png');
+    
+    D.getElementById('saveCsvBtn').onclick = () => {
+         let csvContent = "data:text/csv;charset=utf-8,Parameter,Original,New,Difference (%)\n";
+         const params = ['Diameter', 'Circumference'];
+         params.forEach(p => {
+             const key = p.toLowerCase() + '_mm';
+             const val1 = tire1Results[key]; const val2 = tire2Results[key];
+             csvContent += `${p},${(val1/25.4).toFixed(2)}",${(val2/25.4).toFixed(2)}",${((val2-val1)/val1*100).toFixed(2)}\n`;
+         });
+         const link = D.createElement('a');
+         link.href = encodeURI(csvContent);
+         link.download = 'tire-comparison.csv';
+         link.click();
+    };
+
+    // --- INIT ---
+    const init = () => {
+        // Theme
+        const savedTheme = localStorage.getItem('tireCalcTheme') || 'light';
+        D.documentElement.setAttribute('data-theme', savedTheme);
+        els.themeToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌓';
+
+        // Units
+        const savedUnits = localStorage.getItem('tireCalcUnits') || 'imperial';
+        els.unitToggle.querySelector(`[data-unit="${savedUnits}"]`).classList.add('active');
+        els.unitToggle.querySelector(`[data-unit="${savedUnits === 'imperial' ? 'metric':'imperial'}"]`).classList.remove('active');
+        currentUnits = savedUnits;
+
+        // URL Params
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('tire1')) D.getElementById('tire1').value = urlParams.get('tire1');
+        if (urlParams.has('tire2')) D.getElementById('tire2').value = urlParams.get('tire2');
+
+        updateAll();
+    };
+
+    els.inputs.forEach(input => input.addEventListener('input', updateAll));
+    els.themeToggle.onclick = () => {
+        const newTheme = D.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        D.documentElement.setAttribute('data-theme', newTheme);
+        els.themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌓';
+        localStorage.setItem('tireCalcTheme', newTheme);
+        drawTires(); // Redraw with new theme colors
+    };
+    els.unitToggle.onclick = (e) => {
+        if (!e.target.matches('.toggle-btn')) return;
+        currentUnits = e.target.dataset.unit;
+        els.unitToggle.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+        e.target.classList.add('active');
+        localStorage.setItem('tireCalcUnits', currentUnits);
+        updateAll();
+    };
+
+    init();
+});
+</script>
+
+</body>
+</html>

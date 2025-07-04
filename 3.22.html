@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Heat Index Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            /* Light theme variables */
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --bg: linear-gradient(135deg, #f1f2f6 0%, #dfe4ea 100%);
+            --card-bg: #ffffff;
+            --text: #333333;
+            --text-secondary: #6c757d;
+            --border: #dee2e6;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --result-gradient: linear-gradient(135deg, #2c3e50 0%, #1a2530 100%);
+        }
+
+        .dark-mode {
+            /* Dark theme variables */
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --light: #212529;
+            --dark: #f8f9fa;
+            --bg: linear-gradient(135deg, #121212 0%, #1e1e1e 100%);
+            --card-bg: #2d3436;
+            --text: #f8f9fa;
+            --text-secondary: #adb5bd;
+            --border: #495057;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            --result-gradient: linear-gradient(135deg, #1a2a3a 0%, #0d1824 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--warning);
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            background: var(--primary);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: white;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--text);
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .calculator-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .calculator-wrapper {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .calculator-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            padding: 30px;
+            transition: transform 0.3s ease;
+        }
+
+        .calculator-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .card-header i {
+            font-size: 1.8rem;
+            color: var(--primary);
+        }
+
+        .card-header h2 {
+            color: var(--text);
+            font-size: 1.8rem;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .input-row .unit-selector {
+            width: 100px;
+            flex-shrink: 0;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 14px 15px;
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 16px;
+            color: var(--text);
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .btn-calculate {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 16px 30px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-calculate:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-calculate:active {
+            transform: translateY(0);
+        }
+
+        .result-card {
+            background: var(--result-gradient);
+            color: white;
+            border-radius: 15px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .result-header {
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .result-header i {
+            font-size: 1.8rem;
+            color: var(--warning);
+        }
+
+        .result-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-label {
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .result-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--warning);
+        }
+
+        .risk-level {
+            margin-top: 10px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .risk-caution {
+            background: rgba(243, 156, 18, 0.2);
+            border-left: 4px solid var(--warning);
+        }
+
+        .risk-danger {
+            background: rgba(231, 76, 60, 0.2);
+            border-left: 4px solid var(--danger);
+        }
+
+        .risk-extreme {
+            background: rgba(142, 68, 173, 0.2);
+            border-left: 4px solid #8e44ad;
+        }
+
+        .safety-tips {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .safety-tips h3 {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .safety-tips ul {
+            padding-left: 25px;
+        }
+
+        .safety-tips li {
+            margin-bottom: 10px;
+        }
+
+        .export-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .export-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .export-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .ad-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        @media (max-width: 768px) {
+            .ad-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .ad-space {
+            background: var(--card-bg);
+            border: 2px dashed var(--border);
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .ad-space h3 {
+            margin-bottom: 15px;
+            color: var(--text);
+        }
+
+        .ad-placeholder {
+            background: var(--light);
+            color: var(--text);
+            padding: 20px;
+            border-radius: 8px;
+            font-style: italic;
+            width: 100%;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .instructions {
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            padding: 25px;
+            margin-top: 30px;
+        }
+
+        .instructions h3 {
+            margin-bottom: 15px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+            display: flex;
+            gap: 15px;
+        }
+
+        .feature-icon {
+            background: rgba(52, 152, 219, 0.1);
+            color: var(--primary);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+            font-size: 20px;
+        }
+
+        .feature-content h4 {
+            margin-bottom: 10px;
+            color: var(--text);
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 40px;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .footer-links a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            margin-left: 5px;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 300px;
+            background: var(--card-bg);
+            color: var(--text);
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            box-shadow: var(--shadow);
+            font-size: 14px;
+            font-weight: normal;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .risk-table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        .risk-table th, .risk-table td {
+            border: 1px solid var(--border);
+            padding: 10px;
+            text-align: left;
+        }
+
+        .risk-table th {
+            background: rgba(52, 152, 219, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .theme-toggle {
+                top: 10px;
+                right: 10px;
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+                padding-top: 20px;
+            }
+            
+            .logo-icon {
+                width: 60px;
+                height: 60px;
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <button class="theme-toggle" id="theme-toggle">
+                <i class="fas fa-moon"></i>
+            </button>
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-temperature-high"></i>
+                </div>
+                <h1>Professional Heat Index Calculator</h1>
+                <p class="subtitle">Calculate the perceived temperature based on actual temperature and humidity for accurate heat risk assessment</p>
+            </div>
+        </header>
+        
+        <div class="ad-container">
+            <div class="ad-space">
+                <h3>Adsterra Ad Space</h3>
+                <div class="ad-placeholder">
+                    <p>Responsive Ad Unit (728x90)</p>
+                    <p><small>Ad code would be placed here</small></p>
+                </div>
+            </div>
+            <div class="ad-space">
+                <h3>Yllix Ad Space</h3>
+                <div class="ad-placeholder">
+                    <p>Responsive Ad Unit (300x250)</p>
+                    <p><small>Ad code would be placed here</small></p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="calculator-wrapper">
+            <div class="calculator-card">
+                <div class="card-header">
+                    <i class="fas fa-sliders-h"></i>
+                    <h2>Input Parameters</h2>
+                </div>
+                
+                <div class="input-group">
+                    <label for="temperature">
+                        Temperature
+                        <span class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltiptext">Enter the current air temperature. You can use Fahrenheit or Celsius.</span>
+                        </span>
+                    </label>
+                    <div class="input-row">
+                        <input type="number" id="temperature" placeholder="Enter temperature" min="-40" max="60" step="0.1" value="32">
+                        <select id="temp-unit" class="unit-selector">
+                            <option value="C">°C</option>
+                            <option value="F">°F</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="humidity">
+                        Relative Humidity (%)
+                        <span class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltiptext">Enter the relative humidity percentage (between 0% and 100%).</span>
+                        </span>
+                    </label>
+                    <input type="number" id="humidity" placeholder="Enter humidity" min="0" max="100" step="1" value="70">
+                    <div id="humidity-slider" style="margin-top: 10px;"></div>
+                </div>
+                
+                <div class="input-group">
+                    <label>
+                        Heat Index Calculation
+                        <span class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltiptext">Based on the Rothfusz regression equation used by the US National Weather Service</span>
+                        </span>
+                    </label>
+                    <div style="background: rgba(52, 152, 219, 0.1); padding: 15px; border-radius: 10px; font-size: 14px;">
+                        <p>HI = -42.379 + 2.04901523*T + 10.14333127*RH - 0.22475541*T*RH - 6.83783e-3*T² - 5.481717e-2*RH² + 1.22874e-3*T²*RH + 8.5282e-4*T*RH² - 1.99e-6*T²*RH²</p>
+                    </div>
+                </div>
+                
+                <button id="calculate-btn" class="btn-calculate">
+                    <i class="fas fa-calculator"></i> Calculate Heat Index
+                </button>
+            </div>
+            
+            <div class="result-card">
+                <div>
+                    <div class="result-header">
+                        <i class="fas fa-chart-line"></i>
+                        <h2>Calculation Results</h2>
+                    </div>
+                    
+                    <div class="result-item">
+                        <span class="result-label">Temperature:</span>
+                        <span class="result-value" id="temp-result">-</span>
+                    </div>
+                    
+                    <div class="result-item">
+                        <span class="result-label">Humidity:</span>
+                        <span class="result-value" id="humidity-result">-</span>
+                    </div>
+                    
+                    <div class="result-item">
+                        <span class="result-label">Heat Index:</span>
+                        <span class="result-value" id="heat-index-result">-</span>
+                    </div>
+                    
+                    <div class="result-item">
+                        <span class="result-label">Perception:</span>
+                        <span class="result-value" id="perception-result">-</span>
+                    </div>
+                    
+                    <div id="risk-level" class="risk-level">
+                        <!-- Risk level will be inserted here -->
+                    </div>
+                    
+                    <div class="safety-tips">
+                        <h3><i class="fas fa-first-aid"></i> Safety Recommendations</h3>
+                        <ul id="safety-tips-list">
+                            <li>Heat index calculation in progress...</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="export-options">
+                    <button class="export-btn no-print" id="print-btn"><i class="fas fa-print"></i> Print</button>
+                    <button class="export-btn no-print" id="pdf-btn"><i class="fas fa-file-pdf"></i> PDF</button>
+                    <button class="export-btn no-print" id="csv-btn"><i class="fas fa-file-csv"></i> CSV</button>
+                    <button class="export-btn no-print" id="share-btn"><i class="fas fa-share-alt"></i> Share</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3><i class="fas fa-info-circle"></i> About Heat Index</h3>
+            <p>The heat index is a measure of how hot it really feels when relative humidity is factored in with the actual air temperature. It's also known as the "apparent temperature" and is an important indicator for health risks during hot weather.</p>
+            
+            <div class="risk-table">
+                <h4 style="margin: 20px 0 10px;">Heat Index Risk Levels</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Heat Index</th>
+                            <th>Risk Level</th>
+                            <th>Health Effects</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>27-32°C (80-90°F)</td>
+                            <td>Caution</td>
+                            <td>Fatigue possible with prolonged exposure</td>
+                        </tr>
+                        <tr>
+                            <td>32-41°C (90-105°F)</td>
+                            <td>Extreme Caution</td>
+                            <td>Heat cramps and heat exhaustion possible</td>
+                        </tr>
+                        <tr>
+                            <td>41-54°C (105-130°F)</td>
+                            <td>Danger</td>
+                            <td>Heat cramps and heat exhaustion likely, heatstroke possible</td>
+                        </tr>
+                        <tr>
+                            <td>Above 54°C (130°F)</td>
+                            <td>Extreme Danger</td>
+                            <td>Heatstroke highly likely with continued exposure</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Secure & Private</h4>
+                    <p>All calculations happen in your browser. No data is sent to servers, ensuring complete privacy and GDPR/CCPA compliance.</p>
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Fully Responsive</h4>
+                    <p>Works perfectly on all devices - desktops, tablets, and mobile phones with adaptive layout.</p>
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-shipping-fast"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Accurate Calculations</h4>
+                    <p>Uses the official Rothfusz regression formula adopted by the US National Weather Service.</p>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 Professional Heat Index Calculator | All Rights Reserved</p>
+            <div class="footer-links">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">GDPR Compliance</a>
+                <a href="#">CCPA Information</a>
+                <a href="#">Contact Us</a>
+            </div>
+        </footer>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const calculateBtn = document.getElementById('calculate-btn');
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeIcon = themeToggle.querySelector('i');
+            const tempInput = document.getElementById('temperature');
+            const humidityInput = document.getElementById('humidity');
+            const tempUnitSelect = document.getElementById('temp-unit');
+            const printBtn = document.getElementById('print-btn');
+            const pdfBtn = document.getElementById('pdf-btn');
+            const csvBtn = document.getElementById('csv-btn');
+            const shareBtn = document.getElementById('share-btn');
+            
+            // Theme toggle functionality
+            themeToggle.addEventListener('click', function() {
+                document.body.classList.toggle('dark-mode');
+                
+                if (document.body.classList.contains('dark-mode')) {
+                    themeIcon.className = 'fas fa-sun';
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    themeIcon.className = 'fas fa-moon';
+                    localStorage.setItem('theme', 'light');
+                }
+            });
+            
+            // Check for saved theme preference
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                themeIcon.className = 'fas fa-sun';
+            }
+            
+            // Heat Index Calculation Function
+            function calculateHeatIndex(temp, humidity, unit) {
+                // Convert to Fahrenheit if necessary
+                let tempF = unit === 'C' ? (temp * 9/5) + 32 : temp;
+                
+                // Rothfusz regression formula
+                const c1 = -42.379;
+                const c2 = 2.04901523;
+                const c3 = 10.14333127;
+                const c4 = -0.22475541;
+                const c5 = -6.83783e-3;
+                const c6 = -5.481717e-2;
+                const c7 = 1.22874e-3;
+                const c8 = 8.5282e-4;
+                const c9 = -1.99e-6;
+                
+                // Calculate heat index
+                let heatIndexF = c1 + (c2 * tempF) + (c3 * humidity) + 
+                               (c4 * tempF * humidity) + (c5 * Math.pow(tempF, 2)) + 
+                               (c6 * Math.pow(humidity, 2)) + (c7 * Math.pow(tempF, 2) * humidity) + 
+                               (c8 * tempF * Math.pow(humidity, 2)) + (c9 * Math.pow(tempF, 2) * Math.pow(humidity, 2));
+                
+                // Apply adjustments
+                if (humidity < 13 && tempF > 80 && tempF < 112) {
+                    heatIndexF -= ((13 - humidity) / 4) * Math.sqrt((17 - Math.abs(tempF - 95)) / 17);
+                } else if (humidity > 85 && tempF > 80 && tempF < 87) {
+                    heatIndexF += ((humidity - 85) / 10) * ((87 - tempF) / 5);
+                }
+                
+                // Convert back to Celsius if needed
+                let heatIndexC = (heatIndexF - 32) * 5/9;
+                
+                return unit === 'C' ? heatIndexC : heatIndexF;
+            }
+            
+            // Get risk level based on heat index
+            function getRiskLevel(heatIndex, unit) {
+                // Convert to Fahrenheit for consistent thresholds
+                let hiF = unit === 'C' ? (heatIndex * 9/5) + 32 : heatIndex;
+                
+                if (hiF < 80) return { level: 'Normal', class: '' };
+                if (hiF < 90) return { level: 'Caution', class: 'risk-caution' };
+                if (hiF < 103) return { level: 'Extreme Caution', class: 'risk-caution' };
+                if (hiF < 124) return { level: 'Danger', class: 'risk-danger' };
+                return { level: 'Extreme Danger', class: 'risk-extreme' };
+            }
+            
+            // Get perception description
+            function getPerception(heatIndex, unit) {
+                // Convert to Fahrenheit for consistent thresholds
+                let hiF = unit === 'C' ? (heatIndex * 9/5) + 32 : heatIndex;
+                
+                if (hiF < 80) return "Comfortable";
+                if (hiF < 90) return "Warm";
+                if (hiF < 103) return "Hot";
+                if (hiF < 124) return "Very Hot";
+                return "Extremely Hot";
+            }
+            
+            // Get safety tips
+            function getSafetyTips(riskLevel) {
+                const tips = {
+                    'Normal': [
+                        "Stay hydrated with water",
+                        "Wear lightweight, light-colored clothing",
+                        "Take breaks in shaded areas during prolonged outdoor activities"
+                    ],
+                    'Caution': [
+                        "Drink plenty of fluids",
+                        "Take frequent breaks in cool areas",
+                        "Reduce strenuous activities during peak heat hours",
+                        "Wear sunscreen and a hat"
+                    ],
+                    'Extreme Caution': [
+                        "Drink 2-4 glasses of cool fluids each hour",
+                        "Minimize sun exposure between 10am-4pm",
+                        "Schedule strenuous activities for cooler parts of the day",
+                        "Wear light, loose-fitting clothing"
+                    ],
+                    'Danger': [
+                        "Drink plenty of fluids and avoid alcohol/caffeine",
+                        "Stay indoors in air-conditioned spaces as much as possible",
+                        "If outdoors, take frequent breaks in shaded or cool areas",
+                        "Check on elderly neighbors and relatives"
+                    ],
+                    'Extreme Danger': [
+                        "Avoid all strenuous activity",
+                        "Stay indoors in air-conditioned spaces",
+                        "Drink water constantly (avoid alcohol/caffeine)",
+                        "Check on vulnerable individuals frequently",
+                        "Seek medical attention immediately for heat-related symptoms"
+                    ]
+                };
+                
+                return tips[riskLevel] || tips['Normal'];
+            }
+            
+            // Calculate button handler
+            calculateBtn.addEventListener('click', function() {
+                // Get input values
+                const temp = parseFloat(tempInput.value) || 0;
+                const humidity = parseFloat(humidityInput.value) || 0;
+                const unit = tempUnitSelect.value;
+                
+                // Validate inputs
+                if (temp < -40 || temp > 60) {
+                    alert('Temperature must be between -40°C and 60°C (-40°F and 140°F)');
+                    return;
+                }
+                
+                if (humidity < 0 || humidity > 100) {
+                    alert('Humidity must be between 0% and 100%');
+                    return;
+                }
+                
+                // Calculate heat index
+                const heatIndex = calculateHeatIndex(temp, humidity, unit);
+                
+                // Display results
+                document.getElementById('temp-result').textContent = 
+                    `${temp.toFixed(1)}°${unit}`;
+                
+                document.getElementById('humidity-result').textContent = 
+                    `${humidity.toFixed(0)}%`;
+                
+                document.getElementById('heat-index-result').textContent = 
+                    `${heatIndex.toFixed(1)}°${unit}`;
+                
+                const perception = getPerception(heatIndex, unit);
+                document.getElementById('perception-result').textContent = perception;
+                
+                const risk = getRiskLevel(heatIndex, unit);
+                const riskElement = document.getElementById('risk-level');
+                riskElement.innerHTML = `
+                    <span class="result-label">Risk Level:</span>
+                    <span class="result-value">${risk.level}</span>
+                `;
+                riskElement.className = `risk-level ${risk.class}`;
+                
+                // Display safety tips
+                const safetyTips = getSafetyTips(risk.level);
+                const tipsList = document.getElementById('safety-tips-list');
+                tipsList.innerHTML = '';
+                safetyTips.forEach(tip => {
+                    const li = document.createElement('li');
+                    li.textContent = tip;
+                    tipsList.appendChild(li);
+                });
+            });
+            
+            // Export and Share functionality
+            printBtn.addEventListener('click', function() {
+                window.print();
+            });
+            
+            pdfBtn.addEventListener('click', function() {
+                alert('PDF export would be implemented here. In a production environment, this would generate a PDF report.');
+            });
+            
+            csvBtn.addEventListener('click', function() {
+                const temp = tempInput.value;
+                const humidity = humidityInput.value;
+                const unit = tempUnitSelect.value;
+                const heatIndex = document.getElementById('heat-index-result').textContent;
+                const perception = document.getElementById('perception-result').textContent;
+                const risk = document.getElementById('risk-level').textContent.replace('Risk Level:', '').trim();
+                
+                const csvContent = `data:text/csv;charset=utf-8,Temperature,Unit,Humidity,Heat Index,Perception,Risk Level\n${temp},${unit},${humidity},${heatIndex},${perception},${risk}`;
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement('a');
+                link.setAttribute('href', encodedUri);
+                link.setAttribute('download', 'heat-index-report.csv');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+            
+            shareBtn.addEventListener('click', function() {
+                if (navigator.share) {
+                    const temp = tempInput.value;
+                    const humidity = humidityInput.value;
+                    const unit = tempUnitSelect.value;
+                    const heatIndex = document.getElementById('heat-index-result').textContent;
+                    
+                    navigator.share({
+                        title: 'Heat Index Calculation',
+                        text: `Current temperature: ${temp}°${unit}, Humidity: ${humidity}%. Heat index: ${heatIndex}.`,
+                        url: window.location.href
+                    })
+                    .catch(console.error);
+                } else {
+                    alert('Web Share API not supported in your browser. Copy the URL to share.');
+                }
+            });
+            
+            // Initialize with default values
+            setTimeout(() => {
+                calculateBtn.click();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

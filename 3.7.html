@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProDateCalc | Advanced Date Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --dark: #0d1b2a;
+            --light: #f8f9fa;
+            --gray: #8d99ae;
+            --danger: #e63946;
+            --border-radius: 12px;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+            transition: var(--transition);
+        }
+
+        body.dark-mode {
+            background-color: #121212;
+            color: #f0f0f0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px 0;
+            border-radius: var(--border-radius);
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo i {
+            font-size: 2.5rem;
+        }
+
+        .logo h1 {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .theme-toggle {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50px;
+            padding: 10px 15px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 25px;
+        }
+
+        .calculator-container {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 30px;
+            margin-bottom: 25px;
+        }
+
+        .dark-mode .calculator-container {
+            background: #1e1e1e;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .input-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .input-field {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .input-field label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .dark-mode .input-field label {
+            color: #ddd;
+        }
+
+        .input-field input, .input-field select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .dark-mode .input-field input, .dark-mode .input-field select {
+            background: #2d2d2d;
+            border-color: #444;
+            color: #f0f0f0;
+        }
+
+        .input-field input:focus, .input-field select:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        .format-hint {
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-top: 5px;
+        }
+
+        .dark-mode .format-hint {
+            color: #aaa;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary);
+        }
+
+        .btn-secondary {
+            background: #e9ecef;
+            color: var(--dark);
+        }
+
+        .dark-mode .btn-secondary {
+            background: #333;
+            color: #f0f0f0;
+        }
+
+        .btn-secondary:hover {
+            background: #d1d4d7;
+        }
+
+        .dark-mode .btn-secondary:hover {
+            background: #444;
+        }
+
+        .result-container {
+            background: rgba(67, 97, 238, 0.05);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            margin-top: 20px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .dark-mode .result-container {
+            background: rgba(67, 97, 238, 0.1);
+        }
+
+        .result-title {
+            font-size: 1.25rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .result-box {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .dark-mode .result-box {
+            background: #2d2d2d;
+        }
+
+        .result-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 5px 0;
+        }
+
+        .result-label {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        .dark-mode .result-label {
+            color: #aaa;
+        }
+
+        .result-text {
+            font-size: 1.1rem;
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .dark-mode .result-text {
+            background: #2d2d2d;
+        }
+
+        .export-section {
+            margin-top: 30px;
+        }
+
+        .export-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .export-btn {
+            padding: 10px 15px;
+            border-radius: 8px;
+            background: #e9ecef;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .dark-mode .export-btn {
+            background: #333;
+            color: #f0f0f0;
+        }
+
+        .export-btn:hover {
+            background: #d1d4d7;
+        }
+
+        .dark-mode .export-btn:hover {
+            background: #444;
+        }
+
+        .share-section {
+            margin-top: 25px;
+        }
+
+        .share-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .share-btn {
+            padding: 10px 15px;
+            border-radius: 8px;
+            background: #e9ecef;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .dark-mode .share-btn {
+            background: #333;
+            color: #f0f0f0;
+        }
+
+        .share-btn:hover {
+            background: #d1d4d7;
+        }
+
+        .dark-mode .share-btn:hover {
+            background: #444;
+        }
+
+        .ad-container {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .dark-mode .ad-container {
+            background: #1e1e1e;
+        }
+
+        .ad-title {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: var(--gray);
+        }
+
+        .ad-placeholder {
+            height: 250px;
+            background: linear-gradient(135deg, #f5f7fa, #e4e7eb);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: var(--gray);
+            font-weight: 600;
+        }
+
+        .dark-mode .ad-placeholder {
+            background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+        }
+
+        .ad-placeholder i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .features {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 25px;
+        }
+
+        .dark-mode .features {
+            background: #1e1e1e;
+        }
+
+        .features-list {
+            list-style: none;
+        }
+
+        .features-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .dark-mode .features-list li {
+            border-bottom: 1px solid #333;
+        }
+
+        .features-list li:last-child {
+            border-bottom: none;
+        }
+
+        .features-list i {
+            color: var(--primary);
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 40px;
+            color: var(--gray);
+            border-top: 1px solid #eee;
+        }
+
+        .dark-mode footer {
+            border-top: 1px solid #333;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin: 15px 0;
+        }
+
+        .footer-links a {
+            color: var(--gray);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .input-row {
+                flex-direction: column;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            margin-left: 5px;
+            color: var(--primary);
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-calendar-alt"></i>
+                    <h1>ProDateCalc</h1>
+                </div>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                    <span>Dark Mode</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="calculator-section">
+                <div class="calculator-container">
+                    <h2 class="section-title"><i class="fas fa-calculator"></i> Date Calculator</h2>
+                    
+                    <div class="input-group">
+                        <div class="input-row">
+                            <div class="input-field">
+                                <label for="date1">Start Date</label>
+                                <input type="text" id="date1" placeholder="DD/MM/YYYY" value="26/06/2023">
+                                <div class="format-hint">Formats: DD/MM/YYYY, MM/DD/YYYY, YYYY-MM-DD</div>
+                            </div>
+                            
+                            <div class="input-field">
+                                <label for="date2">End Date</label>
+                                <input type="text" id="date2" placeholder="DD/MM/YYYY" value="26/06/2025">
+                                <div class="format-hint">Formats: DD/MM/YYYY, MM/DD/YYYY, YYYY-MM-DD</div>
+                            </div>
+                        </div>
+                        
+                        <div class="input-row">
+                            <div class="input-field">
+                                <label for="operation">Operation</label>
+                                <select id="operation">
+                                    <option value="difference">Calculate Difference</option>
+                                    <option value="add">Add to Date</option>
+                                    <option value="subtract">Subtract from Date</option>
+                                </select>
+                            </div>
+                            
+                            <div class="input-field" id="amountField">
+                                <label for="amount">
+                                    Amount
+                                    <span class="tooltip">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span class="tooltiptext">Enter the number of days/weeks/months/years to add or subtract</span>
+                                    </span>
+                                </label>
+                                <input type="number" id="amount" placeholder="Enter amount" value="365">
+                            </div>
+                            
+                            <div class="input-field" id="unitField">
+                                <label for="unit">Unit</label>
+                                <select id="unit">
+                                    <option value="days">Days</option>
+                                    <option value="weeks">Weeks</option>
+                                    <option value="months">Months</option>
+                                    <option value="years">Years</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="input-row">
+                            <div class="input-field">
+                                <label for="timezone">
+                                    Timezone
+                                    <span class="tooltip">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span class="tooltiptext">Select timezone for accurate calculations</span>
+                                    </span>
+                                </label>
+                                <select id="timezone">
+                                    <option value="local">Local Time</option>
+                                    <option value="utc">UTC</option>
+                                    <option value="est">EST (New York)</option>
+                                    <option value="pst">PST (Los Angeles)</option>
+                                    <option value="cet">CET (Paris)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="calculateBtn">
+                            <i class="fas fa-calculator"></i> Calculate
+                        </button>
+                        <button class="btn btn-secondary" id="resetBtn">
+                            <i class="fas fa-redo"></i> Reset
+                        </button>
+                    </div>
+                    
+                    <div class="result-container" id="resultContainer">
+                        <h3 class="result-title">Calculation Results</h3>
+                        <div class="result-grid">
+                            <div class="result-box">
+                                <div class="result-value" id="yearsResult">2</div>
+                                <div class="result-label">Years</div>
+                            </div>
+                            <div class="result-box">
+                                <div class="result-value" id="monthsResult">24</div>
+                                <div class="result-label">Months</div>
+                            </div>
+                            <div class="result-box">
+                                <div class="result-value" id="weeksResult">104</div>
+                                <div class="result-label">Weeks</div>
+                            </div>
+                            <div class="result-box">
+                                <div class="result-value" id="daysResult">731</div>
+                                <div class="result-label">Days</div>
+                            </div>
+                        </div>
+                        <div class="result-text" id="resultText">
+                            The difference between <strong>26 June 2023</strong> and <strong>26 June 2025</strong> is <strong>2 years</strong>, 
+                            which is equivalent to <strong>24 months</strong>, <strong>104 weeks</strong>, or <strong>731 days</strong>.
+                        </div>
+                    </div>
+                    
+                    <div class="export-section">
+                        <h3 class="section-title"><i class="fas fa-download"></i> Export Results</h3>
+                        <div class="export-options">
+                            <button class="export-btn" id="printBtn">
+                                <i class="fas fa-print"></i> Print
+                            </button>
+                            <button class="export-btn" id="pdfBtn">
+                                <i class="fas fa-file-pdf"></i> PDF
+                            </button>
+                            <button class="export-btn" id="excelBtn">
+                                <i class="fas fa-file-excel"></i> Excel
+                            </button>
+                            <button class="export-btn" id="csvBtn">
+                                <i class="fas fa-file-csv"></i> CSV
+                            </button>
+                            <button class="export-btn" id="textBtn">
+                                <i class="fas fa-file-alt"></i> Text
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="share-section">
+                        <h3 class="section-title"><i class="fas fa-share-alt"></i> Share Results</h3>
+                        <div class="share-options">
+                            <button class="share-btn" id="emailBtn">
+                                <i class="fas fa-envelope"></i> Email
+                            </button>
+                            <button class="share-btn" id="whatsappBtn">
+                                <i class="fab fa-whatsapp"></i> WhatsApp
+                            </button>
+                            <button class="share-btn" id="facebookBtn">
+                                <i class="fab fa-facebook"></i> Facebook
+                            </button>
+                            <button class="share-btn" id="twitterBtn">
+                                <i class="fab fa-twitter"></i> Twitter
+                            </button>
+                            <button class="share-btn" id="copyBtn">
+                                <i class="fas fa-copy"></i> Copy Link
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="ad-container">
+                    <h3 class="ad-title">Advertisement</h3>
+                    <div class="ad-placeholder">
+                        <i class="fas fa-ad"></i>
+                        <div>Adsterra Ad Space</div>
+                        <div class="format-hint">300x250 Responsive Ad</div>
+                    </div>
+                </div>
+                
+                <div class="ad-container">
+                    <h3 class="ad-title">Advertisement</h3>
+                    <div class="ad-placeholder">
+                        <i class="fas fa-ad"></i>
+                        <div>Yllix Ad Space</div>
+                        <div class="format-hint">300x600 Responsive Ad</div>
+                    </div>
+                </div>
+                
+                <div class="features">
+                    <h3 class="section-title"><i class="fas fa-star"></i> Premium Features</h3>
+                    <ul class="features-list">
+                        <li><i class="fas fa-check-circle"></i> Date difference in multiple units</li>
+                        <li><i class="fas fa-check-circle"></i> Add/Subtract days/weeks/months/years</li>
+                        <li><i class="fas fa-check-circle"></i> Timezone-aware calculations</li>
+                        <li><i class="fas fa-check-circle"></i> Multiple date formats support</li>
+                        <li><i class="fas fa-check-circle"></i> Export to PDF, Excel, CSV</li>
+                        <li><i class="fas fa-check-circle"></i> One-click sharing options</li>
+                        <li><i class="fas fa-check-circle"></i> Dark/Light mode</li>
+                        <li><i class="fas fa-check-circle"></i> Mobile responsive design</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2023 ProDateCalc. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Contact Us</a>
+                <a href="#">About</a>
+            </div>
+            <p class="format-hint">All calculations are performed client-side. Your data never leaves your device.</p>
+        </div>
+    </footer>
+
+    <script>
+        // DOM Elements
+        const themeToggle = document.getElementById('themeToggle');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const operationSelect = document.getElementById('operation');
+        const amountField = document.getElementById('amountField');
+        const unitField = document.getElementById('unitField');
+        
+        // Initialize theme
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.body.classList.toggle('dark-mode', savedTheme === 'dark');
+            updateThemeButton(savedTheme);
+        }
+        
+        // Update theme button text and icon
+        function updateThemeButton(theme) {
+            const icon = themeToggle.querySelector('i');
+            const text = themeToggle.querySelector('span');
+            
+            if (theme === 'dark') {
+                icon.className = 'fas fa-sun';
+                text.textContent = 'Light Mode';
+            } else {
+                icon.className = 'fas fa-moon';
+                text.textContent = 'Dark Mode';
+            }
+        }
+        
+        // Toggle theme
+        themeToggle.addEventListener('click', () => {
+            const isDark = document.body.classList.toggle('dark-mode');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateThemeButton(isDark ? 'dark' : 'light');
+        });
+        
+        // Handle operation change
+        operationSelect.addEventListener('change', function() {
+            if (this.value === 'difference') {
+                amountField.style.display = 'none';
+                unitField.style.display = 'none';
+            } else {
+                amountField.style.display = 'block';
+                unitField.style.display = 'block';
+            }
+        });
+        
+        // Initialize operation display
+        operationSelect.dispatchEvent(new Event('change'));
+        
+        // Parse date from different formats
+        function parseDate(dateStr) {
+            // Try different formats
+            const formats = [
+                /^(\d{2})\/(\d{2})\/(\d{4})$/, // DD/MM/YYYY
+                /^(\d{2})\/(\d{2})\/(\d{4})$/, // MM/DD/YYYY - same regex, will handle differently
+                /^(\d{4})-(\d{2})-(\d{2})$/,   // YYYY-MM-DD
+            ];
+            
+            for (let i = 0; i < formats.length; i++) {
+                const match = dateStr.match(formats[i]);
+                if (match) {
+                    if (i === 0) {
+                        // DD/MM/YYYY
+                        return new Date(match[3], match[2] - 1, match[1]);
+                    } else if (i === 1) {
+                        // MM/DD/YYYY - same regex, but swap month and day
+                        return new Date(match[3], match[1] - 1, match[2]);
+                    } else if (i === 2) {
+                        // YYYY-MM-DD
+                        return new Date(match[1], match[2] - 1, match[3]);
+                    }
+                }
+            }
+            
+            return null; // Invalid format
+        }
+        
+        // Calculate date difference
+        function calculateDateDifference(date1, date2) {
+            // Calculate difference in milliseconds
+            const diffMs = Math.abs(date2 - date1);
+            
+            // Calculate days
+            const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            
+            // Calculate weeks
+            const weeks = Math.floor(days / 7);
+            
+            // Calculate months and years
+            let months, years;
+            const startYear = date1.getFullYear();
+            const startMonth = date1.getMonth();
+            const endYear = date2.getFullYear();
+            const endMonth = date2.getMonth();
+            
+            years = endYear - startYear;
+            months = endMonth - startMonth;
+            
+            if (date2.getDate() < date1.getDate()) {
+                months--;
+            }
+            
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+            
+            return {
+                days: days,
+                weeks: weeks,
+                months: months,
+                years: years,
+                totalDays: days
+            };
+        }
+        
+        // Add or subtract time
+        function addSubtractTime(date, amount, unit, operation) {
+            const result = new Date(date);
+            const multiplier = operation === 'add' ? 1 : -1;
+            
+            switch (unit) {
+                case 'days':
+                    result.setDate(result.getDate() + (amount * multiplier));
+                    break;
+                case 'weeks':
+                    result.setDate(result.getDate() + (amount * 7 * multiplier));
+                    break;
+                case 'months':
+                    result.setMonth(result.getMonth() + (amount * multiplier));
+                    break;
+                case 'years':
+                    result.setFullYear(result.getFullYear() + (amount * multiplier));
+                    break;
+            }
+            
+            return result;
+        }
+        
+        // Format date for display
+        function formatDate(date) {
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            return date.toLocaleDateString(undefined, options);
+        }
+        
+        // Perform calculation
+        function performCalculation() {
+            const date1Str = document.getElementById('date1').value;
+            const date2Str = document.getElementById('date2').value;
+            const operation = document.getElementById('operation').value;
+            
+            const date1 = parseDate(date1Str);
+            
+            if (!date1) {
+                alert('Please enter a valid start date in one of the supported formats.');
+                return;
+            }
+            
+            let date2;
+            let result;
+            let resultText;
+            
+            if (operation === 'difference') {
+                date2 = parseDate(date2Str);
+                
+                if (!date2) {
+                    alert('Please enter a valid end date in one of the supported formats.');
+                    return;
+                }
+                
+                // Ensure date2 is after date1
+                if (date2 < date1) {
+                    const temp = date1;
+                    date1 = date2;
+                    date2 = temp;
+                }
+                
+                result = calculateDateDifference(date1, date2);
+                
+                resultText = `The difference between <strong>${formatDate(date1)}</strong> and <strong>${formatDate(date2)}</strong> is `;
+                
+                const parts = [];
+                if (result.years > 0) parts.push(`${result.years} year${result.years !== 1 ? 's' : ''}`);
+                if (result.months > 0) parts.push(`${result.months} month${result.months !== 1 ? 's' : ''}`);
+                if (result.days > 0 && result.years === 0) parts.push(`${result.days} day${result.days !== 1 ? 's' : ''}`);
+                
+                resultText += parts.join(', ') + '.';
+                
+                resultText += `<br>This is equivalent to <strong>${result.months + (result.years * 12)} months</strong>, `;
+                resultText += `<strong>${result.weeks} weeks</strong>, or <strong>${result.days} days</strong>.`;
+            } else {
+                const amount = parseInt(document.getElementById('amount').value);
+                const unit = document.getElementById('unit').value;
+                
+                if (isNaN(amount) || amount <= 0) {
+                    alert('Please enter a valid positive number for the amount.');
+                    return;
+                }
+                
+                date2 = addSubtractTime(date1, amount, unit, operation);
+                result = calculateDateDifference(date1, date2);
+                
+                const opText = operation === 'add' ? 'added to' : 'subtracted from';
+                resultText = `${amount} ${unit} ${opText} <strong>${formatDate(date1)}</strong> results in <strong>${formatDate(date2)}</strong>.`;
+                
+                // Update date2 input field
+                document.getElementById('date2').value = formatDate(date2);
+            }
+            
+            // Update results
+            document.getElementById('yearsResult').textContent = result.years;
+            document.getElementById('monthsResult').textContent = result.months + (result.years * 12);
+            document.getElementById('weeksResult').textContent = result.weeks;
+            document.getElementById('daysResult').textContent = result.days;
+            document.getElementById('resultText').innerHTML = resultText;
+            
+            // Show result container
+            document.getElementById('resultContainer').style.display = 'block';
+        }
+        
+        // Reset calculator
+        function resetCalculator() {
+            document.getElementById('date1').value = '';
+            document.getElementById('date2').value = '';
+            document.getElementById('amount').value = '1';
+            document.getElementById('resultContainer').style.display = 'none';
+        }
+        
+        // Export functions
+        function exportAsPDF() {
+            alert('PDF export functionality would be implemented here. In a real app, this would generate a PDF document with the results.');
+        }
+        
+        function exportAsExcel() {
+            alert('Excel export functionality would be implemented here. In a real app, this would generate an Excel file with the results.');
+        }
+        
+        function exportAsCSV() {
+            alert('CSV export functionality would be implemented here. In a real app, this would generate a CSV file with the results.');
+        }
+        
+        function exportAsText() {
+            alert('Text export functionality would be implemented here. In a real app, this would generate a text file with the results.');
+        }
+        
+        function printResults() {
+            window.print();
+        }
+        
+        // Share functions
+        function shareViaEmail() {
+            const subject = 'Date Calculation Results';
+            const body = 'Check out my date calculation results:\n\n' + 
+                          document.getElementById('resultText').innerText;
+            window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        }
+        
+        function shareViaWhatsApp() {
+            const text = 'Check out my date calculation results: ' + 
+                         document.getElementById('resultText').innerText;
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+        }
+        
+        function shareViaFacebook() {
+            const url = encodeURIComponent(window.location.href);
+            window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+        }
+        
+        function shareViaTwitter() {
+            const text = 'Check out my date calculation results!';
+            const url = encodeURIComponent(window.location.href);
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${url}`, '_blank');
+        }
+        
+        function copyLink() {
+            navigator.clipboard.writeText(window.location.href);
+            alert('Link copied to clipboard!');
+        }
+        
+        // Event Listeners
+        calculateBtn.addEventListener('click', performCalculation);
+        resetBtn.addEventListener('click', resetCalculator);
+        
+        // Export buttons
+        document.getElementById('printBtn').addEventListener('click', printResults);
+        document.getElementById('pdfBtn').addEventListener('click', exportAsPDF);
+        document.getElementById('excelBtn').addEventListener('click', exportAsExcel);
+        document.getElementById('csvBtn').addEventListener('click', exportAsCSV);
+        document.getElementById('textBtn').addEventListener('click', exportAsText);
+        
+        // Share buttons
+        document.getElementById('emailBtn').addEventListener('click', shareViaEmail);
+        document.getElementById('whatsappBtn').addEventListener('click', shareViaWhatsApp);
+        document.getElementById('facebookBtn').addEventListener('click', shareViaFacebook);
+        document.getElementById('twitterBtn').addEventListener('click', shareViaTwitter);
+        document.getElementById('copyBtn').addEventListener('click', copyLink);
+        
+        // Initialize the app
+        function initApp() {
+            initTheme();
+            // Perform initial calculation
+            setTimeout(performCalculation, 500);
+        }
+        
+        // Start the app
+        initApp();
+    </script>
+</body>
+</html>

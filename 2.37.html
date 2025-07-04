@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Z-Score Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #4a6fa5;
+            --secondary: #6b7a8f;
+            --accent: #f7882f;
+            --light: #f7f9fb;
+            --dark: #2c3e50;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --info: #2196f3;
+            --border-radius: 10px;
+            --transition: all 0.3s ease;
+            --shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dark-mode {
+            --light: #1e2a38;
+            --dark: #ecf0f1;
+            --shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: var(--transition);
+        }
+        
+        body {
+            background: linear-gradient(135deg, #eef2f7 0%, #d6e4f0 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .dark-mode body {
+            background: linear-gradient(135deg, #1a2a4a 0%, #2c3e50 100%);
+            color: #ecf0f1;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            margin-bottom: 20px;
+        }
+        
+        header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        header h1 i {
+            background: var(--primary);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        header p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto;
+            opacity: 0.9;
+        }
+        
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            z-index: 100;
+        }
+        
+        .calculator-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 900px) {
+            .calculator-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .input-section, .result-section {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: var(--shadow);
+        }
+        
+        .dark-mode .input-section, 
+        .dark-mode .result-section {
+            background: #253449;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary);
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        label i {
+            color: var(--accent);
+        }
+        
+        input {
+            width: 100%;
+            padding: 14px 15px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 1.1rem;
+        }
+        
+        .dark-mode input {
+            background: #1e2a38;
+            border-color: #34495e;
+            color: #ecf0f1;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(247, 136, 47, 0.2);
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            margin-left: 10px;
+            cursor: help;
+        }
+        
+        .tooltip i {
+            color: var(--accent);
+        }
+        
+        .tooltip-text {
+            visibility: hidden;
+            width: 280px;
+            background: var(--dark);
+            color: white;
+            text-align: center;
+            border-radius: var(--border-radius);
+            padding: 15px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.9rem;
+            font-weight: normal;
+        }
+        
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 25px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--shadow);
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .calculate-btn {
+            width: 100%;
+            padding: 16px;
+            margin-top: 10px;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        
+        .result-card {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 25px;
+            border: 1px solid #d1e7ff;
+        }
+        
+        .dark-mode .result-card {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2c3e50 100%);
+            border-color: #34495e;
+        }
+        
+        .result-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: var(--accent);
+        }
+        
+        .result-value {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 15px 0;
+        }
+        
+        .result-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .detail-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+        }
+        
+        .dark-mode .detail-card {
+            background: #1e2a38;
+        }
+        
+        .detail-card h4 {
+            margin-bottom: 8px;
+            color: var(--accent);
+            font-size: 0.95rem;
+        }
+        
+        .detail-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .interpretation {
+            background: linear-gradient(135deg, #f9f9f9 0%, #f0f0f0 100%);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .dark-mode .interpretation {
+            background: linear-gradient(135deg, #1e2a38 0%, #253449 100%);
+        }
+        
+        .interpretation h4 {
+            margin-bottom: 15px;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .interpretation p {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            min-width: 120px;
+            background: var(--accent);
+        }
+        
+        .share-btn {
+            background: var(--info);
+        }
+        
+        .export-btn {
+            background: var(--warning);
+            color: #333;
+        }
+        
+        .ad-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .ad-section {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .ad-container {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            text-align: center;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: var(--shadow);
+        }
+        
+        .dark-mode .ad-container {
+            background: #253449;
+        }
+        
+        .ad-container h3 {
+            margin-bottom: 15px;
+            color: var(--warning);
+        }
+        
+        .ad-placeholder {
+            width: 100%;
+            height: 150px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: var(--border-radius);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .dark-mode .ad-placeholder {
+            background: linear-gradient(135deg, #1e2a38 0%, #253449 100%);
+            color: #95a5a6;
+        }
+        
+        .ad-placeholder i {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: var(--warning);
+        }
+        
+        .history-panel {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 30px;
+            margin-top: 30px;
+            box-shadow: var(--shadow);
+        }
+        
+        .dark-mode .history-panel {
+            background: #253449;
+        }
+        
+        .history-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .history-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .dark-mode .history-item {
+            border-bottom: 1px solid #34495e;
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .history-details {
+            flex: 1;
+        }
+        
+        .history-points {
+            font-weight: bold;
+            font-size: 1.4rem;
+            color: var(--primary);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 40px;
+            border-top: 1px solid #eee;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .dark-mode footer {
+            border-top: 1px solid #34495e;
+        }
+        
+        /* Print styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .result-section, .result-section * {
+                visibility: visible;
+            }
+            .result-section {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white;
+                color: black;
+                padding: 20px;
+                box-shadow: none;
+                border: none;
+            }
+            .action-buttons, .ad-section, .info-section, header, .input-section, .theme-toggle {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" id="themeToggle">
+        <i class="fas fa-moon"></i>
+    </button>
+    
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-calculator"></i> Advanced Z-Score Calculator</h1>
+            <p>Calculate Z-scores, probabilities, and percentiles with statistical precision</p>
+        </header>
+        
+        <div class="ad-section">
+            <div class="ad-container">
+                <h3>Adsterra Ad Space</h3>
+                <div class="ad-placeholder">
+                    <i class="fas fa-ad"></i>
+                    <p>Banner Advertisement (728x90)</p>
+                    <p>Adsterra code would be placed here</p>
+                </div>
+            </div>
+            
+            <div class="ad-container">
+                <h3>Yllix Ad Space</h3>
+                <div class="ad-placeholder">
+                    <i class="fas fa-window-restore"></i>
+                    <p>Floating/Pop-under Ad (300x600)</p>
+                    <p>Yllix code would be placed here</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="calculator-container">
+            <div class="input-section">
+                <h2 class="section-title"><i class="fas fa-edit"></i> Statistical Data</h2>
+                
+                <div class="input-group">
+                    <label for="raw-score">
+                        <i class="fas fa-chart-line"></i> Raw Score (X)
+                        <span class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">The individual data point you want to analyze in the distribution</span>
+                        </span>
+                    </label>
+                    <input type="number" id="raw-score" min="0" placeholder="Enter raw score" value="85">
+                </div>
+                
+                <div class="input-group">
+                    <label for="mean">
+                        <i class="fas fa-balance-scale"></i> Population Mean (μ)
+                        <span class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">The average value of the entire population</span>
+                        </span>
+                    </label>
+                    <input type="number" id="mean" min="0" step="0.1" placeholder="Enter mean" value="75">
+                </div>
+                
+                <div class="input-group">
+                    <label for="std-dev">
+                        <i class="fas fa-ruler"></i> Standard Deviation (σ)
+                        <span class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">Measure of how spread out the values are in the population</span>
+                        </span>
+                    </label>
+                    <input type="number" id="std-dev" min="0.1" step="0.1" placeholder="Enter standard deviation" value="10">
+                </div>
+                
+                <button class="calculate-btn" id="calculate">
+                    <i class="fas fa-calculator"></i> Calculate Z-Score
+                </button>
+                
+                <div class="formula-section">
+                    <h4><i class="fas fa-square-root-alt"></i> Formula:</h4>
+                    <p>Z = (X - μ) / σ</p>
+                </div>
+            </div>
+            
+            <div class="result-section">
+                <h2 class="section-title"><i class="fas fa-chart-pie"></i> Calculation Results</h2>
+                
+                <div class="result-card">
+                    <h3>Z-Score</h3>
+                    <div class="result-value" id="z-score">1.00</div>
+                    <p>Standard deviations from the mean</p>
+                    
+                    <div class="result-details">
+                        <div class="detail-card">
+                            <h4>Probability</h4>
+                            <div class="detail-value" id="probability">0.8413</div>
+                        </div>
+                        <div class="detail-card">
+                            <h4>Percentile</h4>
+                            <div class="detail-value" id="percentile">84.13%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="interpretation">
+                    <h4><i class="fas fa-lightbulb"></i> Interpretation</h4>
+                    <p>The raw score of <strong>85</strong> is <strong>1.00</strong> standard deviations above the mean.</p>
+                    <p>This corresponds to the <strong>84.13th percentile</strong>, meaning it's higher than approximately 84.13% of values in the distribution.</p>
+                    <p>The probability of a value being less than this score is <strong>84.13%</strong>.</p>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="action-btn" id="print-btn">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+                    
+                    <button class="action-btn export-btn" id="export-btn">
+                        <i class="fas fa-file-export"></i> Export
+                    </button>
+                    
+                    <button class="action-btn share-btn" id="share-btn">
+                        <i class="fas fa-share-alt"></i> Share
+                    </button>
+                </div>
+                
+                <div class="export-options" id="exportOptions" style="display: none; margin-top: 15px;">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="action-btn" id="pdf-btn" style="background: #e74c3c;">
+                            <i class="fas fa-file-pdf"></i> PDF
+                        </button>
+                        <button class="action-btn" id="png-btn" style="background: #27ae60;">
+                            <i class="fas fa-file-image"></i> PNG
+                        </button>
+                        <button class="action-btn" id="jpg-btn" style="background: #3498db;">
+                            <i class="fas fa-file-image"></i> JPG
+                        </button>
+                        <button class="action-btn" id="csv-btn" style="background: #9b59b6;">
+                            <i class="fas fa-file-csv"></i> CSV
+                        </button>
+                        <button class="action-btn" id="excel-btn" style="background: #2ecc71;">
+                            <i class="fas fa-file-excel"></i> Excel
+                        </button>
+                        <button class="action-btn" id="txt-btn" style="background: #f39c12;">
+                            <i class="fas fa-file-alt"></i> TXT
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="history-panel">
+            <h2 class="section-title"><i class="fas fa-history"></i> Calculation History</h2>
+            <div class="history-list" id="historyList">
+                <!-- History items will be added dynamically -->
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 Advanced Z-Score Calculator | Secure & Privacy-Focused</p>
+            <p>All calculations are performed client-side. No personal data is stored or transmitted.</p>
+        </footer>
+    </div>
+    
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        
+        // Check for saved theme preference
+        const savedTheme = localStorage.getItem('zscoreTheme');
+        if (savedTheme === 'dark') {
+            body.classList.add('dark-mode');
+            themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+        }
+        
+        // Toggle theme on button click
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            const isDark = body.classList.contains('dark-mode');
+            localStorage.setItem('zscoreTheme', isDark ? 'dark' : 'light');
+            themeToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        });
+        
+        // DOM Elements
+        const rawScoreInput = document.getElementById('raw-score');
+        const meanInput = document.getElementById('mean');
+        const stdDevInput = document.getElementById('std-dev');
+        const calculateBtn = document.getElementById('calculate');
+        const zScoreDisplay = document.getElementById('z-score');
+        const probabilityDisplay = document.getElementById('probability');
+        const percentileDisplay = document.getElementById('percentile');
+        const exportBtn = document.getElementById('export-btn');
+        const exportOptions = document.getElementById('exportOptions');
+        const printBtn = document.getElementById('print-btn');
+        const shareBtn = document.getElementById('share-btn');
+        const historyList = document.getElementById('historyList');
+        
+        // Corrected cumulative distribution function
+        function cumulativeDistribution(z) {
+            // Abramowitz & Stegun approximation
+            const absZ = Math.abs(z);
+            const t = 1 / (1 + 0.2316419 * absZ);
+            const d = 0.3989423 * Math.exp(-absZ * absZ / 2);
+            let p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+            
+            if (z >= 0) {
+                return 1 - p;
+            } else {
+                return p;
+            }
+        }
+        
+        // Calculate Z-Score
+        function calculateZScore() {
+            // Get input values
+            const rawScore = parseFloat(rawScoreInput.value) || 0;
+            const mean = parseFloat(meanInput.value) || 0;
+            const stdDev = parseFloat(stdDevInput.value) || 1;
+            
+            // Validate inputs
+            if (stdDev <= 0) {
+                alert('Standard deviation must be greater than zero');
+                return;
+            }
+            
+            // Calculate Z-Score
+            const zScore = (rawScore - mean) / stdDev;
+            
+            // Calculate probability and percentile
+            const probability = cumulativeDistribution(zScore);
+            const percentile = probability * 100;
+            
+            // Display results
+            zScoreDisplay.textContent = zScore.toFixed(2);
+            probabilityDisplay.textContent = probability.toFixed(4);
+            percentileDisplay.textContent = percentile.toFixed(2) + '%';
+            
+            // Update interpretation
+            updateInterpretation(rawScore, mean, stdDev, zScore, percentile);
+            
+            // Add to history
+            addToHistory(rawScore, mean, stdDev, zScore, percentile);
+        }
+        
+        // Update interpretation section
+        function updateInterpretation(rawScore, mean, stdDev, zScore, percentile) {
+            const interpretationEl = document.querySelector('.interpretation');
+            
+            const position = zScore > 0 ? "above" : "below";
+            const absZ = Math.abs(zScore).toFixed(2);
+            
+            const interpretationHTML = `
+                <p>The raw score of <strong>${rawScore}</strong> is <strong>${absZ}</strong> standard deviations ${position} the mean.</p>
+                <p>This corresponds to the <strong>${percentile.toFixed(2)}th percentile</strong>, meaning it's higher than approximately ${percentile.toFixed(2)}% of values in the distribution.</p>
+                <p>The probability of a value being less than this score is <strong>${(percentile).toFixed(2)}%</strong>.</p>
+            `;
+            
+            interpretationEl.innerHTML = `
+                <h4><i class="fas fa-lightbulb"></i> Interpretation</h4>
+                ${interpretationHTML}
+            `;
+        }
+        
+        // Add calculation to history
+        function addToHistory(rawScore, mean, stdDev, zScore, percentile) {
+            const historyItem = document.createElement('div');
+            historyItem.className = 'history-item';
+            
+            historyItem.innerHTML = `
+                <div class="history-details">
+                    <div>X: ${rawScore}, μ: ${mean}, σ: ${stdDev}</div>
+                    <div style="font-size: 0.9rem; opacity: 0.8;">Z = ${zScore.toFixed(2)}, Percentile: ${percentile.toFixed(2)}%</div>
+                </div>
+                <div class="history-points">${zScore.toFixed(2)}</div>
+            `;
+            
+            historyList.insertBefore(historyItem, historyList.firstChild);
+            
+            // Limit to 10 items
+            if (historyList.children.length > 10) {
+                historyList.removeChild(historyList.lastChild);
+            }
+            
+            // Save to localStorage
+            saveToLocalStorage(rawScore, mean, stdDev, zScore, percentile);
+        }
+        
+        // Save to localStorage
+        function saveToLocalStorage(rawScore, mean, stdDev, zScore, percentile) {
+            const history = JSON.parse(localStorage.getItem('zscoreHistory')) || [];
+            
+            history.unshift({
+                rawScore,
+                mean,
+                stdDev,
+                zScore,
+                percentile,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Keep only last 10 items
+            if (history.length > 10) {
+                history.pop();
+            }
+            
+            localStorage.setItem('zscoreHistory', JSON.stringify(history));
+        }
+        
+        // Load from localStorage
+        function loadHistory() {
+            let history = JSON.parse(localStorage.getItem('zscoreHistory')) || [];
+            
+            // If empty, initialize with examples
+            if (history.length === 0) {
+                history = [
+                    {
+                        rawScore: 85,
+                        mean: 75,
+                        stdDev: 10,
+                        zScore: 1.0,
+                        percentile: 84.13,
+                        timestamp: new Date('2023-01-01').toISOString()
+                    },
+                    {
+                        rawScore: 70,
+                        mean: 75,
+                        stdDev: 10,
+                        zScore: -0.5,
+                        percentile: 30.85,
+                        timestamp: new Date('2023-01-01').toISOString()
+                    },
+                    {
+                        rawScore: 90,
+                        mean: 75,
+                        stdDev: 10,
+                        zScore: 1.5,
+                        percentile: 93.32,
+                        timestamp: new Date('2023-01-01').toISOString()
+                    }
+                ];
+                localStorage.setItem('zscoreHistory', JSON.stringify(history));
+            }
+            
+            historyList.innerHTML = '';
+            
+            history.forEach(item => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                
+                historyItem.innerHTML = `
+                    <div class="history-details">
+                        <div>X: ${item.rawScore}, μ: ${item.mean}, σ: ${item.stdDev}</div>
+                        <div style="font-size: 0.9rem; opacity: 0.8;">Z = ${item.zScore.toFixed(2)}, Percentile: ${item.percentile.toFixed(2)}%</div>
+                    </div>
+                    <div class="history-points">${item.zScore.toFixed(2)}</div>
+                `;
+                
+                historyList.appendChild(historyItem);
+            });
+        }
+        
+        // Export functions
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(18);
+            doc.text("Z-Score Calculation Report", 105, 20, null, null, 'center');
+            
+            doc.setFontSize(14);
+            doc.text("Input Data", 20, 40);
+            
+            doc.setFontSize(12);
+            doc.text(`Raw Score (X): ${rawScoreInput.value}`, 20, 50);
+            doc.text(`Population Mean (μ): ${meanInput.value}`, 20, 60);
+            doc.text(`Standard Deviation (σ): ${stdDevInput.value}`, 20, 70);
+            
+            doc.setFontSize(14);
+            doc.text("Results", 20, 90);
+            
+            doc.setFontSize(12);
+            doc.text(`Z-Score: ${zScoreDisplay.textContent}`, 20, 100);
+            doc.text(`Probability: ${probabilityDisplay.textContent}`, 20, 110);
+            doc.text(`Percentile: ${percentileDisplay.textContent}`, 20, 120);
+            
+            doc.save('zscore_report.pdf');
+        }
+        
+        function exportToImage(format) {
+            html2canvas(document.querySelector('.result-section')).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `zscore_report.${format}`;
+                link.href = canvas.toDataURL(`image/${format}`);
+                link.click();
+            });
+        }
+        
+        function exportToCSV() {
+            const csvContent = 
+`Category,Value
+Raw Score (X),${rawScoreInput.value}
+Population Mean (μ),${meanInput.value}
+Standard Deviation (σ),${stdDevInput.value}
+Z-Score,${zScoreDisplay.textContent}
+Probability,${probabilityDisplay.textContent}
+Percentile,${percentileDisplay.textContent}`;
+            
+            const link = document.createElement('a');
+            link.download = 'zscore_report.csv';
+            link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+            link.click();
+        }
+        
+        function exportToExcel() {
+            const data = [
+                ['Category', 'Value'],
+                ['Raw Score (X)', rawScoreInput.value],
+                ['Population Mean (μ)', meanInput.value],
+                ['Standard Deviation (σ)', stdDevInput.value],
+                ['Z-Score', zScoreDisplay.textContent],
+                ['Probability', probabilityDisplay.textContent],
+                ['Percentile', percentileDisplay.textContent]
+            ];
+            
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Z-Score Report');
+            XLSX.writeFile(wb, 'zscore_report.xlsx');
+        }
+        
+        function exportToTXT() {
+            const txtContent = 
+`Z-Score Calculation Report
+==========================
+Input Data:
+  Raw Score (X): ${rawScoreInput.value}
+  Population Mean (μ): ${meanInput.value}
+  Standard Deviation (σ): ${stdDevInput.value}
+
+Results:
+  Z-Score: ${zScoreDisplay.textContent}
+  Probability: ${probabilityDisplay.textContent}
+  Percentile: ${percentileDisplay.textContent}`;
+            
+            const link = document.createElement('a');
+            link.download = 'zscore_report.txt';
+            link.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(txtContent);
+            link.click();
+        }
+        
+        // Event Listeners
+        calculateBtn.addEventListener('click', calculateZScore);
+        
+        // Calculate on initial load
+        calculateZScore();
+        loadHistory();
+        
+        // Auto-calculate when inputs change
+        [rawScoreInput, meanInput, stdDevInput].forEach(input => {
+            input.addEventListener('input', calculateZScore);
+        });
+        
+        exportBtn.addEventListener('click', () => {
+            exportOptions.style.display = exportOptions.style.display === 'block' ? 'none' : 'block';
+        });
+        
+        document.getElementById('pdf-btn').addEventListener('click', exportToPDF);
+        document.getElementById('png-btn').addEventListener('click', () => exportToImage('png'));
+        document.getElementById('jpg-btn').addEventListener('click', () => exportToImage('jpeg'));
+        document.getElementById('csv-btn').addEventListener('click', exportToCSV);
+        document.getElementById('excel-btn').addEventListener('click', exportToExcel);
+        document.getElementById('txt-btn').addEventListener('click', exportToTXT);
+        
+        printBtn.addEventListener('click', () => {
+            window.print();
+        });
+        
+        shareBtn.addEventListener('click', () => {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Z-Score Calculation',
+                    text: `I calculated a Z-Score of ${zScoreDisplay.textContent} for this data!`,
+                    url: window.location.href
+                }).catch(console.error);
+            } else {
+                alert('Share functionality is supported in modern browsers. Please copy the URL manually.');
+            }
+        });
+    </script>
+</body>
+</html>
