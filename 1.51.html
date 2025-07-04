@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Percent Off Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4cc9f0;
+            --success-color: #4ade80;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --text-color: #1e293b;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --transition: all 0.3s ease;
+        }
+
+        .dark-mode {
+            --text-color: #f1f5f9;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --border-color: #334155;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            transition: var(--transition);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .logo i {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .theme-toggle {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 50px;
+            padding: 8px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .theme-toggle:hover {
+            transform: translateY(-2px);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+
+        @media (min-width: 992px) {
+            .main-content {
+                grid-template-columns: 2fr 1fr;
+            }
+        }
+
+        .calculator-container {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            padding: 30px;
+            transition: var(--transition);
+        }
+
+        .calculator-title {
+            font-size: 1.8rem;
+            margin-bottom: 25px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .calculator-title i {
+            background: var(--primary-color);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .input-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--text-color);
+            color: var(--bg-color);
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.85rem;
+            font-weight: normal;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1.1rem;
+            transition: var(--transition);
+            background: var(--card-bg);
+            color: var(--text-color);
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        .input-field.invalid {
+            border-color: var(--danger-color);
+        }
+
+        .error-message {
+            color: var(--danger-color);
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .results-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-card h3 {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .result-card .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+            border: none;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .ad-container {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .ad-placeholder {
+            background: linear-gradient(45deg, #f0f9ff, #e0f2fe);
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 40px 20px;
+            color: var(--text-color);
+        }
+
+        .dark-mode .ad-placeholder {
+            background: linear-gradient(45deg, #1e3a8a, #0c4a6e);
+        }
+
+        .ad-label {
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: block;
+            color: var(--primary-color);
+        }
+
+        .history-container {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            padding: 25px;
+            transition: var(--transition);
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .history-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-details {
+            flex: 1;
+        }
+
+        .history-price {
+            font-weight: 700;
+            color: var(--success-color);
+        }
+
+        .history-delete {
+            color: var(--danger-color);
+            cursor: pointer;
+            padding: 0 10px;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* Print specific styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .calculator-container, .calculator-container * {
+                visibility: visible;
+            }
+            .calculator-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                box-shadow: none;
+            }
+            .action-buttons, .theme-toggle, .ad-container, .history-container, footer {
+                display: none;
+            }
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: var(--shadow);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-percentage"></i>
+                <span>DiscountCalc Pro</span>
+            </div>
+            <button class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+                <span>Dark Mode</span>
+            </button>
+        </header>
+
+        <div class="main-content">
+            <div class="calculator-container">
+                <h1 class="calculator-title">
+                    <i class="fas fa-calculator"></i>
+                    Percent Off Calculator
+                </h1>
+
+                <div class="input-group">
+                    <label class="input-label">
+                        Original Price ($)
+                        <div class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">The original price before any discounts are applied</span>
+                        </div>
+                    </label>
+                    <input type="number" id="originalPrice" class="input-field" placeholder="Enter original price" min="0" step="0.01" value="100">
+                    <div class="error-message" id="priceError">Please enter a valid price</div>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">
+                        Discount Percentage (%)
+                        <div class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">The percentage discount you're receiving (e.g., 25 for 25%)</span>
+                        </div>
+                    </label>
+                    <input type="number" id="discountPercentage" class="input-field" placeholder="Enter discount percentage" min="0" max="100" step="0.01" value="25">
+                    <div class="error-message" id="discountError">Discount must be between 0-100%</div>
+                </div>
+
+                <div class="results-container">
+                    <div class="result-card">
+                        <h3>Discounted Price</h3>
+                        <div class="value" id="discountedPrice">$75.00</div>
+                    </div>
+                    <div class="result-card" style="background: linear-gradient(135deg, #10b981, #059669);">
+                        <h3>Amount Saved</h3>
+                        <div class="value" id="amountSaved">$25.00</div>
+                    </div>
+                    <div class="result-card" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                        <h3>Final Payable</h3>
+                        <div class="value" id="finalPayable">$75.00</div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="calculateBtn">
+                        <i class="fas fa-calculator"></i>
+                        Calculate
+                    </button>
+                    <button class="btn btn-secondary" id="printBtn">
+                        <i class="fas fa-print"></i>
+                        Print
+                    </button>
+                    <button class="btn btn-success" id="savePdfBtn">
+                        <i class="fas fa-file-pdf"></i>
+                        Save as PDF
+                    </button>
+                    <button class="btn btn-warning" id="saveExcelBtn">
+                        <i class="fas fa-file-excel"></i>
+                        Save as Excel
+                    </button>
+                    <button class="btn btn-danger" id="saveCsvBtn">
+                        <i class="fas fa-file-csv"></i>
+                        Save as CSV
+                    </button>
+                    <button class="btn btn-secondary" id="shareBtn">
+                        <i class="fas fa-share-alt"></i>
+                        Share
+                    </button>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="ad-container">
+                    <span class="ad-label">Adsterra Ad Space</span>
+                    <div class="ad-placeholder">
+                        <i class="fas fa-ad" style="font-size: 2.5rem; margin-bottom: 15px;"></i>
+                        <p>Adsterra Ad Code</p>
+                        <small>728 x 90 Leaderboard</small>
+                    </div>
+                </div>
+
+                <div class="ad-container">
+                    <span class="ad-label">Yllix Ad Space</span>
+                    <div class="ad-placeholder">
+                        <i class="fas fa-ad" style="font-size: 2.5rem; margin-bottom: 15px;"></i>
+                        <p>Yllix Ad Code</p>
+                        <small>300 x 250 Medium Rectangle</small>
+                    </div>
+                </div>
+
+                <div class="history-container">
+                    <h2 class="section-title">
+                        <i class="fas fa-history"></i>
+                        Calculation History
+                    </h2>
+                    <div class="history-list" id="historyList">
+                        <!-- History items will be added here dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>© 2023 DiscountCalc Pro | All calculations performed client-side for privacy | GDPR-compliant ad implementation</p>
+        </footer>
+    </div>
+
+    <!-- Social Sharing Modal -->
+    <div class="modal" id="shareModal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-share-alt"></i>
+                Share Calculation
+            </h2>
+            <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px;">
+                <button class="btn" style="background: #1877f2; color: white; flex: 1;" id="facebookShare">
+                    <i class="fab fa-facebook-f"></i> Facebook
+                </button>
+                <button class="btn" style="background: #1da1f2; color: white; flex: 1;" id="twitterShare">
+                    <i class="fab fa-twitter"></i> Twitter
+                </button>
+                <button class="btn" style="background: #0a66c2; color: white; flex: 1;" id="linkedinShare">
+                    <i class="fab fa-linkedin-in"></i> LinkedIn
+                </button>
+                <button class="btn" style="background: #ea4335; color: white; flex: 1;" id="emailShare">
+                    <i class="fas fa-envelope"></i> Email
+                </button>
+            </div>
+            <div>
+                <p style="margin-bottom: 10px;">Copy link:</p>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="shareableLink" style="flex: 1; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg); color: var(--text-color);" readonly>
+                    <button class="btn btn-primary" id="copyLinkBtn">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                </div>
+            </div>
+            <button class="btn btn-secondary" style="margin-top: 20px; width: 100%;" id="closeModalBtn">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const themeToggle = document.getElementById('themeToggle');
+        const originalPriceInput = document.getElementById('originalPrice');
+        const discountPercentageInput = document.getElementById('discountPercentage');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const printBtn = document.getElementById('printBtn');
+        const savePdfBtn = document.getElementById('savePdfBtn');
+        const saveExcelBtn = document.getElementById('saveExcelBtn');
+        const saveCsvBtn = document.getElementById('saveCsvBtn');
+        const shareBtn = document.getElementById('shareBtn');
+        const discountedPriceEl = document.getElementById('discountedPrice');
+        const amountSavedEl = document.getElementById('amountSaved');
+        const finalPayableEl = document.getElementById('finalPayable');
+        const historyList = document.getElementById('historyList');
+        const shareModal = document.getElementById('shareModal');
+        const shareableLink = document.getElementById('shareableLink');
+        const copyLinkBtn = document.getElementById('copyLinkBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const facebookShare = document.getElementById('facebookShare');
+        const twitterShare = document.getElementById('twitterShare');
+        const linkedinShare = document.getElementById('linkedinShare');
+        const emailShare = document.getElementById('emailShare');
+        const priceError = document.getElementById('priceError');
+        const discountError = document.getElementById('discountError');
+
+        // Initialize theme
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+            themeToggle.innerHTML = '<i class="fas fa-sun"></i><span>Light Mode</span>';
+        }
+
+        // Theme toggle
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            
+            if (document.body.classList.contains('dark-mode')) {
+                localStorage.setItem('theme', 'dark');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i><span>Light Mode</span>';
+            } else {
+                localStorage.setItem('theme', 'light');
+                themeToggle.innerHTML = '<i class="fas fa-moon"></i><span>Dark Mode</span>';
+            }
+        });
+
+        // Load history from localStorage
+        function loadHistory() {
+            const history = JSON.parse(localStorage.getItem('percentOffHistory')) || [];
+            historyList.innerHTML = '';
+            
+            if (history.length === 0) {
+                historyList.innerHTML = '<p style="text-align: center; padding: 20px; color: #94a3b8;">No calculation history yet</p>';
+                return;
+            }
+            
+            // Show latest 5 entries
+            history.slice(0, 5).forEach(item => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.innerHTML = `
+                    <div class="history-details">
+                        <div>$${item.originalPrice.toFixed(2)} - ${item.discountPercentage}%</div>
+                        <div><small>${new Date(item.timestamp).toLocaleString()}</small></div>
+                    </div>
+                    <div class="history-price">$${item.discountedPrice.toFixed(2)}</div>
+                    <div class="history-delete" data-id="${item.timestamp}">
+                        <i class="fas fa-trash-alt"></i>
+                    </div>
+                `;
+                historyList.appendChild(historyItem);
+            });
+            
+            // Add event listeners to delete buttons
+            document.querySelectorAll('.history-delete').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const timestamp = e.currentTarget.getAttribute('data-id');
+                    deleteHistoryItem(timestamp);
+                });
+            });
+        }
+
+        // Delete history item
+        function deleteHistoryItem(timestamp) {
+            let history = JSON.parse(localStorage.getItem('percentOffHistory')) || [];
+            history = history.filter(item => item.timestamp != timestamp);
+            localStorage.setItem('percentOffHistory', JSON.stringify(history));
+            loadHistory();
+        }
+
+        // Calculate discount
+        function calculateDiscount() {
+            // Reset errors
+            priceError.style.display = 'none';
+            discountError.style.display = 'none';
+            originalPriceInput.classList.remove('invalid');
+            discountPercentageInput.classList.remove('invalid');
+            
+            const originalPrice = parseFloat(originalPriceInput.value);
+            const discountPercentage = parseFloat(discountPercentageInput.value);
+            
+            // Validate inputs
+            let isValid = true;
+            
+            if (isNaN(originalPrice) || originalPrice <= 0) {
+                priceError.style.display = 'block';
+                originalPriceInput.classList.add('invalid');
+                isValid = false;
+            }
+            
+            if (isNaN(discountPercentage)) {
+                discountError.style.display = 'block';
+                discountPercentageInput.classList.add('invalid');
+                isValid = false;
+            } else if (discountPercentage < 0 || discountPercentage > 100) {
+                discountError.textContent = 'Discount must be between 0-100%';
+                discountError.style.display = 'block';
+                discountPercentageInput.classList.add('invalid');
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                // Reset results to $0.00
+                discountedPriceEl.textContent = '$0.00';
+                amountSavedEl.textContent = '$0.00';
+                finalPayableEl.textContent = '$0.00';
+                return null;
+            }
+            
+            const amountSaved = (originalPrice * discountPercentage) / 100;
+            const discountedPrice = originalPrice - amountSaved;
+            const finalPayable = discountedPrice; // For clarity, though same as discountedPrice
+            
+            // Update UI
+            discountedPriceEl.textContent = `$${discountedPrice.toFixed(2)}`;
+            amountSavedEl.textContent = `$${amountSaved.toFixed(2)}`;
+            finalPayableEl.textContent = `$${finalPayable.toFixed(2)}`;
+            
+            // Save to history
+            saveToHistory(originalPrice, discountPercentage, discountedPrice, amountSaved);
+            
+            return { originalPrice, discountPercentage, discountedPrice, amountSaved };
+        }
+
+        // Save calculation to history
+        function saveToHistory(originalPrice, discountPercentage, discountedPrice, amountSaved) {
+            const history = JSON.parse(localStorage.getItem('percentOffHistory')) || [];
+            const newEntry = {
+                originalPrice,
+                discountPercentage,
+                discountedPrice,
+                amountSaved,
+                timestamp: Date.now()
+            };
+            
+            // Add to beginning of array
+            history.unshift(newEntry);
+            
+            // Keep only the last 10 entries
+            if (history.length > 10) {
+                history.pop();
+            }
+            
+            localStorage.setItem('percentOffHistory', JSON.stringify(history));
+            loadHistory();
+        }
+
+        // Generate PDF
+        function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const originalPrice = originalPriceInput.value || '0';
+            const discountPercentage = discountPercentageInput.value || '0';
+            const discountedPrice = discountedPriceEl.textContent.replace('$', '');
+            const amountSaved = amountSavedEl.textContent.replace('$', '');
+            
+            doc.setFontSize(22);
+            doc.text('Percent Off Calculator Result', 20, 20);
+            
+            doc.setFontSize(14);
+            doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 30);
+            
+            // Add a line
+            doc.setLineWidth(0.5);
+            doc.line(20, 35, 190, 35);
+            
+            doc.setFontSize(16);
+            doc.text('Input Values:', 20, 45);
+            doc.setFontSize(14);
+            doc.text(`• Original Price: $${originalPrice}`, 25, 55);
+            doc.text(`• Discount Percentage: ${discountPercentage}%`, 25, 65);
+            
+            doc.setFontSize(16);
+            doc.text('Calculation Results:', 20, 80);
+            doc.setFontSize(14);
+            doc.setTextColor(0, 0, 255);
+            doc.text(`• Discounted Price: $${discountedPrice}`, 25, 90);
+            doc.setTextColor(0, 128, 0);
+            doc.text(`• Amount Saved: $${amountSaved}`, 25, 100);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`• Final Payable: $${discountedPrice}`, 25, 110);
+            
+            // Add footer
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text('Generated by DiscountCalc Pro - www.example.com', 105, 280, null, null, 'center');
+            
+            // Save the PDF
+            doc.save('percent-off-calculator-result.pdf');
+        }
+
+        // Export to Excel
+        function exportToExcel() {
+            const originalPrice = originalPriceInput.value || '0';
+            const discountPercentage = discountPercentageInput.value || '0';
+            const discountedPrice = discountedPriceEl.textContent.replace('$', '');
+            const amountSaved = amountSavedEl.textContent.replace('$', '');
+            
+            const data = [
+                ['Field', 'Value'],
+                ['Original Price', `$${originalPrice}`],
+                ['Discount Percentage', `${discountPercentage}%`],
+                ['Discounted Price', `$${discountedPrice}`],
+                ['Amount Saved', `$${amountSaved}`],
+                ['Final Payable', `$${discountedPrice}`],
+                ['Date', new Date().toLocaleDateString()]
+            ];
+            
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Calculation Result');
+            XLSX.writeFile(wb, 'percent-off-calculator-result.xlsx');
+        }
+
+        // Export to CSV
+        function exportToCSV() {
+            const originalPrice = originalPriceInput.value || '0';
+            const discountPercentage = discountPercentageInput.value || '0';
+            const discountedPrice = discountedPriceEl.textContent.replace('$', '');
+            const amountSaved = amountSavedEl.textContent.replace('$', '');
+            
+            const csvContent = "data:text/csv;charset=utf-8," +
+                "Field,Value\n" +
+                `Original Price,$${originalPrice}\n` +
+                `Discount Percentage,${discountPercentage}%\n` +
+                `Discounted Price,$${discountedPrice}\n` +
+                `Amount Saved,$${amountSaved}\n` +
+                `Final Payable,$${discountedPrice}\n` +
+                `Date,${new Date().toLocaleDateString()}`;
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "percent-off-calculator-result.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Generate shareable link
+        function generateShareLink() {
+            const originalPrice = originalPriceInput.value || '';
+            const discountPercentage = discountPercentageInput.value || '';
+            
+            if (!originalPrice || !discountPercentage) {
+                alert('Please calculate first before sharing');
+                return;
+            }
+            
+            const baseUrl = window.location.href.split('?')[0];
+            const shareUrl = `${baseUrl}?original=${originalPrice}&discount=${discountPercentage}`;
+            shareableLink.value = shareUrl;
+            return shareUrl;
+        }
+
+        // Copy to clipboard
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Link copied to clipboard!');
+            }).catch(err => {
+                console.error('Could not copy text: ', err);
+                alert('Failed to copy link. Please try again.');
+            });
+        }
+
+        // Share on social media
+        function shareOnFacebook() {
+            const url = generateShareLink();
+            if (!url) return;
+            const encodedUrl = encodeURIComponent(url);
+            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`, '_blank');
+        }
+
+        function shareOnTwitter() {
+            const url = generateShareLink();
+            if (!url) return;
+            const encodedUrl = encodeURIComponent(url);
+            const text = encodeURIComponent('Check out this discount calculation!');
+            window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodedUrl}`, '_blank');
+        }
+
+        function shareOnLinkedIn() {
+            const url = generateShareLink();
+            if (!url) return;
+            const encodedUrl = encodeURIComponent(url);
+            window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`, '_blank');
+        }
+
+        function shareViaEmail() {
+            const url = generateShareLink();
+            if (!url) return;
+            const subject = encodeURIComponent('Discount Calculation');
+            const body = encodeURIComponent(`Check out this discount calculation: ${url}`);
+            window.location.href = `mailto:?subject=${subject}&body=${body}`;
+        }
+
+        // Check URL parameters on load
+        function checkUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const original = urlParams.get('original');
+            const discount = urlParams.get('discount');
+            
+            if (original && discount) {
+                originalPriceInput.value = original;
+                discountPercentageInput.value = discount;
+                calculateDiscount();
+            }
+        }
+
+        // Event Listeners
+        calculateBtn.addEventListener('click', calculateDiscount);
+        
+        printBtn.addEventListener('click', () => {
+            window.print();
+        });
+        
+        savePdfBtn.addEventListener('click', () => {
+            if (discountedPriceEl.textContent === '$0.00') {
+                alert('Please calculate first before saving as PDF');
+                return;
+            }
+            generatePDF();
+        });
+        
+        saveExcelBtn.addEventListener('click', () => {
+            if (discountedPriceEl.textContent === '$0.00') {
+                alert('Please calculate first before saving as Excel');
+                return;
+            }
+            exportToExcel();
+        });
+        
+        saveCsvBtn.addEventListener('click', () => {
+            if (discountedPriceEl.textContent === '$0.00') {
+                alert('Please calculate first before saving as CSV');
+                return;
+            }
+            exportToCSV();
+        });
+        
+        shareBtn.addEventListener('click', () => {
+            if (!originalPriceInput.value || !discountPercentageInput.value) {
+                alert('Please enter values and calculate first before sharing');
+                return;
+            }
+            generateShareLink();
+            shareModal.style.display = 'flex';
+        });
+        
+        copyLinkBtn.addEventListener('click', () => {
+            copyToClipboard(shareableLink.value);
+        });
+        
+        closeModalBtn.addEventListener('click', () => {
+            shareModal.style.display = 'none';
+        });
+        
+        facebookShare.addEventListener('click', shareOnFacebook);
+        twitterShare.addEventListener('click', shareOnTwitter);
+        linkedinShare.addEventListener('click', shareOnLinkedIn);
+        emailShare.addEventListener('click', shareViaEmail);
+        
+        // Calculate on Enter key
+        [originalPriceInput, discountPercentageInput].forEach(input => {
+            input.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') {
+                    calculateDiscount();
+                }
+            });
+        });
+
+        // Initialize
+        loadHistory();
+        checkUrlParams();
+    </script>
+</body>
+</html>

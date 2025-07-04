@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProCalorieBurn - Professional Calories Burned Calculator</title>
+    <meta name="description" content="Calculate your calories burned with scientific precision. Track BMR, active calories, and total expenditure.">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --accent: #e74c3c;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+            --gray: #95a5a6;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --radius: 10px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2980, #26d0ce);
+            color: var(--dark);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            margin: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        header {
+            background: var(--dark);
+            color: white;
+            padding: 20px;
+            grid-column: 1 / -1;
+            text-align: center;
+            position: relative;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .logo i {
+            color: var(--secondary);
+        }
+
+        .tagline {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .calculator-container {
+            padding: 30px;
+            border-right: 1px solid #eee;
+        }
+
+        .results-container {
+            padding: 30px;
+            background: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            color: var(--primary);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .input-row .input-group {
+            flex: 1;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .unit-toggle {
+            display: flex;
+            background: #eee;
+            border-radius: 5px;
+            padding: 2px;
+            margin-top: 5px;
+        }
+
+        .unit-toggle button {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-weight: 500;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+
+        .unit-toggle button.active {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .activity-levels {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .activity-option {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+        }
+
+        .activity-option:hover {
+            border-color: var(--primary);
+        }
+
+        .activity-option.selected {
+            border-color: var(--primary);
+            background: rgba(52, 152, 219, 0.1);
+        }
+
+        .activity-option .level {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        .activity-option .desc {
+            font-size: 0.7rem;
+            color: var(--gray);
+        }
+
+        .calculate-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 5px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: var(--transition);
+            margin-top: 10px;
+        }
+
+        .calculate-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .results-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 25px;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+            flex: 1;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            font-weight: 500;
+        }
+
+        .result-value {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+
+        .progress-container {
+            margin: 25px 0;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: #eee;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--secondary);
+            border-radius: 5px;
+            width: 0%;
+            transition: width 1s ease;
+        }
+
+        .export-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .export-btn {
+            padding: 12px;
+            border-radius: 5px;
+            border: none;
+            background: #f1f1f1;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            font-weight: 500;
+        }
+
+        .export-btn:hover {
+            background: #e1e1e1;
+            transform: translateY(-2px);
+        }
+
+        .export-btn i {
+            font-size: 1.4rem;
+        }
+
+        .print-btn { color: #3498db; }
+        .pdf-btn { color: #e74c3c; }
+        .csv-btn { color: #2ecc71; }
+        .txt-btn { color: #f39c12; }
+        .share-btn { color: #9b59b6; }
+        .reset-btn { color: #7f8c8d; }
+
+        .ad-container {
+            background: #f8f8f8;
+            border: 1px dashed #ccc;
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+            color: var(--gray);
+        }
+
+        .ad-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .ad-placeholder {
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #eee;
+            border-radius: 5px;
+            margin: 10px 0;
+            color: #777;
+            font-weight: 500;
+        }
+
+        .ad-placeholder.bottom {
+            height: 50px;
+        }
+
+        .disclaimer {
+            font-size: 0.75rem;
+            color: var(--gray);
+            margin-top: 20px;
+            line-height: 1.5;
+        }
+
+        .explanation {
+            background: #e3f2fd;
+            border-left: 4px solid var(--primary);
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 0 5px 5px 0;
+            font-size: 0.85rem;
+        }
+
+        .explanation h4 {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .input-row {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .activity-levels {
+                grid-template-columns: 1fr;
+            }
+            
+            .export-options {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 10px;
+            }
+            
+            .calculator-container, 
+            .results-container {
+                padding: 20px;
+            }
+            
+            .section-title {
+                font-size: 1.3rem;
+            }
+            
+            .result-value {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-fire"></i>
+                <span>ProCalorieBurn</span>
+            </div>
+            <div class="tagline">Scientifically validated metabolic calculations for fitness professionals</div>
+        </header>
+        
+        <!-- Ad Space - Top (Adsterra) -->
+        <div class="ad-container" style="grid-column: 1 / -1;">
+            <div class="ad-label">Advertisement</div>
+            <div class="ad-placeholder">
+                <!-- Adsterra Ad Code Would Be Placed Here -->
+                Adsterra Ad Space (728x90)
+            </div>
+            <div class="disclaimer">
+                We use third-party advertising companies to serve ads. These ads are GDPR/CCPA compliant.
+            </div>
+        </div>
+        
+        <div class="calculator-container">
+            <h2 class="section-title"><i class="fas fa-calculator"></i> Calculator Inputs</h2>
+            
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="gender">Gender</label>
+                    <select id="gender">
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label for="age">Age</label>
+                    <input type="number" id="age" min="18" max="100" value="30">
+                </div>
+            </div>
+            
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="weight">Weight</label>
+                    <input type="number" id="weight" value="70">
+                    <div class="unit-toggle">
+                        <button class="active" data-unit="kg">kg</button>
+                        <button data-unit="lbs">lbs</button>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="height">Height</label>
+                    <input type="number" id="height" value="175">
+                    <div class="unit-toggle">
+                        <button class="active" data-unit="cm">cm</button>
+                        <button data-unit="in">in</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label>Activity Level</label>
+                <div class="activity-levels">
+                    <div class="activity-option" data-level="1.2">
+                        <div class="level">Sedentary</div>
+                        <div class="desc">Little/no exercise</div>
+                    </div>
+                    <div class="activity-option selected" data-level="1.375">
+                        <div class="level">Light</div>
+                        <div class="desc">1-3 days/week</div>
+                    </div>
+                    <div class="activity-option" data-level="1.55">
+                        <div class="level">Moderate</div>
+                        <div class="desc">3-5 days/week</div>
+                    </div>
+                    <div class="activity-option" data-level="1.725">
+                        <div class="level">Active</div>
+                        <div class="desc">6-7 days/week</div>
+                    </div>
+                    <div class="activity-option" data-level="1.9">
+                        <div class="level">Athlete</div>
+                        <div class="desc">Intense daily</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="exercise">Exercise Duration (min)</label>
+                    <input type="number" id="duration" min="1" value="45">
+                </div>
+                
+                <div class="input-group">
+                    <label for="intensity">Exercise Intensity</label>
+                    <select id="intensity">
+                        <option value="3">Light (e.g. Walking)</option>
+                        <option value="5" selected>Moderate (e.g. Cycling)</option>
+                        <option value="8">High (e.g. Running)</option>
+                        <option value="10">Very High (e.g. HIIT)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button class="calculate-btn">Calculate Calories Burned</button>
+            
+            <div class="explanation">
+                <h4><i class="fas fa-info-circle"></i> How It Works</h4>
+                <p>This calculator uses the Mifflin-St Jeor equation to determine your Basal Metabolic Rate (BMR) and calculates exercise calories using Metabolic Equivalent of Task (MET) values. Results are based on validated scientific models.</p>
+            </div>
+            
+            <!-- Ad Space - Middle (Yllix) -->
+            <div class="ad-container">
+                <div class="ad-label">Advertisement</div>
+                <div class="ad-placeholder bottom">
+                    <!-- Yllix Ad Code Would Be Placed Here -->
+                    Yllix Ad Space (468x60)
+                </div>
+            </div>
+        </div>
+        
+        <div class="results-container">
+            <h2 class="section-title"><i class="fas fa-chart-line"></i> Results</h2>
+            
+            <div class="results-card">
+                <div class="result-item">
+                    <div class="result-label">Basal Metabolic Rate (BMR)</div>
+                    <div class="result-value" id="bmr-result">1,655 kcal</div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">Total Daily Expenditure (TDEE)</div>
+                    <div class="result-value" id="tdee-result">2,565 kcal</div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">Exercise Calories Burned</div>
+                    <div class="result-value" id="exercise-result">394 kcal</div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">Total Calories Today</div>
+                    <div class="result-value" id="total-result">2,959 kcal</div>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>BMR</span>
+                        <span>Exercise</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="calorie-progress" style="width: 56%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <h3 class="section-title"><i class="fas fa-share-alt"></i> Export & Share</h3>
+            
+            <div class="export-options">
+                <button class="export-btn print-btn" id="print-btn">
+                    <i class="fas fa-print"></i>
+                    <span>Print</span>
+                </button>
+                <button class="export-btn pdf-btn" id="pdf-btn">
+                    <i class="fas fa-file-pdf"></i>
+                    <span>PDF</span>
+                </button>
+                <button class="export-btn csv-btn" id="csv-btn">
+                    <i class="fas fa-file-csv"></i>
+                    <span>CSV</span>
+                </button>
+                <button class="export-btn txt-btn" id="txt-btn">
+                    <i class="fas fa-file-alt"></i>
+                    <span>TXT</span>
+                </button>
+                <button class="export-btn share-btn" id="share-btn">
+                    <i class="fas fa-share"></i>
+                    <span>Share</span>
+                </button>
+                <button class="export-btn reset-btn" id="reset-btn">
+                    <i class="fas fa-redo"></i>
+                    <span>Reset</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Units toggle functionality
+            const unitButtons = document.querySelectorAll('.unit-toggle button');
+            unitButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const parent = this.parentElement;
+                    parent.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Convert values if needed
+                    const inputId = this.closest('.input-group').querySelector('input').id;
+                    if (inputId === 'weight') {
+                        convertWeight(this.dataset.unit);
+                    } else if (inputId === 'height') {
+                        convertHeight(this.dataset.unit);
+                    }
+                });
+            });
+            
+            // Activity level selection
+            const activityOptions = document.querySelectorAll('.activity-option');
+            activityOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    activityOptions.forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                    calculateCalories();
+                });
+            });
+            
+            // Calculate button
+            document.querySelector('.calculate-btn').addEventListener('click', calculateCalories);
+            
+            // Input change listeners for real-time updates
+            document.querySelectorAll('input, select').forEach(input => {
+                input.addEventListener('change', calculateCalories);
+                if (input.type === 'number') {
+                    input.addEventListener('input', calculateCalories);
+                }
+            });
+            
+            // Export buttons
+            document.getElementById('print-btn').addEventListener('click', printResults);
+            document.getElementById('pdf-btn').addEventListener('click', generatePDF);
+            document.getElementById('csv-btn').addEventListener('click', exportCSV);
+            document.getElementById('txt-btn').addEventListener('click', exportTXT);
+            document.getElementById('share-btn').addEventListener('click', shareResults);
+            document.getElementById('reset-btn').addEventListener('click', resetForm);
+            
+            // Initialize with calculation
+            calculateCalories();
+            
+            // Conversion functions
+            function convertWeight(targetUnit) {
+                const weightInput = document.getElementById('weight');
+                const currentValue = parseFloat(weightInput.value) || 0;
+                
+                if (targetUnit === 'kg') {
+                    // Convert lbs to kg
+                    weightInput.value = (currentValue * 0.45359237).toFixed(1);
+                } else if (targetUnit === 'lbs') {
+                    // Convert kg to lbs
+                    weightInput.value = (currentValue / 0.45359237).toFixed(1);
+                }
+                calculateCalories();
+            }
+            
+            function convertHeight(targetUnit) {
+                const heightInput = document.getElementById('height');
+                const currentValue = parseFloat(heightInput.value) || 0;
+                
+                if (targetUnit === 'cm') {
+                    // Convert in to cm
+                    heightInput.value = (currentValue * 2.54).toFixed(1);
+                } else if (targetUnit === 'in') {
+                    // Convert cm to in
+                    heightInput.value = (currentValue / 2.54).toFixed(1);
+                }
+                calculateCalories();
+            }
+            
+            // Format number with commas
+            function formatNumber(num) {
+                return num.toLocaleString();
+            }
+            
+            // Calculation function using validated metabolic equations
+            function calculateCalories() {
+                // Get input values
+                const gender = document.getElementById('gender').value;
+                const age = parseInt(document.getElementById('age').value) || 30;
+                let weight = parseFloat(document.getElementById('weight').value) || 70;
+                let height = parseFloat(document.getElementById('height').value) || 175;
+                const duration = parseInt(document.getElementById('duration').value) || 45;
+                const intensity = parseFloat(document.getElementById('intensity').value) || 5;
+                
+                // Get selected activity level
+                const activityLevel = parseFloat(document.querySelector('.activity-option.selected').dataset.level) || 1.375;
+                
+                // Get current units
+                const weightUnit = document.querySelector('.input-group #weight + .unit-toggle .active').dataset.unit;
+                const heightUnit = document.querySelector('.input-group #height + .unit-toggle .active').dataset.unit;
+                
+                // Convert to metric if needed
+                if (weightUnit === 'lbs') weight = weight * 0.45359237; // lbs to kg
+                if (heightUnit === 'in') height = height * 2.54; // inches to cm
+                
+                // Calculate BMR using Mifflin-St Jeor Equation (most accurate)
+                let bmr;
+                if (gender === 'male') {
+                    bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
+                } else {
+                    bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
+                }
+                
+                // Calculate TDEE (Total Daily Energy Expenditure)
+                const tdee = bmr * activityLevel;
+                
+                // Calculate exercise calories using MET formula
+                const exerciseCalories = (intensity * weight * duration) / 60;
+                
+                // Calculate total calories for the day
+                const totalCalories = tdee + exerciseCalories;
+                
+                // Calculate progress visualization
+                const bmrPercentage = (bmr / totalCalories) * 100;
+                
+                // Update UI with results
+                document.getElementById('bmr-result').textContent = formatNumber(Math.round(bmr)) + ' kcal';
+                document.getElementById('tdee-result').textContent = formatNumber(Math.round(tdee)) + ' kcal';
+                document.getElementById('exercise-result').textContent = formatNumber(Math.round(exerciseCalories)) + ' kcal';
+                document.getElementById('total-result').textContent = formatNumber(Math.round(totalCalories)) + ' kcal';
+                
+                // Update progress bar
+                document.getElementById('calorie-progress').style.width = bmrPercentage.toFixed(1) + '%';
+            }
+            
+            // Export functions
+            function printResults() {
+                window.print();
+            }
+            
+            function generatePDF() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                doc.setFontSize(18);
+                doc.text('Calories Burned Report', 105, 15, null, null, 'center');
+                
+                doc.setFontSize(12);
+                doc.text(`BMR: ${document.getElementById('bmr-result').textContent}`, 20, 30);
+                doc.text(`TDEE: ${document.getElementById('tdee-result').textContent}`, 20, 40);
+                doc.text(`Exercise Calories: ${document.getElementById('exercise-result').textContent}`, 20, 50);
+                doc.text(`Total Calories: ${document.getElementById('total-result').textContent}`, 20, 60);
+                
+                // Add calculation details
+                doc.setFontSize(10);
+                doc.text(`Calculation Date: ${new Date().toLocaleDateString()}`, 20, 80);
+                doc.text("Formula: Mifflin-St Jeor BMR + MET-based Exercise Calories", 20, 90);
+                
+                doc.save('calories-report.pdf');
+            }
+            
+            function exportCSV() {
+                const bmr = document.getElementById('bmr-result').textContent;
+                const tdee = document.getElementById('tdee-result').textContent;
+                const exercise = document.getElementById('exercise-result').textContent;
+                const total = document.getElementById('total-result').textContent;
+                
+                const csvContent = 
+                    "Data Type,Value\n" +
+                    `Basal Metabolic Rate (BMR),${bmr}\n` +
+                    `Total Daily Expenditure (TDEE),${tdee}\n` +
+                    `Exercise Calories Burned,${exercise}\n` +
+                    `Total Calories Today,${total}`;
+                
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'calories_data.csv');
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+            
+            function exportTXT() {
+                const bmr = document.getElementById('bmr-result').textContent;
+                const tdee = document.getElementById('tdee-result').textContent;
+                const exercise = document.getElementById('exercise-result').textContent;
+                const total = document.getElementById('total-result').textContent;
+                
+                const textContent = 
+                    "Calories Burned Report\n\n" +
+                    `Basal Metabolic Rate (BMR): ${bmr}\n` +
+                    `Total Daily Expenditure (TDEE): ${tdee}\n` +
+                    `Exercise Calories Burned: ${exercise}\n` +
+                    `Total Calories Today: ${total}\n\n` +
+                    `Calculation Date: ${new Date().toLocaleDateString()}\n` +
+                    "Formula: Mifflin-St Jeor BMR + MET-based Exercise Calories";
+                
+                const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'calories_data.txt');
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+            
+            function shareResults() {
+                const bmr = document.getElementById('bmr-result').textContent;
+                const tdee = document.getElementById('tdee-result').textContent;
+                const exercise = document.getElementById('exercise-result').textContent;
+                
+                const shareText = `Check out my calorie burn results!\nBMR: ${bmr}\nTDEE: ${tdee}\nExercise: ${exercise}\nCalculated with ProCalorieBurn`;
+                
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'My Calorie Burn Results',
+                        text: shareText,
+                        url: window.location.href
+                    })
+                    .catch(error => console.log('Sharing failed:', error));
+                } else {
+                    // Fallback for browsers without Web Share API
+                    prompt('Copy to clipboard: Ctrl+C, Enter', shareText);
+                }
+            }
+            
+            function resetForm() {
+                document.getElementById('age').value = '30';
+                document.getElementById('weight').value = '70';
+                document.getElementById('height').value = '175';
+                document.getElementById('duration').value = '45';
+                document.getElementById('intensity').value = '5';
+                
+                // Reset activity level
+                activityOptions.forEach(opt => opt.classList.remove('selected'));
+                document.querySelector('[data-level="1.375"]').classList.add('selected');
+                
+                // Reset units
+                document.querySelectorAll('.unit-toggle').forEach(toggle => {
+                    toggle.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                    toggle.querySelector('button').classList.add('active');
+                });
+                
+                // Recalculate
+                calculateCalories();
+            }
+        });
+    </script>
+</body>
+</html>

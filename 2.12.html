@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Due Date Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--dark);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 2rem 0;
+            background: var(--primary);
+            color: white;
+            border-radius: 10px 10px 0 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .calculator-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+        
+        .ad-container {
+            text-align: center;
+            padding: 15px;
+            background: var(--light);
+            margin: 10px 0;
+            border-radius: 5px;
+            min-height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .ad-placeholder {
+            color: #7f8c8d;
+            font-style: italic;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .calculator-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .calculator-body {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .input-section, .result-section {
+            background: var(--light);
+            padding: 1.5rem;
+            border-radius: 8px;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            border-color: var(--secondary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .btn {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-print {
+            background: #16a085;
+        }
+        
+        .btn-share {
+            background: #9b59b6;
+        }
+        
+        .btn-download {
+            background: #f39c12;
+        }
+        
+        .btn-reset {
+            background: #7f8c8d;
+        }
+        
+        .result-display {
+            margin-top: 1rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .date-format {
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .date-format:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .format-label {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 0.3rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .format-value {
+            font-size: 1.2rem;
+            color: var(--dark);
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            margin-top: 4px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        .error {
+            color: var(--accent);
+            margin-top: 0.5rem;
+            font-weight: 500;
+            display: none;
+        }
+        
+        .ad-block-warning {
+            color: var(--accent);
+            text-align: center;
+            padding: 10px;
+            display: none;
+        }
+        
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--secondary);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .timezone-note {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-top: 0.5rem;
+        }
+        
+        .examples {
+            background: #e3f2fd;
+            border-left: 4px solid var(--secondary);
+            padding: 12px;
+            margin: 16px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .examples h3 {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .examples ul {
+            padding-left: 20px;
+        }
+        
+        .examples li {
+            margin-bottom: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="calculator-card">
+            <header>
+                <h1><i class="fas fa-calculator"></i> Due Date Calculator</h1>
+                <p>Calculate precise due dates with advanced calendar algorithms</p>
+            </header>
+            
+            <div class="ad-container" id="ad-top">
+                <div class="ad-placeholder">
+                    <i class="fas fa-ad"></i> Advertisement Space (728x90)
+                </div>
+            </div>
+            
+            <div class="ad-block-warning" id="ad-block-warning">
+                <i class="fas fa-exclamation-triangle"></i> Our service is ad-supported. Please consider disabling your ad blocker.
+            </div>
+            
+            <div class="calculator-body">
+                <div class="input-section">
+                    <h2><i class="fas fa-keyboard"></i> Input Details</h2>
+                    <div class="examples">
+                        <h3><i class="fas fa-lightbulb"></i> Examples</h3>
+                        <ul>
+                            <li>40 weeks from today (pregnancy due date)</li>
+                            <li>90 days from contract start date</li>
+                            <li>6 months from project start</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="start-date"><i class="far fa-calendar-alt"></i> Start Date</label>
+                        <input type="date" id="start-date" required>
+                        <div class="error" id="date-error">Please select a valid date</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="duration"><i class="fas fa-ruler"></i> Duration</label>
+                        <input type="number" id="duration" min="1" value="40" required>
+                        <div class="error" id="duration-error">Please enter a valid number (min 1)</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="unit"><i class="fas fa-ruler-combined"></i> Duration Unit</label>
+                        <select id="unit">
+                            <option value="days">Days</option>
+                            <option value="weeks" selected>Weeks</option>
+                            <option value="months">Months</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="timezone"><i class="fas fa-globe"></i> Timezone</label>
+                        <select id="timezone">
+                            <option value="local">Local Time</option>
+                            <option value="utc">UTC/GMT</option>
+                        </select>
+                        <div class="timezone-note">
+                            <i class="fas fa-info-circle"></i> Calculations account for DST and leap years automatically
+                        </div>
+                    </div>
+                    
+                    <div class="form-group action-buttons">
+                        <button id="calculate-btn" class="btn">
+                            <i class="fas fa-calculator"></i> Calculate Due Date
+                        </button>
+                        <button id="reset-btn" class="btn btn-reset">
+                            <i class="fas fa-redo"></i> Reset
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="result-section">
+                    <h2><i class="fas fa-chart-line"></i> Results</h2>
+                    <div class="loader" id="loader">
+                        <div class="spinner"></div>
+                        <p>Calculating...</p>
+                    </div>
+                    
+                    <div class="result-display" id="result-display" style="display: none;">
+                        <div class="date-format">
+                            <div class="format-label">
+                                <i class="far fa-calendar"></i> Standard Format
+                            </div>
+                            <div class="format-value" id="format-standard">-</div>
+                        </div>
+                        
+                        <div class="date-format">
+                            <div class="format-label">
+                                <i class="fas fa-calendar-day"></i> DD/MM/YYYY Format
+                            </div>
+                            <div class="format-value" id="format-dmy">-</div>
+                        </div>
+                        
+                        <div class="date-format">
+                            <div class="format-label">
+                                <i class="fas fa-calendar-alt"></i> MM/DD/YYYY Format
+                            </div>
+                            <div class="format-value" id="format-mdy">-</div>
+                        </div>
+                        
+                        <div class="date-format">
+                            <div class="format-label">
+                                <i class="far fa-calendar-check"></i> Full Date Format
+                            </div>
+                            <div class="format-value" id="format-full">-</div>
+                        </div>
+                        
+                        <div class="date-format">
+                            <div class="format-label">
+                                <i class="fas fa-calendar-week"></i> ISO 8601 Format
+                            </div>
+                            <div class="format-value" id="format-iso">-</div>
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <button id="print-btn" class="btn btn-print">
+                                <i class="fas fa-print"></i> Print Result
+                            </button>
+                            <button id="download-btn" class="btn btn-download">
+                                <i class="fas fa-download"></i> Download
+                            </button>
+                            <button id="share-btn" class="btn btn-share">
+                                <i class="fas fa-share-alt"></i> Share
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="ad-container" id="ad-bottom">
+                <div class="ad-placeholder">
+                    <i class="fas fa-ad"></i> Advertisement Space (728x90)
+                </div>
+            </div>
+            
+            <footer>
+                <p><i class="fas fa-lock"></i> © 2023 Due Date Calculator Pro | All calculations performed client-side | No data stored</p>
+                <p><i class="fas fa-cogs"></i> This calculator accounts for leap years, variable month lengths, and DST changes</p>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        // Fixed Date Calculation Algorithm
+        function calculateDueDate(startDate, duration, unit) {
+            const result = new Date(startDate);
+            
+            switch(unit) {
+                case 'days':
+                    result.setDate(result.getDate() + duration);
+                    break;
+                case 'weeks':
+                    result.setDate(result.getDate() + (duration * 7));
+                    break;
+                case 'months':
+                    // Get the current month and year
+                    const currentMonth = result.getMonth();
+                    const currentYear = result.getFullYear();
+                    
+                    // Calculate target month and year
+                    const targetMonth = currentMonth + duration;
+                    const targetYear = currentYear + Math.floor(targetMonth / 12);
+                    const newMonth = targetMonth % 12;
+                    
+                    // Set the new month and year
+                    result.setFullYear(targetYear, newMonth, result.getDate());
+                    
+                    // Handle month overflow (e.g., Jan 31 + 1 month)
+                    if (result.getMonth() !== newMonth) {
+                        result.setDate(0); // Set to last day of previous month
+                    }
+                    break;
+            }
+            
+            return result;
+        }
+
+        // Format date based on timezone
+        function formatDate(date, timezone, format) {
+            const options = { timeZone: timezone === 'utc' ? 'UTC' : undefined };
+            
+            switch(format) {
+                case 'standard':
+                    return date.toLocaleDateString('en-US', { 
+                        ...options, 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric' 
+                    });
+                case 'dmy':
+                    return date.toLocaleDateString('en-GB', options);
+                case 'mdy':
+                    return date.toLocaleDateString('en-US', options);
+                case 'full':
+                    return date.toLocaleDateString('en-US', { 
+                        ...options,
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    });
+                case 'iso':
+                    return timezone === 'utc' ? 
+                        date.toISOString().split('T')[0] : 
+                        date.toLocaleDateString('sv-SE', options);
+            }
+        }
+
+        // Export functionality
+        function exportResult(format) {
+            const startDate = document.getElementById('start-date').value;
+            const duration = document.getElementById('duration').value;
+            const unit = document.getElementById('unit').value;
+            const dueDate = calculateDueDate(new Date(startDate), parseInt(duration), unit);
+            
+            let content = '';
+            
+            switch(format) {
+                case 'pdf':
+                    // In a real implementation, use a library like jsPDF
+                    alert("PDF generation would be implemented with a library in production");
+                    break;
+                    
+                case 'txt':
+                    content = `Due Date Calculation\n\n`;
+                    content += `Start Date: ${startDate}\n`;
+                    content += `Duration: ${duration} ${unit}\n`;
+                    content += `Due Date: ${formatDate(dueDate, 'local', 'full')}\n\n`;
+                    content += `Generated on: ${new Date().toLocaleString()}`;
+                    downloadFile(content, 'due-date.txt', 'text/plain');
+                    break;
+                    
+                case 'csv':
+                    content = `Start Date,Duration,Unit,Due Date\n`;
+                    content += `${startDate},${duration},${unit},${formatDate(dueDate, 'local', 'iso')}`;
+                    downloadFile(content, 'due-date.csv', 'text/csv');
+                    break;
+            }
+        }
+
+        function downloadFile(content, fileName, contentType) {
+            const blob = new Blob([content], { type: contentType });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            URL.revokeObjectURL(url);
+        }
+
+        // Initialize the calculator
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set default date to today
+            const today = new Date();
+            const formattedDate = today.toISOString().split('T')[0];
+            document.getElementById('start-date').value = formattedDate;
+            
+            // Calculate button handler
+            document.getElementById('calculate-btn').addEventListener('click', () => {
+                // Validate inputs
+                const startDateInput = document.getElementById('start-date');
+                const durationInput = document.getElementById('duration');
+                let isValid = true;
+                
+                if (!startDateInput.value) {
+                    document.getElementById('date-error').style.display = 'block';
+                    isValid = false;
+                } else {
+                    document.getElementById('date-error').style.display = 'none';
+                }
+                
+                if (!durationInput.value || parseInt(durationInput.value) <= 0) {
+                    document.getElementById('duration-error').style.display = 'block';
+                    isValid = false;
+                } else {
+                    document.getElementById('duration-error').style.display = 'none';
+                }
+                
+                if (!isValid) return;
+                
+                // Show loader
+                document.getElementById('loader').style.display = 'block';
+                document.getElementById('result-display').style.display = 'none';
+                
+                // Calculate with delay to show loader
+                setTimeout(() => {
+                    const startDate = new Date(startDateInput.value);
+                    const duration = parseInt(durationInput.value);
+                    const unit = document.getElementById('unit').value;
+                    const timezone = document.getElementById('timezone').value;
+                    
+                    // Perform calculation
+                    const dueDate = calculateDueDate(startDate, duration, unit);
+                    
+                    // Display results
+                    document.getElementById('format-standard').textContent = 
+                        formatDate(dueDate, timezone, 'standard');
+                    document.getElementById('format-dmy').textContent = 
+                        formatDate(dueDate, timezone, 'dmy');
+                    document.getElementById('format-mdy').textContent = 
+                        formatDate(dueDate, timezone, 'mdy');
+                    document.getElementById('format-full').textContent = 
+                        formatDate(dueDate, timezone, 'full');
+                    document.getElementById('format-iso').textContent = 
+                        formatDate(dueDate, timezone, 'iso');
+                    
+                    // Show results
+                    document.getElementById('loader').style.display = 'none';
+                    document.getElementById('result-display').style.display = 'block';
+                }, 500);
+            });
+            
+            // Reset button
+            document.getElementById('reset-btn').addEventListener('click', () => {
+                const today = new Date();
+                const formattedDate = today.toISOString().split('T')[0];
+                document.getElementById('start-date').value = formattedDate;
+                document.getElementById('duration').value = '40';
+                document.getElementById('unit').value = 'weeks';
+                document.getElementById('result-display').style.display = 'none';
+                document.querySelectorAll('.error').forEach(el => {
+                    el.style.display = 'none';
+                });
+            });
+            
+            // Print button
+            document.getElementById('print-btn').addEventListener('click', () => {
+                window.print();
+            });
+            
+            // Download button
+            document.getElementById('download-btn').addEventListener('click', () => {
+                // Create a simple menu for download options
+                const choice = prompt("Choose download format:\n1. TXT (Text File)\n2. CSV (Spreadsheet)\nEnter 1 or 2:");
+                
+                if (choice === '1') {
+                    exportResult('txt');
+                } else if (choice === '2') {
+                    exportResult('csv');
+                } else {
+                    alert("Invalid choice. Please enter 1 or 2.");
+                }
+            });
+            
+            // Share button
+            document.getElementById('share-btn').addEventListener('click', () => {
+                try {
+                    if (navigator.share) {
+                        navigator.share({
+                            title: 'Due Date Calculation',
+                            text: 'Check out my due date calculation!',
+                            url: window.location.href
+                        });
+                    } else {
+                        // Fallback for desktop
+                        const shareText = `Due Date Calculation: ${document.getElementById('format-full').textContent}`;
+                        prompt('Copy this result to share:', shareText);
+                    }
+                } catch (e) {
+                    console.error('Sharing failed:', e);
+                    const shareText = `Due Date Calculation: ${document.getElementById('format-full').textContent}`;
+                    prompt('Copy this result to share:', shareText);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

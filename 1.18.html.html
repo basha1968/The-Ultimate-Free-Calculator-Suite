@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Compound Interest Calculator</title>
+    <!-- 
+        Content-Security-Policy: For production deployment, configure this via your web server (e.g., Nginx, Apache) 
+        for best practice. If using a meta tag, ensure all CDN domains (Chart.js, jsPDF, SheetJS) are whitelisted.
+        For this single-file, self-contained solution, inline scripts/styles require 'unsafe-inline'.
+        Example for meta (adjust for your specific ad networks if they inject more):
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com cdn.jsdelivr.net cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src * data:; media-src *; connect-src *;">
+    -->
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        /* CSS Variables for theming */
+        :root {
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --danger: #e74c3c;
+            --dark-heading-bg: #2c3e50; /* Used for table headers in light mode */
+            --light-bg-secondary: #ecf0f1; /* Used for ad containers, tab non-active */
+            --text-color: #333;
+            --bg-color: #f9f9f9;
+            --card-bg: #fff;
+            --border-color: #ddd;
+            --chart-color-principal: #3498db; /* Blue */
+            --chart-color-interest: #2ecc71; /* Green */
+        }
+        
+        /* Dark Theme Variables */
+        [data-theme="dark"] {
+            --primary: #2980b9;
+            --secondary: #27ae60;
+            --danger: #c0392b;
+            --dark-heading-bg: #34495e; /* Adjusted for dark mode table headers */
+            --light-bg-secondary: #4a667e; /* Adjusted for dark mode ad containers/tabs */
+            --text-color: #ecf0f1;
+            --bg-color: #2c3e50;
+            --card-bg: #34495e;
+            --border-color: #555;
+            --chart-color-principal: #4a90e2; 
+            --chart-color-interest: #4CAF50;
+        }
+        
+        /* Global Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            transition: all 0.3s ease; /* Smooth transition for theme change */
+        }
+        
+        .calculator-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .calculator-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .input-section, .results-section {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1, h2, h3 {
+            color: var(--primary);
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            transition: border-color 0.3s, background-color 0.3s, color 0.3s;
+        }
+        
+        /* Buttons */
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--secondary);
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        /* Ad Containers */
+        .ad-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--light-bg-secondary);
+            border-radius: 4px;
+            text-align: center;
+            min-height: 90px;
+            color: var(--text-color);
+            display: flex; /* For centering text */
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            border: 1px dashed var(--border-color);
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .summary-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .summary-card h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: var(--text-color); /* Use theme variable */
+        }
+        
+        .summary-card p {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: var(--primary); /* Use primary color */
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            color: var(--text-color);
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background-color: var(--dark-heading-bg); /* Use dark card bg for table headers */
+            color: white;
+        }
+        
+        tr:hover {
+            background-color: rgba(0,0,0,0.05); /* Light mode hover */
+        }
+        [data-theme="dark"] tr:hover {
+            background-color: rgba(255,255,255,0.05); /* Dark mode hover */
+        }
+        
+        /* Tooltips */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            color: var(--primary);
+            font-size: 0.9em;
+            margin-left: 5px;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 250px; /* Wider for more text */
+            background-color: var(--dark-heading-bg);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+            font-weight: normal;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Export & Share Options */
+        .export-options, .social-sharing {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .social-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 12px;
+            border-radius: 4px;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            transition: opacity 0.3s;
+        }
+        .social-btn:hover {
+            opacity: 0.8;
+        }
+        
+        .email { background-color: #777; }
+        .whatsapp { background-color: #25D366; }
+        .linkedin { background-color: #0077B5; }
+        .twitter { background-color: #1DA1F2; }
+        
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: absolute; 
+            top: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 1.2em;
+            width: 40px; /* Fixed width/height for round button */
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        /* Error Messages */
+        .error-message {
+            color: var(--danger);
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        /* How to Use / Disclaimer Section */
+        .info-section {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        .info-section h2 {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-color); /* Ensure heading matches text color */
+        }
+        .info-content {
+            display: none;
+            color: var(--text-color); /* Ensure content matches text color */
+        }
+        .info-content.active {
+            display: block;
+        }
+        .info-section p {
+            margin-bottom: 10px;
+        }
+        .info-section ul {
+            list-style-type: disc;
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+        .info-section li {
+            margin-bottom: 5px;
+        }
+
+        /* Comparison Table */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: var(--light-bg-secondary);
+            border: none;
+            border-radius: 4px 4px 0 0;
+            margin-right: 5px;
+            color: var(--text-color);
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .tab.active {
+            background-color: var(--primary);
+            color: white;
+            border-bottom: 2px solid var(--primary);
+        }
+        .tab:not(.active):hover {
+            background-color: rgba(var(--primary), 0.1);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+
+        /* Print Specific Styles */
+        @media print {
+            .no-print, .ad-container, .theme-toggle, .info-section, .export-options, .social-sharing, .tabs, .add-comparison-btn, .clear-comparison-btn {
+                display: none !important;
+            }
+            body {
+                background: none;
+                padding: 0;
+                color: black; /* Force black text for print */
+            }
+            .calculator-container {
+                display: block;
+            }
+            .input-section {
+                display: none; /* Hide input section in print */
+            }
+            .results-section {
+                box-shadow: none; /* Remove shadow for print */
+                padding: 0;
+            }
+            table {
+                font-size: 10px; /* Smaller font for print tables */
+                color: black;
+            }
+            th, td {
+                padding: 8px;
+                border-color: #ccc; /* Lighter border for print */
+            }
+            th {
+                background-color: #eee !important; /* Lighter header for print */
+                color: black !important;
+            }
+            tr:hover {
+                background-color: transparent !important;
+            }
+            .chart-container canvas {
+                max-width: 500px; /* Constrain chart size for print */
+                max-height: 300px;
+                display: block; /* Ensure chart is block level for print */
+                margin: 0 auto;
+            }
+            .summary-card h3, .summary-card p {
+                color: black !important; /* Ensure readable colors in print */
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle no-print" id="themeToggle" aria-label="Toggle dark/light mode">🌓</button>
+    
+    <h1>Professional Compound Interest Calculator</h1>
+    
+    <div class="calculator-container">
+        <div class="input-section">
+            <h2>Investment Details</h2>
+            
+            <div class="input-group">
+                <label for="principal">
+                    Principal Amount ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">
+                            The initial amount of money you invest.
+                        </span>
+                    </span>
+                </label>
+                <input type="number" id="principal" min="1" step="100" value="10000" aria-describedby="principal-error">
+                <div class="error-message" id="principal-error" role="alert" aria-live="polite"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="interestRate">
+                    Annual Interest Rate (%)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">
+                            The yearly interest rate your investment earns.
+                        </span>
+                    </span>
+                </label>
+                <input type="number" id="interestRate" min="0" max="100" step="0.01" value="5.00" aria-describedby="interestRate-error">
+                <div class="error-message" id="interestRate-error" role="alert" aria-live="polite"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="timePeriodYears">
+                    Time Period (Years)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">
+                            The total number of years your money will be invested. Can be a decimal (e.g., 5.5 years).
+                        </span>
+                    </span>
+                </label>
+                <input type="number" id="timePeriodYears" min="0" max="100" step="0.1" value="10" aria-describedby="timePeriodYears-error">
+                <div class="error-message" id="timePeriodYears-error" role="alert" aria-live="polite"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="compoundingFrequency">
+                    Compounding Frequency
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">
+                            How often the interest is calculated and added to the principal. More frequent compounding leads to higher returns.
+                        </span>
+                    </span>
+                </label>
+                <select id="compoundingFrequency">
+                    <option value="1">Annually</option>
+                    <option value="2">Semi-Annually</option>
+                    <option value="4">Quarterly</option>
+                    <option value="12" selected>Monthly</option>
+                    <option value="365">Daily</option>
+                    <option value="continuous">Continuously</option>
+                </select>
+            </div>
+            
+            <button id="calculateBtn">Calculate Growth</button>
+            <button id="addComparisonBtn" class="btn-secondary no-print">Add to Comparison</button>
+        </div>
+        
+        <div class="results-section">
+            <h2>Growth Summary</h2>
+            
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <h3>Total Interest Earned</h3>
+                    <p id="totalInterestEarned">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Maturity Value</h3>
+                    <p id="totalMaturityValue">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Effective Annual Rate (APY)</h3>
+                    <p id="effectiveAnnualRate">0.00%</p>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="growthChart" aria-label="Investment Growth Chart"></canvas>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab active" data-tab="growth-schedule" aria-controls="growth-schedule-tab">Growth Schedule</button>
+                <button class="tab" data-tab="comparison" aria-controls="comparison-tab">Comparison</button>
+            </div>
+            
+            <div class="tab-content active" id="growth-schedule-tab" role="tabpanel" aria-labelledby="growth-schedule-tab-btn">
+                <h3>Detailed Growth Over Time</h3>
+                <div style="overflow-x: auto;">
+                    <table id="growthTable">
+                        <thead>
+                            <tr>
+                                <th>Year</th>
+                                <th>Starting Balance</th>
+                                <th>Interest Earned (Year)</th>
+                                <th>Ending Balance</th>
+                                <th>Total Interest Earned</th>
+                            </tr>
+                        </thead>
+                        <tbody id="growthTableBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="comparison-tab" role="tabpanel" aria-labelledby="comparison-tab-btn">
+                <h3>Compared Scenarios</h3>
+                <div style="overflow-x: auto;">
+                    <table id="comparisonTable">
+                        <thead>
+                            <tr>
+                                <th>Scenario</th>
+                                <th>Principal</th>
+                                <th>Interest Rate</th>
+                                <th>Time (Yrs)</th>
+                                <th>Compounding</th>
+                                <th>Maturity Value</th>
+                                <th>Total Interest</th>
+                                <th class="no-print">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comparisonBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <button id="clearComparisonBtn" class="btn-secondary no-print">Clear All Comparisons</button>
+            </div>
+            
+            <div class="ad-container">
+                <!-- Adsterra Responsive Banner Ad Code Here -->
+                Advertisement Space (Adsterra Responsive Banner)
+                <small>This space is reserved for ad network code (e.g., 728x90).</small>
+            </div>
+
+            <div class="export-options no-print">
+                <button id="printBtn">Print Summary</button>
+                <button id="pdfBtn">Save as PDF</button>
+                <button id="excelBtn">Save as Excel</button>
+                <button id="csvBtn">Save as CSV</button>
+            </div>
+            
+            <div class="social-sharing no-print">
+                <button class="social-btn email" id="emailShare" aria-label="Share via Email">Email</button>
+                <button class="social-btn whatsapp" id="whatsappShare" aria-label="Share via WhatsApp">WhatsApp</button>
+                <button class="social-btn linkedin" id="linkedinShare" aria-label="Share via LinkedIn">LinkedIn</button>
+                <button class="social-btn twitter" id="twitterShare" aria-label="Share via Twitter">Twitter</button>
+                <button class="social-btn btn-secondary" id="shareLink" aria-label="Copy Shareable Link">Copy Share Link</button>
+            </div>
+
+            <div class="ad-container" style="height: 250px;">
+                <!-- Yllix Sidebar/Floating Ad Code Here -->
+                Advertisement Space (Yllix Sidebar/Floating)
+                <small>This space is reserved for ad network code (e.g., 300x250).</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <h2 id="howToUseToggle" aria-expanded="false" aria-controls="howToUseContent">
+            How to Use This Calculator <span aria-hidden="true">▼</span>
+        </h2>
+        <div class="info-content" id="howToUseContent">
+            <p>This calculator helps you understand how your investment grows over time with compound interest.</p>
+            <ul>
+                <li><strong>Principal Amount:</strong> The initial lump sum you are investing.</li>
+                <li><strong>Annual Interest Rate:</strong> The stated yearly interest rate your investment earns (e.g., 5% should be entered as "5").</li>
+                <li><strong>Time Period (Years):</strong> The total number of years you plan to keep your money invested. Can be a decimal (e.g., 5.5 years).</li>
+                <li><strong>Compounding Frequency:</strong> How often the interest is calculated and added to your principal. More frequent compounding (e.g., daily vs. annually) leads to higher overall returns.
+                    <ul>
+                        <li><strong>Continuously:</strong> Interest is compounded infinitely often. This yields the highest possible return for a given annual rate.</li>
+                    </ul>
+                </li>
+            </ul>
+            <p><strong>What the Results Mean:</strong></p>
+            <ul>
+                <li><strong>Total Interest Earned:</strong> The total amount of interest your investment accumulated over the entire time period.</li>
+                <li><strong>Total Maturity Value:</strong> The final value of your investment at the end of the time period (Principal + Total Interest).</li>
+                <li><strong>Effective Annual Rate (APY):</strong> The actual annual rate of return you earn, considering the effect of compounding. It's usually slightly higher than the stated annual interest rate if compounding is more frequent than annually.</li>
+                <li><strong>Growth Schedule:</strong> A year-by-year breakdown of your balance, showing how interest is earned and your investment grows.</li>
+                <li><strong>Comparison Tool:</strong> Allows you to save multiple scenarios and compare them side-by-side. Useful for comparing different interest rates, time periods, or compounding frequencies.</li>
+            </ul>
+            <p style="font-style: italic; color: var(--danger);"><strong>Disclaimer:</strong> This calculator provides estimates based on compound interest formulas. It does not account for additional deposits, withdrawals, taxes, fees, or inflation. It is for informational purposes only and should not be considered financial advice. Actual investment returns may vary. Consult a qualified financial advisor for personalized investment planning.</p>
+        </div>
+    </div>
+
+    <script>
+        // Global variables to store calculation results and chart instance
+        let currentGrowthResults = {};
+        let growthSchedule = []; // Stores year-by-year growth
+        let growthChartInstance = null; // To manage Chart.js instance
+        let comparedScenarios = []; // Array to store comparison scenarios
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up theme toggle
+            const savedTheme = localStorage.getItem('theme') || 'light'; 
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+            
+            // Set up tab functionality for comparison
+            setupTabs();
+            
+            // Set up event listeners for calculation and exports
+            document.getElementById('calculateBtn').addEventListener('click', calculateCompoundInterest);
+            document.getElementById('addComparisonBtn').addEventListener('click', addScenarioToComparison);
+            document.getElementById('clearComparisonBtn').addEventListener('click', clearAllComparisons);
+            document.getElementById('printBtn').addEventListener('click', printSummary);
+            document.getElementById('pdfBtn').addEventListener('click', exportToPDF);
+            document.getElementById('excelBtn').addEventListener('click', exportToExcel);
+            document.getElementById('csvBtn').addEventListener('click', exportToCSV);
+            document.getElementById('shareLink').addEventListener('click', copyShareLink);
+
+            // Set up how-to-use toggle
+            const howToUseToggle = document.getElementById('howToUseToggle');
+            const howToUseContent = document.getElementById('howToUseContent');
+            howToUseToggle.addEventListener('click', function() {
+                const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                this.setAttribute('aria-expanded', !isExpanded);
+                howToUseContent.classList.toggle('active');
+                howToUseToggle.querySelector('span').textContent = isExpanded ? '▼' : '▲';
+            });
+            // Initial state for how-to-use
+            howToUseContent.classList.remove('active');
+            howToUseToggle.setAttribute('aria-expanded', 'false');
+            howToUseToggle.querySelector('span').textContent = '▼';
+
+            // Decode share link parameters on page load if present
+            decodeShareLink();
+            
+            // Initial calculation to populate the UI (from default values or decoded link)
+            calculateCompoundInterest();
+            setupSocialSharing(); // Needs initial data
+        });
+        
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            }
+            // Update chart colors on theme change
+            if (growthChartInstance) {
+                const rootStyle = getComputedStyle(document.documentElement);
+                growthChartInstance.data.datasets[0].borderColor = rootStyle.getPropertyValue('--chart-color-principal');
+                growthChartInstance.data.datasets[0].backgroundColor = rootStyle.getPropertyValue('--chart-color-principal'); // For fill
+                growthChartInstance.data.datasets[1].borderColor = rootStyle.getPropertyValue('--chart-color-interest');
+                growthChartInstance.options.plugins.legend.labels.color = rootStyle.getPropertyValue('--text-color');
+                growthChartInstance.options.plugins.title.color = rootStyle.getPropertyValue('--text-color');
+                growthChartInstance.options.scales.x.ticks.color = rootStyle.getPropertyValue('--text-color');
+                growthChartInstance.options.scales.y.ticks.color = rootStyle.getPropertyValue('--text-color');
+                growthChartInstance.update();
+            }
+        }
+        
+        function setupTabs() {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                });
+            });
+        }
+
+        // --- Error Handling Utilities ---
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+        }
+
+        function showError(elementId, message) {
+            document.getElementById(elementId).textContent = message;
+        }
+        
+        // --- Core Compound Interest Calculation Logic ---
+        function calculateCompoundInterest() {
+            clearErrors(); // Clear previous errors
+
+            // Get input values
+            const principal = parseFloat(document.getElementById('principal').value);
+            let annualInterestRate = parseFloat(document.getElementById('interestRate').value);
+            const timePeriodYears = parseFloat(document.getElementById('timePeriodYears').value); // Can be decimal
+            const compoundingFrequencyStr = document.getElementById('compoundingFrequency').value;
+            
+            // Convert percentages to decimals
+            annualInterestRate /= 100;
+            
+            // --- Input Validation ---
+            let isValid = true;
+            if (isNaN(principal) || principal <= 0) {
+                showError('principal-error', 'Principal must be a positive number.'); isValid = false;
+            }
+            if (isNaN(annualInterestRate) || annualInterestRate < 0 || annualInterestRate > 1) { // 0-100%
+                showError('interestRate-error', 'Interest rate must be between 0% and 100%.'); isValid = false;
+            }
+            if (isNaN(timePeriodYears) || timePeriodYears < 0) { // Can be 0 years, but usually >0 for growth
+                showError('timePeriodYears-error', 'Time period must be a non-negative number.'); isValid = false;
+            }
+            
+            if (!isValid) {
+                document.getElementById('results-section').style.display = 'none';
+                return;
+            }
+
+            let totalMaturityValue;
+            let compoundingPeriodsPerYear;
+
+            if (compoundingFrequencyStr === 'continuous') {
+                // Continuous Compounding Formula: A = P * e^(rt)
+                totalMaturityValue = principal * Math.exp(annualInterestRate * timePeriodYears);
+                compoundingPeriodsPerYear = Infinity; // Conceptual, for effective rate calculation
+            } else {
+                compoundingPeriodsPerYear = parseInt(compoundingFrequencyStr);
+                const periodicRate = annualInterestRate / compoundingPeriodsPerYear;
+                const totalCompoundingPeriods = compoundingPeriodsPerYear * timePeriodYears;
+
+                // Discrete Compounding Formula: A = P * (1 + r/n)^(nt)
+                totalMaturityValue = principal * Math.pow(1 + periodicRate, totalCompoundingPeriods);
+            }
+            
+            const totalInterestEarned = totalMaturityValue - principal;
+
+            // Effective Annual Rate (APY) calculation
+            let effectiveAnnualRate;
+            if (compoundingFrequencyStr === 'continuous') {
+                effectiveAnnualRate = Math.exp(annualInterestRate) - 1; // APY for continuous compounding
+            } else if (compoundingPeriodsPerYear === 0) { // If somehow compounding freq is 0 (shouldn't happen with select)
+                effectiveAnnualRate = 0; // Or annualInterestRate, depending on exact interpretation
+            }
+            else {
+                effectiveAnnualRate = Math.pow(1 + (annualInterestRate / compoundingPeriodsPerYear), compoundingPeriodsPerYear) - 1;
+            }
+            
+
+            // Validate final calculated values
+            if (isNaN(totalMaturityValue) || !isFinite(totalMaturityValue)) {
+                showError('interestRate-error', 'Calculation resulted in invalid numbers. Check inputs.');
+                document.getElementById('results-section').style.display = 'none';
+                return;
+            }
+
+            // Store results in global object
+            currentGrowthResults = {
+                principal: principal,
+                annualInterestRate: annualInterestRate * 100, // Store as percentage for display
+                timePeriodYears: timePeriodYears,
+                compoundingFrequencyStr: compoundingFrequencyStr, // Store string value
+                compoundingFrequencyText: document.getElementById('compoundingFrequency').options[document.getElementById('compoundingFrequency').selectedIndex].text,
+                
+                totalInterestEarned: totalInterestEarned,
+                totalMaturityValue: totalMaturityValue,
+                effectiveAnnualRate: effectiveAnnualRate * 100 // Store as percentage for display
+            };
+
+            // Generate growth schedule
+            growthSchedule = generateGrowthSchedule(currentGrowthResults);
+            
+            // Update UI
+            updateSummaryCards(currentGrowthResults);
+            updateChart(currentGrowthResults);
+            displayGrowthTable(growthSchedule);
+            displayComparisonTable(); // Redraw comparison table in case it's open
+            setupSocialSharing(); // Update sharing links with new data
+
+            document.getElementById('results-section').style.display = 'block';
+        }
+
+        // --- Growth Schedule Generation ---
+        function generateGrowthSchedule(results) {
+            const schedule = [];
+            let currentBalance = results.principal;
+            let cumulativeInterest = 0;
+            
+            const annualRate = results.annualInterestRate / 100;
+            const years = results.timePeriodYears;
+            const compoundingStr = results.compoundingFrequencyStr;
+
+            // Determine effective annual rate for schedule (for consistent yearly increments)
+            let effectiveAnnualRateForSchedule;
+            if (compoundingStr === 'continuous') {
+                effectiveAnnualRateForSchedule = Math.exp(annualRate) - 1;
+            } else {
+                const compoundingFreq = parseInt(compoundingStr);
+                effectiveAnnualRateForSchedule = Math.pow(1 + (annualRate / compoundingFreq), compoundingFreq) - 1;
+            }
+            
+            // Loop year by year for schedule
+            for (let year = 1; year <= years; year++) {
+                const interestEarnedThisYear = currentBalance * effectiveAnnualRateForSchedule;
+                currentBalance += interestEarnedThisYear;
+                cumulativeInterest += interestEarnedThisYear;
+
+                schedule.push({
+                    year: year,
+                    startingBalance: parseFloat((currentBalance - interestEarnedThisYear).toFixed(2)),
+                    interestEarnedYear: parseFloat(interestEarnedThisYear.toFixed(2)),
+                    endingBalance: parseFloat(currentBalance.toFixed(2)),
+                    totalInterestEarned: parseFloat(cumulativeInterest.toFixed(2))
+                });
+            }
+            return schedule;
+        }
+
+        // --- Comparison Logic ---
+        function addScenarioToComparison() {
+            if (Object.keys(currentGrowthResults).length === 0 || isNaN(currentGrowthResults.totalMaturityValue)) {
+                alert("Please calculate a valid growth scenario first before adding to comparison.");
+                return;
+            }
+            
+            const scenarioName = prompt("Enter a name for this scenario (e.g., 'Option A', 'Higher Rate'):");
+            if (!scenarioName) return; // User cancelled or entered empty name
+
+            const newScenario = {
+                id: Date.now(), // Unique ID
+                name: scenarioName,
+                principal: currentGrowthResults.principal,
+                interestRate: currentGrowthResults.annualInterestRate,
+                timePeriodYears: currentGrowthResults.timePeriodYears,
+                compoundingFrequencyText: currentGrowthResults.compoundingFrequencyText,
+                totalMaturityValue: currentGrowthResults.totalMaturityValue,
+                totalInterestEarned: currentGrowthResults.totalInterestEarned
+            };
+            comparedScenarios.push(newScenario);
+            displayComparisonTable();
+            // Switch to comparison tab if it's not active
+            document.querySelector('.tabs .tab[data-tab="comparison"]').click();
+        }
+
+        function removeScenarioFromComparison(idToRemove) {
+            comparedScenarios = comparedScenarios.filter(scenario => scenario.id !== idToRemove);
+            displayComparisonTable();
+        }
+
+        function clearAllComparisons() {
+            if (confirm("Are you sure you want to clear all compared scenarios? This action cannot be undone.")) {
+                comparedScenarios = [];
+                displayComparisonTable();
+            }
+        }
+
+        // --- UI Update Functions ---
+        function updateSummaryCards(results) {
+            document.getElementById('totalInterestEarned').textContent = formatCurrency(results.totalInterestEarned);
+            document.getElementById('totalMaturityValue').textContent = formatCurrency(results.totalMaturityValue);
+            document.getElementById('effectiveAnnualRate').textContent = formatPercentage(results.effectiveAnnualRate);
+        }
+        
+        function updateChart(results) {
+            const ctx = document.getElementById('growthChart').getContext('2d');
+            
+            // Destroy previous chart if exists
+            if (growthChartInstance) {
+                growthChartInstance.destroy();
+            }
+
+            if (results.timePeriodYears === 0 || results.principal <= 0) { // No meaningful growth to chart
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                return;
+            }
+
+            const yearsLabels = growthSchedule.map(s => `Year ${s.year}`);
+            const principalLineData = growthSchedule.map(s => results.principal); // Principal line remains constant
+            const totalBalanceLineData = growthSchedule.map(s => s.endingBalance);
+
+            const rootStyle = getComputedStyle(document.documentElement);
+            const textColor = rootStyle.getPropertyValue('--text-color');
+            const principalColor = rootStyle.getPropertyValue('--chart-color-principal');
+            const interestColor = rootStyle.getPropertyValue('--chart-color-interest');
+
+            growthChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: yearsLabels,
+                    datasets: [
+                        {
+                            label: 'Principal',
+                            data: principalLineData,
+                            borderColor: principalColor,
+                            backgroundColor: principalColor, // For fill
+                            borderWidth: 2,
+                            fill: 'origin', // Fill area under the line
+                            tension: 0.2,
+                            pointRadius: 3
+                        },
+                        {
+                            label: 'Total Value (Principal + Interest)',
+                            data: totalBalanceLineData,
+                            borderColor: interestColor,
+                            backgroundColor: interestColor, // For fill over principal
+                            borderWidth: 2,
+                            fill: 'stack', // Fill area on top of previous dataset
+                            tension: 0.2,
+                            pointRadius: 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: textColor
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${formatCurrency(context.raw)}`;
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Investment Growth Over Time',
+                            color: textColor
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Year',
+                                color: textColor
+                            },
+                            ticks: {
+                                color: textColor
+                            },
+                            grid: {
+                                color: 'rgba(100,100,100,0.1)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Amount ($)',
+                                color: textColor
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                },
+                                color: textColor
+                            },
+                            grid: {
+                                color: 'rgba(100,100,100,0.1)'
+                            },
+                            stack: true // Stack the areas for total value visualization
+                        }
+                    }
+                }
+            });
+        }
+
+        function displayGrowthTable(schedule) {
+            const tableBody = document.getElementById('growthTableBody');
+            tableBody.innerHTML = '';
+            
+            if (schedule.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No growth data available.</td></tr>';
+                return;
+            }
+
+            schedule.forEach(yearData => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${yearData.year}</td>
+                    <td>${formatCurrency(yearData.startingBalance)}</td>
+                    <td>${formatCurrency(yearData.interestEarnedYear)}</td>
+                    <td>${formatCurrency(yearData.endingBalance)}</td>
+                    <td>${formatCurrency(yearData.totalInterestEarned)}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function displayComparisonTable() {
+            const tableBody = document.getElementById('comparisonBody');
+            tableBody.innerHTML = '';
+
+            if (comparedScenarios.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No scenarios added for comparison yet.</td></tr>';
+                return;
+            }
+
+            comparedScenarios.forEach(scenario => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${scenario.name}</td>
+                    <td>${formatCurrency(scenario.principal)}</td>
+                    <td>${scenario.interestRate.toFixed(2)}%</td>
+                    <td>${scenario.timePeriodYears}</td>
+                    <td>${scenario.compoundingFrequencyText}</td>
+                    <td>${formatCurrency(scenario.totalMaturityValue)}</td>
+                    <td>${formatCurrency(scenario.totalInterestEarned)}</td>
+                    <td class="no-print"><button class="btn-secondary" onclick="removeScenarioFromComparison(${scenario.id})" aria-label="Remove scenario ${scenario.name}">X</button></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // --- Formatting Utilities ---
+        function formatCurrency(amount) {
+            // Check for NaN or Infinity before formatting
+            if (isNaN(amount) || !isFinite(amount)) {
+                return "$0.00"; 
+            }
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        }
+
+        function formatPercentage(value) {
+            // Check for NaN or Infinity before formatting
+            if (isNaN(value) || !isFinite(value)) {
+                return "0.00%";
+            }
+            return value.toFixed(2) + '%';
+        }
+        
+        // --- Export Functions ---
+        function printSummary() {
+            window.print();
+        }
+        
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'pt', 'letter');
+            let currentY = 40;
+            const margin = 40;
+            const pageWidth = doc.internal.pageSize.width;
+
+            doc.setFontSize(18);
+            doc.text('Compound Interest Report', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 30;
+
+            doc.setFontSize(12);
+            doc.text(`Calculated On: ${new Date().toLocaleDateString()}`, margin, currentY);
+            currentY += 20;
+
+            // Input Details
+            const inputDetails = [
+                ["Principal Amount", formatCurrency(currentGrowthResults.principal)],
+                ["Annual Interest Rate", formatPercentage(currentGrowthResults.annualInterestRate)],
+                ["Time Period (Years)", currentGrowthResults.timePeriodYears],
+                ["Compounding Frequency", currentGrowthResults.compoundingFrequencyText]
+            ];
+            doc.autoTable({
+                startY: currentY,
+                head: [['Parameter', 'Value']],
+                body: inputDetails,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                margin: { left: margin, right: margin }
+            });
+            currentY = doc.autoTable.previous.finalY + 20;
+
+            // Summary Results
+            const summaryResults = [
+                ["Total Interest Earned", document.getElementById('totalInterestEarned').textContent],
+                ["Total Maturity Value", document.getElementById('totalMaturityValue').textContent],
+                ["Effective Annual Rate (APY)", document.getElementById('effectiveAnnualRate').textContent]
+            ];
+            doc.autoTable({
+                startY: currentY,
+                head: [['Result', 'Value']],
+                body: summaryResults,
+                theme: 'grid',
+                headStyles: { fillColor: [46, 204, 113], textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                margin: { left: margin, right: margin }
+            });
+            currentY = doc.autoTable.previous.finalY + 30;
+
+            // Detailed Growth Schedule
+            doc.addPage();
+            currentY = margin;
+            doc.setFontSize(16);
+            doc.text('Detailed Growth Over Time', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 20;
+
+            const growthTableData = growthSchedule.map(y => [
+                y.year,
+                y.startingBalance.toFixed(2),
+                y.interestEarnedYear.toFixed(2),
+                y.endingBalance.toFixed(2),
+                y.totalInterestEarned.toFixed(2)
+            ]);
+
+            doc.autoTable({
+                startY: currentY,
+                head: [['Year', 'Starting Balance', 'Interest Earned (Year)', 'Ending Balance', 'Total Interest Earned']],
+                body: growthTableData,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                styles: { fontSize: 8, cellPadding: 4 }, 
+                margin: { left: margin, right: margin },
+                didDrawPage: function(data) {
+                    let pageCount = doc.internal.getNumberOfPages();
+                    doc.setFontSize(8);
+                    doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber + ' of ' + pageCount, data.settings.margin.left, doc.internal.pageSize.height - 20);
+                }
+            });
+
+            // Comparison Table (if any)
+            if (comparedScenarios.length > 0) {
+                doc.addPage();
+                currentY = margin;
+                doc.setFontSize(16);
+                doc.text('Scenario Comparison', pageWidth / 2, currentY, { align: 'center' });
+                currentY += 20;
+
+                const comparisonTableData = comparedScenarios.map(s => [
+                    s.name,
+                    s.principal.toFixed(2),
+                    s.interestRate.toFixed(2),
+                    s.timePeriodYears,
+                    s.compoundingFrequencyText,
+                    s.totalMaturityValue.toFixed(2),
+                    s.totalInterestEarned.toFixed(2)
+                ]);
+
+                doc.autoTable({
+                    startY: currentY,
+                    head: [['Scenario', 'Principal', 'Rate (%)', 'Time (Yrs)', 'Compounding', 'Maturity Value', 'Total Interest']],
+                    body: comparisonTableData,
+                    theme: 'grid',
+                    headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                    styles: { fontSize: 8, cellPadding: 4 },
+                    margin: { left: margin, right: margin },
+                    didDrawPage: function(data) {
+                        let pageCount = doc.internal.getNumberOfPages();
+                        doc.setFontSize(8);
+                        doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber + ' of ' + pageCount, data.settings.margin.left, doc.internal.pageSize.height - 20);
+                    }
+                });
+            }
+            
+            doc.save('compound_interest_report.pdf');
+        }
+        
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+            
+            // Sheet 1: Summary
+            const summaryData = [
+                ["Compound Interest Report", ""],
+                ["Calculated On", new Date().toLocaleDateString()],
+                [],
+                ["Input Details", ""],
+                ["Principal Amount", currentGrowthResults.principal],
+                ["Annual Interest Rate", currentGrowthResults.annualInterestRate], // Unformatted for Excel
+                ["Time Period (Years)", currentGrowthResults.timePeriodYears],
+                ["Compounding Frequency", currentGrowthResults.compoundingFrequencyText],
+                [],
+                ["Results", ""],
+                ["Total Interest Earned", currentGrowthResults.totalInterestEarned], // Unformatted
+                ["Total Maturity Value", currentGrowthResults.totalMaturityValue], // Unformatted
+                ["Effective Annual Rate (APY)", currentGrowthResults.effectiveAnnualRate] // Unformatted
+            ];
+            const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, summaryWs, "Summary");
+
+            // Sheet 2: Detailed Growth Schedule
+            const detailedScheduleHeaders = [
+                "Year", "Starting Balance", "Interest Earned (Year)", "Ending Balance", "Total Interest Earned"
+            ];
+            const detailedScheduleData = [detailedScheduleHeaders];
+            growthSchedule.forEach(y => {
+                detailedScheduleData.push([
+                    y.year,
+                    y.startingBalance,
+                    y.interestEarnedYear,
+                    y.endingBalance,
+                    y.totalInterestEarned
+                ]);
+            });
+            const detailedScheduleWs = XLSX.utils.aoa_to_sheet(detailedScheduleData);
+            XLSX.utils.book_append_sheet(wb, detailedScheduleWs, "Growth Schedule");
+
+            // Sheet 3: Comparison (if any)
+            if (comparedScenarios.length > 0) {
+                const comparisonHeaders = [
+                    "Scenario", "Principal", "Interest Rate (%)", "Time (Yrs)", 
+                    "Compounding", "Maturity Value", "Total Interest"
+                ];
+                const comparisonData = [comparisonHeaders];
+                comparedScenarios.forEach(s => {
+                    comparisonData.push([
+                        s.name, s.principal, s.interestRate, s.timePeriodYears, 
+                        s.compoundingFrequencyText, s.totalMaturityValue, s.totalInterestEarned
+                    ]);
+                });
+                const comparisonWs = XLSX.utils.aoa_to_sheet(comparisonData);
+                XLSX.utils.book_append_sheet(wb, comparisonWs, "Comparison");
+            }
+            
+            XLSX.writeFile(wb, 'compound_interest_report.xlsx');
+        }
+        
+        function exportToCSV() {
+            let csvContent = "";
+
+            // Summary data
+            csvContent += "Compound Interest Report\n";
+            csvContent += `"Calculated On","${new Date().toLocaleDateString()}"\n\n`;
+            csvContent += `"Input Details",\n`;
+            csvContent += `"Principal Amount",${currentGrowthResults.principal}\n`;
+            csvContent += `"Annual Interest Rate",${currentGrowthResults.annualInterestRate}%\n`; // Formatted for CSV
+            csvContent += `"Time Period (Years)",${currentGrowthResults.timePeriodYears}\n`;
+            csvContent += `"Compounding Frequency","${currentGrowthResults.compoundingFrequencyText}"\n\n`;
+            csvContent += `"Results",\n`;
+            csvContent += `"Total Interest Earned",${currentGrowthResults.totalInterestEarned.toFixed(2)}\n`; // Formatted for CSV
+            csvContent += `"Total Maturity Value",${currentGrowthResults.totalMaturityValue.toFixed(2)}\n`; // Formatted for CSV
+            csvContent += `"Effective Annual Rate (APY)",${currentGrowthResults.effectiveAnnualRate.toFixed(2)}%\n\n`; // Formatted for CSV
+
+            // Detailed Growth Schedule
+            csvContent += "Growth Schedule\n";
+            csvContent += "Year,Starting Balance,Interest Earned (Year),Ending Balance,Total Interest Earned\n";
+            growthSchedule.forEach(y => {
+                csvContent += `${y.year},${y.startingBalance.toFixed(2)},${y.interestEarnedYear.toFixed(2)},${y.endingBalance.toFixed(2)},${y.totalInterestEarned.toFixed(2)}\n`;
+            });
+            csvContent += "\n";
+
+            // Comparison (if any)
+            if (comparedScenarios.length > 0) {
+                csvContent += "Comparison\n";
+                csvContent += "Scenario,Principal,Interest Rate (%),Time (Yrs),Compounding,Maturity Value,Total Interest\n";
+                comparedScenarios.forEach(s => {
+                    csvContent += `"${s.name}",${s.principal.toFixed(2)},${s.interestRate.toFixed(2)},${s.timePeriodYears},"${s.compoundingFrequencyText}",${s.totalMaturityValue.toFixed(2)},${s.totalInterestEarned.toFixed(2)}\n`;
+                });
+                csvContent += "\n";
+            }
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'compound_interest_report.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // --- Share Link Logic ---
+        function generateShareLink() {
+            const dataToShare = {
+                p: document.getElementById('principal').value,
+                r: document.getElementById('interestRate').value,
+                t: document.getElementById('timePeriodYears').value,
+                c: document.getElementById('compoundingFrequency').value
+            };
+            const jsonString = JSON.stringify(dataToShare);
+            const encodedData = btoa(encodeURIComponent(jsonString)); // Base64 encode after URI encoding
+            const shareUrl = `${window.location.origin}${window.location.pathname}?data=${encodedData}`;
+            return shareUrl;
+        }
+
+        function copyShareLink() {
+            const shareUrl = generateShareLink();
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                alert('Share link copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy share link: ', err);
+                alert('Failed to copy link. Please copy manually: ' + shareUrl);
+            });
+        }
+
+        function decodeShareLink() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const encodedData = urlParams.get('data');
+            if (encodedData) {
+                try {
+                    const decodedJsonString = decodeURIComponent(atob(encodedData)); // Decode URI then Base64
+                    const sharedData = JSON.parse(decodedJsonString);
+                    
+                    document.getElementById('principal').value = sharedData.p || 0;
+                    document.getElementById('interestRate').value = sharedData.r || 0;
+                    document.getElementById('timePeriodYears').value = sharedData.t || 0;
+                    document.getElementById('compoundingFrequency').value = sharedData.c || '12';
+                    
+                    // Remove budget parameter from URL to prevent re-decoding on refresh
+                    const newUrl = new URL(window.location.href);
+                    newUrl.searchParams.delete('data');
+                    window.history.replaceState({}, document.title, newUrl.toString());
+
+                    calculateCompoundInterest(); // Recalculate based on shared link's data
+                } catch (e) {
+                    console.error("Failed to decode share link parameters:", e);
+                    showError('principal-error', 'Invalid share link detected. Please check the URL or try new calculation.');
+                }
+            }
+        }
+
+        function setupSocialSharing() {
+            const principal = currentGrowthResults.principal || 0;
+            const annualInterestRate = currentGrowthResults.annualInterestRate || 0;
+            const timePeriodYears = currentGrowthResults.timePeriodYears || 0;
+            const compoundingFrequencyText = currentGrowthResults.compoundingFrequencyText || '';
+            const totalMaturityValue = currentGrowthResults.totalMaturityValue || 0;
+            const totalInterestEarned = currentGrowthResults.totalInterestEarned || 0;
+            const effectiveAnnualRate = currentGrowthResults.effectiveAnnualRate || 0;
+
+            const shareUrl = generateShareLink(); 
+
+            let shareText = `I calculated my compound interest! Investing ${formatCurrency(principal)} at ${annualInterestRate.toFixed(2)}% over ${timePeriodYears} years, compounded ${compoundingFrequencyText}, grows to ${formatCurrency(totalMaturityValue)}. I earned ${formatCurrency(totalInterestEarned)} in interest (APY: ${effectiveAnnualRate.toFixed(2)}%). Calculate yours here:`;
+            
+            document.getElementById('emailShare').onclick = () => {
+                window.open(`mailto:?subject=Compound Interest Calculation Results&body=${encodeURIComponent(shareText + ' ' + shareUrl)}`);
+            };
+            document.getElementById('whatsappShare').onclick = () => {
+                window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`);
+            };
+            document.getElementById('linkedinShare').onclick = () => {
+                window.open(`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent('Professional Compound Interest Calculation')}&summary=${encodeURIComponent(shareText)}`);
+            };
+            document.getElementById('twitterShare').onclick = () => {
+                window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`);
+            };
+        }
+    </script>
+</body>
+</html>

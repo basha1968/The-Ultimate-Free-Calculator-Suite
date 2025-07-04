@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional GCF Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(to right, #2c3e50, #4a6491);
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+            position: relative;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .header-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .tagline {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+        
+        .ad-container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px auto;
+            text-align: center;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            max-width: 728px;
+        }
+        
+        .ad-label {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.7);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .calculator-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 40px;
+        }
+        
+        @media (max-width: 768px) {
+            .calculator-body {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .input-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .result-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+            color: #2c3e50;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+        }
+        
+        input:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.2);
+        }
+        
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            font-size: 1.1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 6px rgba(52, 152, 219, 0.3);
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn-calculate {
+            background: #27ae60;
+            box-shadow: 0 4px 6px rgba(39, 174, 96, 0.3);
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .btn-calculate:hover {
+            background: #219653;
+        }
+        
+        .result-display {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .result-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            margin-bottom: 30px;
+            border-top: 5px solid #3498db;
+        }
+        
+        .result-title {
+            font-size: 1.3rem;
+            color: #7f8c8d;
+            margin-bottom: 15px;
+        }
+        
+        .result-value {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 10px 0;
+        }
+        
+        .result-details {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-top: 15px;
+            text-align: left;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .btn-print {
+            background: #16a085;
+        }
+        
+        .btn-share {
+            background: #9b59b6;
+        }
+        
+        .btn-download {
+            background: #f39c12;
+        }
+        
+        .btn-reset {
+            background: #e74c3c;
+        }
+        
+        .explanation {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e3f2fd;
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .explanation h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        
+        .explanation p {
+            margin-bottom: 15px;
+            line-height: 1.7;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 25px;
+            color: #7f8c8d;
+            font-size: 1rem;
+            background: #f8f9fa;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .error {
+            color: #e74c3c;
+            margin-top: 8px;
+            font-weight: 500;
+            display: none;
+        }
+        
+        .steps {
+            margin-top: 20px;
+            padding-left: 20px;
+        }
+        
+        .steps li {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        
+        .input-row {
+            display: flex;
+            gap: 15px;
+        }
+        
+        @media (max-width: 480px) {
+            .input-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .calculator-body {
+                padding: 20px;
+            }
+            
+            .input-section, .result-section {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            background: #3498db;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1><i class="fas fa-calculator"></i> GCF Calculator</h1>
+                <p class="tagline">Professional Greatest Common Factor Calculator using the Euclidean Algorithm</p>
+                
+                <div class="ad-container">
+                    <div class="ad-label">
+                        <i class="fas fa-ad"></i> Advertisement Space (Adsterra)
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="calculator-body">
+            <div class="input-section">
+                <div class="section-title">
+                    <i class="fas fa-keyboard"></i>
+                    <h2>Input Numbers</h2>
+                </div>
+                
+                <div class="tabs">
+                    <div class="tab active" data-tab="two-numbers">Two Numbers</div>
+                    <div class="tab" data-tab="multiple-numbers">Multiple Numbers</div>
+                </div>
+                
+                <div id="two-numbers-input">
+                    <div class="form-group">
+                        <label for="number1">
+                            <i class="fas fa-hashtag"></i> First Number
+                        </label>
+                        <input type="number" id="number1" placeholder="Enter a positive integer" min="1" value="48">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="number2">
+                            <i class="fas fa-hashtag"></i> Second Number
+                        </label>
+                        <input type="number" id="number2" placeholder="Enter a positive integer" min="1" value="60">
+                        <div class="error" id="input-error">Please enter valid positive integers</div>
+                    </div>
+                </div>
+                
+                <div id="multiple-numbers-input" style="display: none;">
+                    <div class="form-group">
+                        <label for="numbers">
+                            <i class="fas fa-list-ol"></i> Enter Numbers (comma separated)
+                        </label>
+                        <input type="text" id="numbers" placeholder="e.g., 48, 60, 72" value="48, 60, 72">
+                    </div>
+                </div>
+                
+                <button id="calculate-btn" class="btn btn-calculate">
+                    <i class="fas fa-calculator"></i> Calculate GCF
+                </button>
+                
+                <button id="reset-btn" class="btn btn-reset" style="margin-top: 15px;">
+                    <i class="fas fa-redo"></i> Reset Calculator
+                </button>
+            </div>
+            
+            <div class="result-section">
+                <div class="section-title">
+                    <i class="fas fa-chart-bar"></i>
+                    <h2>Calculation Results</h2>
+                </div>
+                
+                <div class="result-display">
+                    <div class="result-card">
+                        <div class="result-title">Greatest Common Factor (GCF)</div>
+                        <div class="result-value" id="gcf-result">12</div>
+                        <div class="result-details">
+                            <div><strong>Input Numbers:</strong> <span id="input-display">48, 60</span></div>
+                            <div><strong>Calculation Method:</strong> Euclidean Algorithm</div>
+                            <div><strong>Calculation Time:</strong> <span id="calc-time">0.12 ms</span></div>
+                        </div>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button id="print-btn" class="btn btn-print">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                        <button id="download-btn" class="btn btn-download">
+                            <i class="fas fa-download"></i> Save
+                        </button>
+                        <button id="share-btn" class="btn btn-share">
+                            <i class="fas fa-share-alt"></i> Share
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="explanation">
+            <h3><i class="fas fa-lightbulb"></i> How the Euclidean Algorithm Works</h3>
+            <p>The Euclidean algorithm is an efficient method for computing the greatest common divisor (GCD) of two integers. It's based on the principle that the GCD of two numbers also divides their difference.</p>
+            
+            <p><strong>Steps to calculate GCF using Euclidean algorithm:</strong></p>
+            <ol class="steps">
+                <li>Start with two numbers, a and b, where a > b</li>
+                <li>Divide a by b and get the remainder (r)</li>
+                <li>Replace a with b, and b with r</li>
+                <li>Repeat steps 2-3 until the remainder is zero</li>
+                <li>The last non-zero remainder is the GCF</li>
+            </ol>
+            
+            <p><strong>Example:</strong> For 48 and 60: 
+            <br>60 ÷ 48 = 1 remainder 12
+            <br>48 ÷ 12 = 4 remainder 0
+            <br>Therefore, GCF is 12</p>
+        </div>
+        
+        <div class="ad-container" style="margin: 20px auto; max-width: 728px;">
+            <div class="ad-label">
+                <i class="fas fa-ad"></i> Advertisement Space (Yllix)
+            </div>
+        </div>
+        
+        <footer>
+            <p><i class="fas fa-lock"></i> Secure Client-Side Processing | No Data Stored | WCAG Compliant</p>
+            <p><i class="fas fa-calculator"></i> Professional GCF Calculator &copy; 2023 | All Rights Reserved</p>
+        </footer>
+    </div>
+
+    <script>
+        // Euclidean Algorithm for two numbers
+        function gcd(a, b) {
+            // Ensure positive integers
+            a = Math.abs(a);
+            b = Math.abs(b);
+            
+            while (b !== 0) {
+                const temp = b;
+                b = a % b;
+                a = temp;
+            }
+            return a;
+        }
+        
+        // GCF for multiple numbers
+        function multiGcd(numbers) {
+            if (numbers.length === 0) return 0;
+            
+            let result = numbers[0];
+            for (let i = 1; i < numbers.length; i++) {
+                result = gcd(result, numbers[i]);
+                if (result === 1) return 1;
+            }
+            return result;
+        }
+        
+        // DOM Elements
+        const number1Input = document.getElementById('number1');
+        const number2Input = document.getElementById('number2');
+        const numbersInput = document.getElementById('numbers');
+        const calculateBtn = document.getElementById('calculate-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const gcfResult = document.getElementById('gcf-result');
+        const inputDisplay = document.getElementById('input-display');
+        const calcTime = document.getElementById('calc-time');
+        const inputError = document.getElementById('input-error');
+        const twoNumbersTab = document.querySelector('[data-tab="two-numbers"]');
+        const multipleNumbersTab = document.querySelector('[data-tab="multiple-numbers"]');
+        const twoNumbersInput = document.getElementById('two-numbers-input');
+        const multipleNumbersInput = document.getElementById('multiple-numbers-input');
+        
+        // Tab switching
+        twoNumbersTab.addEventListener('click', () => {
+            twoNumbersTab.classList.add('active');
+            multipleNumbersTab.classList.remove('active');
+            twoNumbersInput.style.display = 'block';
+            multipleNumbersInput.style.display = 'none';
+            calculateGCF();
+        });
+        
+        multipleNumbersTab.addEventListener('click', () => {
+            multipleNumbersTab.classList.add('active');
+            twoNumbersTab.classList.remove('active');
+            multipleNumbersInput.style.display = 'block';
+            twoNumbersInput.style.display = 'none';
+            calculateGCF();
+        });
+        
+        // Calculate GCF
+        function calculateGCF() {
+            inputError.style.display = 'none';
+            let numbers = [];
+            
+            if (twoNumbersTab.classList.contains('active')) {
+                const num1 = parseInt(number1Input.value);
+                const num2 = parseInt(number2Input.value);
+                
+                if (isNaN(num1) || num1 <= 0) {
+                    inputError.textContent = "Please enter a valid first number";
+                    inputError.style.display = 'block';
+                    return;
+                }
+                
+                if (isNaN(num2) || num2 <= 0) {
+                    inputError.textContent = "Please enter a valid second number";
+                    inputError.style.display = 'block';
+                    return;
+                }
+                
+                numbers = [num1, num2];
+                inputDisplay.textContent = `${num1}, ${num2}`;
+            } else {
+                const input = numbersInput.value;
+                const numArray = input.split(',')
+                    .map(num => parseInt(num.trim()))
+                    .filter(num => !isNaN(num) && num > 0);
+                
+                if (numArray.length < 2) {
+                    inputError.textContent = "Please enter at least two valid positive numbers";
+                    inputError.style.display = 'block';
+                    return;
+                }
+                
+                numbers = numArray;
+                inputDisplay.textContent = numArray.join(', ');
+            }
+            
+            // Calculate with performance measurement
+            const startTime = performance.now();
+            const result = numbers.length === 2 ? 
+                gcd(numbers[0], numbers[1]) : 
+                multiGcd(numbers);
+            const endTime = performance.now();
+            
+            gcfResult.textContent = result;
+            calcTime.textContent = (endTime - startTime).toFixed(2) + " ms";
+        }
+        
+        // Event listeners
+        calculateBtn.addEventListener('click', calculateGCF);
+        
+        // Input validation
+        numbersInput.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9,]/g, '');
+        });
+        
+        // Reset calculator
+        resetBtn.addEventListener('click', function() {
+            number1Input.value = '48';
+            number2Input.value = '60';
+            numbersInput.value = '48, 60, 72';
+            inputError.style.display = 'none';
+            twoNumbersTab.classList.add('active');
+            multipleNumbersTab.classList.remove('active');
+            twoNumbersInput.style.display = 'block';
+            multipleNumbersInput.style.display = 'none';
+            calculateGCF();
+        });
+        
+        // Print functionality
+        document.getElementById('print-btn').addEventListener('click', function() {
+            window.print();
+        });
+        
+        // Download functionality
+        document.getElementById('download-btn').addEventListener('click', function() {
+            const choice = prompt("Choose format:\n1. TXT\n2. CSV\nEnter 1 or 2:");
+            
+            if (choice === '1') {
+                downloadFile('txt');
+            } else if (choice === '2') {
+                downloadFile('csv');
+            } else {
+                alert("Invalid choice. Please enter 1 or 2.");
+            }
+        });
+        
+        // Share functionality
+        document.getElementById('share-btn').addEventListener('click', function() {
+            const gcfValue = gcfResult.textContent;
+            const numbers = inputDisplay.textContent;
+            
+            try {
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'GCF Calculation Result',
+                        text: `The GCF of ${numbers} is ${gcfValue}. Calculate yours!`,
+                        url: window.location.href
+                    });
+                } else {
+                    const shareText = `The Greatest Common Factor of ${numbers} is ${gcfValue}. Calculate yours at ${window.location.href}`;
+                    prompt('Copy this result to share:', shareText);
+                }
+            } catch (e) {
+                console.error('Sharing failed:', e);
+                const shareText = `The Greatest Common Factor of ${numbers} is ${gcfValue}. Calculate yours at ${window.location.href}`;
+                prompt('Copy this result to share:', shareText);
+            }
+        });
+        
+        // Download file
+        function downloadFile(format) {
+            const gcfValue = gcfResult.textContent;
+            const numbers = inputDisplay.textContent;
+            const timestamp = new Date().toLocaleString();
+            
+            let content = '';
+            let fileName = '';
+            
+            if (format === 'txt') {
+                content = `Greatest Common Factor (GCF) Calculator Report\n\n`;
+                content += `Input Numbers: ${numbers}\n`;
+                content += `Calculated GCF: ${gcfValue}\n`;
+                content += `Calculation Method: Euclidean Algorithm\n`;
+                content += `Calculation Time: ${calcTime.textContent}\n\n`;
+                content += `Generated on: ${timestamp}\n`;
+                fileName = `gfc-result-${numbers.replace(/, /g, '-')}.txt`;
+            } else if (format === 'csv') {
+                content = `Category,Value\n`;
+                content += `Input Numbers,"${numbers}"\n`;
+                content += `GCF Result,${gcfValue}\n`;
+                content += `Calculation Method,Euclidean Algorithm\n`;
+                content += `Calculation Time,${calcTime.textContent}\n`;
+                content += `Timestamp,${timestamp}\n`;
+                fileName = `gfc-result-${numbers.replace(/, /g, '-')}.csv`;
+            }
+            
+            const blob = new Blob([content], { type: format === 'txt' ? 'text/plain' : 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            URL.revokeObjectURL(url);
+        }
+        
+        // Initialize the calculator
+        document.addEventListener('DOMContentLoaded', function() {
+            calculateGCF();
+        });
+    </script>
+</body>
+</html>

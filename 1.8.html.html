@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Average Return Calculator</title>
+    <!-- 
+        Content-Security-Policy: For production deployment, configure this via your web server (e.g., Nginx, Apache) 
+        for best practice. If using a meta tag, ensure all CDN domains (Chart.js, jsPDF, SheetJS) are whitelisted.
+        For this single-file, self-contained solution, inline scripts/styles require 'unsafe-inline'.
+        Example for meta (adjust for your specific ad networks if they inject more):
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com cdn.jsdelivr.net cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src * data:; media-src *; connect-src *;">
+    -->
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        /* CSS Variables for theming */
+        :root {
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --danger: #e74c3c;
+            --dark-heading-bg: #2c3e50; /* Used for table headers in light mode */
+            --light-bg-secondary: #ecf0f1; /* Used for ad containers, tab non-active */
+            --text-color: #333;
+            --bg-color: #f9f9f9;
+            --card-bg: #fff;
+            --border-color: #ddd;
+            --chart-color-arithmetic: #3498db; /* Blue */
+            --chart-color-geometric: #2ecc71; /* Green */
+            --chart-color-cumulative: #9b59b6; /* Purple */
+            --chart-color-periodic: #f39c12; /* Orange */
+        }
+        
+        /* Dark Theme Variables */
+        [data-theme="dark"] {
+            --primary: #2980b9;
+            --secondary: #27ae60;
+            --danger: #c0392b;
+            --dark-heading-bg: #34495e; /* Adjusted for dark mode table headers */
+            --light-bg-secondary: #4a667e; /* Adjusted for dark mode ad containers/tabs */
+            --text-color: #ecf0f1;
+            --bg-color: #2c3e50;
+            --card-bg: #34495e;
+            --border-color: #555;
+            --chart-color-arithmetic: #4a90e2; 
+            --chart-color-geometric: #4CAF50;
+            --chart-color-cumulative: #c792ea;
+            --chart-color-periodic: #f9c26b;
+        }
+        
+        /* Global Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            transition: all 0.3s ease; /* Smooth transition for theme change */
+        }
+        
+        .calculator-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .calculator-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .input-section, .results-section {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1, h2, h3 {
+            color: var(--primary);
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            transition: border-color 0.3s, background-color 0.3s, color 0.3s;
+        }
+        
+        /* Buttons */
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--secondary);
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        /* Ad Containers */
+        .ad-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--light-bg-secondary);
+            border-radius: 4px;
+            text-align: center;
+            min-height: 90px;
+            color: var(--text-color);
+            display: flex; /* For centering text */
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            border: 1px dashed var(--border-color);
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .summary-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .summary-card h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: var(--text-color); /* Use theme variable */
+        }
+        
+        .summary-card p {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: var(--primary); /* Use primary color */
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            color: var(--text-color);
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background-color: var(--dark-heading-bg); /* Use dark card bg for table headers */
+            color: white;
+        }
+        
+        tr:hover {
+            background-color: rgba(0,0,0,0.05); /* Light mode hover */
+        }
+        [data-theme="dark"] tr:hover {
+            background-color: rgba(255,255,255,0.05); /* Dark mode hover */
+        }
+        
+        /* Tooltips */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            color: var(--primary);
+            font-size: 0.9em;
+            margin-left: 5px;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 250px; /* Wider for more text */
+            background-color: var(--dark-heading-bg);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+            font-weight: normal;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Export & Share Options */
+        .export-options, .social-sharing {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .social-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 12px;
+            border-radius: 4px;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            transition: opacity 0.3s;
+        }
+        .social-btn:hover {
+            opacity: 0.8;
+        }
+        
+        .email { background-color: #777; }
+        .whatsapp { background-color: #25D366; }
+        .linkedin { background-color: #0077B5; }
+        .twitter { background-color: #1DA1F2; }
+        
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: absolute; 
+            top: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 1.2em;
+            width: 40px; /* Fixed width/height for round button */
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        /* Error Messages */
+        .error-message {
+            color: var(--danger);
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        /* How to Use / Disclaimer Section */
+        .info-section {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        .info-section h2 {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .info-content {
+            display: none;
+        }
+        .info-content.active {
+            display: block;
+        }
+        .info-section p {
+            margin-bottom: 10px;
+        }
+
+        /* Print Specific Styles */
+        @media print {
+            .no-print, .ad-container, .theme-toggle, .info-section, .export-options, .social-sharing {
+                display: none !important;
+            }
+            body {
+                background: none;
+                padding: 0;
+                color: black; /* Force black text for print */
+            }
+            .calculator-container {
+                display: block;
+            }
+            .input-section {
+                display: none; /* Hide input section in print */
+            }
+            .results-section {
+                box-shadow: none; /* Remove shadow for print */
+                padding: 0;
+            }
+            table {
+                font-size: 10px; /* Smaller font for print tables */
+                color: black;
+            }
+            th, td {
+                padding: 8px;
+                border-color: #ccc; /* Lighter border for print */
+            }
+            th {
+                background-color: #eee !important; /* Lighter header for print */
+                color: black !important;
+            }
+            tr:hover {
+                background-color: transparent !important;
+            }
+            .chart-container canvas {
+                max-width: 500px; /* Constrain chart size for print */
+                max-height: 300px;
+                display: block; /* Ensure chart is block level for print */
+                margin: 0 auto;
+            }
+            .summary-card h3, .summary-card p {
+                color: black !important; /* Ensure readable colors in print */
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle no-print" id="themeToggle" aria-label="Toggle dark/light mode">🌓</button>
+    
+    <h1>Advanced Average Return Calculator</h1>
+    
+    <div class="calculator-container">
+        <div class="input-section">
+            <h2>Input Periodic Returns</h2>
+            
+            <div class="input-group">
+                <label for="returnsInput">
+                    Enter Returns (e.g., 10, -5%, 0.12)
+                    <span class="tooltip" aria-label="About Returns Input">ℹ️
+                        <span class="tooltiptext">
+                            Enter your periodic returns separated by commas or spaces. 
+                            You can use percentages (e.g., 10%, -2.5%) or decimals (e.g., 0.10, -0.025). 
+                            Example: 10, -5, 12.5, 8.5%, -3%
+                        </span>
+                    </span>
+                </label>
+                <textarea id="returnsInput" rows="5" placeholder="Enter your returns here (e.g., 10, -5, 12.5, 8.5%, -3%)" aria-describedby="returns-input-error"></textarea>
+                <div class="error-message" id="returns-input-error" role="alert" aria-live="polite"></div>
+            </div>
+            
+            <button id="calculateBtn">Calculate Returns</button>
+        </div>
+        
+        <div class="results-section">
+            <h2>Return Analysis</h2>
+            
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <h3>Arithmetic Mean</h3>
+                    <p id="arithmeticMean">0.00%</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Geometric Mean</h3>
+                    <p id="geometricMean">0.00%</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Cumulative Return</h3>
+                    <p id="cumulativeReturn">0.00%</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Periods</h3>
+                    <p id="totalPeriods">0</p>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="returnsChart" aria-label="Investment Returns Chart"></canvas>
+            </div>
+            
+            <h3>Detailed Periodic Returns</h3>
+            <div style="overflow-x: auto;">
+                <table id="returnsTable">
+                    <thead>
+                        <tr>
+                            <th>Period</th>
+                            <th>Original Return</th>
+                            <th>Decimal Return</th>
+                            <th>Cumulative Return</th>
+                        </tr>
+                    </thead>
+                    <tbody id="returnsTableBody">
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="ad-container">
+                Advertisement Space (Adsterra Header/Footer)
+                <small>This space is reserved for ad network code (e.g., 728x90).</small>
+            </div>
+
+            <div class="export-options no-print">
+                <button id="printBtn">Print Summary</button>
+                <button id="pdfBtn">Save as PDF</button>
+                <button id="excelBtn">Save as Excel</button>
+                <button id="csvBtn">Save as CSV</button>
+            </div>
+            
+            <div class="social-sharing no-print">
+                <button class="social-btn email" id="emailShare" aria-label="Share via Email">Email</button>
+                <button class="social-btn whatsapp" id="whatsappShare" aria-label="Share via WhatsApp">WhatsApp</button>
+                <button class="social-btn linkedin" id="linkedinShare" aria-label="Share via LinkedIn">LinkedIn</button>
+                <button class="social-btn twitter" id="twitterShare" aria-label="Share via Twitter">Twitter</button>
+                <button class="social-btn btn-secondary" id="shareLink" aria-label="Copy Shareable Link">Share Link</button>
+            </div>
+
+            <div class="ad-container" style="height: 250px;">
+                Advertisement Space (Yllix Sidebar/Floating)
+                <small>This space is reserved for ad network code (e.g., 300x250).</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <h2 id="howToUseToggle" aria-expanded="false" aria-controls="howToUseContent">
+            How to Use This Calculator <span aria-hidden="true">▼</span>
+        </h2>
+        <div class="info-content" id="howToUseContent">
+            <p><strong>1. Enter Your Returns:</strong> In the text area, type your periodic returns. These can be daily, monthly, yearly, etc. They can be positive or negative numbers.</p>
+            <ul>
+                <li><strong>Percentages:</strong> Enter as `10%` or `10`. The calculator will automatically convert `10` to `10%` if no decimal point is present (e.g., `0.1` is treated as `0.1` decimal, while `10` is `10%`).</li>
+                <li><strong>Decimals:</strong> Enter as `0.05` or `-0.02`.</li>
+                <li><strong>Separators:</strong> Use commas (`,`) or spaces to separate your returns.</li>
+            </ul>
+            <p><strong>2. Calculate:</strong> Click the "Calculate Returns" button.</p>
+            <p><strong>3. Review Results:</strong></p>
+            <ul>
+                <li><strong>Arithmetic Mean:</strong> A simple average of your returns. Useful for understanding the typical return in a single period.</li>
+                <li><strong>Geometric Mean:</strong> The true compound annual growth rate. This is generally the more accurate measure for investments, as it accounts for the effect of compounding.</li>
+                <li><strong>Cumulative Return:</strong> The total percentage gain or loss over all periods.</li>
+                <li><strong>Total Periods:</strong> The number of return periods you entered.</li>
+            </ul>
+            <p><strong>4. Export & Share:</strong> Use the buttons at the bottom to print, save as PDF/Excel/CSV, or share your results.</p>
+            <p style="font-style: italic; color: var(--danger);"><strong>Disclaimer:</strong> This calculator provides mathematical averages based on your inputs. It is for informational purposes only and should not be considered financial advice. Investment values can fluctuate. Consult a qualified financial advisor for personalized advice.</p>
+        </div>
+    </div>
+
+    <script>
+        // Global variables to store calculation results and chart instance
+        let currentReturnsData = {};
+        let returnsChartInstance = null; // To manage Chart.js instance
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up theme toggle
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+            
+            // Set up event listeners for calculation and exports
+            document.getElementById('calculateBtn').addEventListener('click', calculateAverageReturns);
+            document.getElementById('printBtn').addEventListener('click', printSummary);
+            document.getElementById('pdfBtn').addEventListener('click', exportToPDF);
+            document.getElementById('excelBtn').addEventListener('click', exportToExcel);
+            document.getElementById('csvBtn').addEventListener('click', exportToCSV);
+            document.getElementById('shareLink').addEventListener('click', copyShareLink);
+
+            // Set up how-to-use toggle
+            const howToUseToggle = document.getElementById('howToUseToggle');
+            const howToUseContent = document.getElementById('howToUseContent');
+            howToUseToggle.addEventListener('click', function() {
+                const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                this.setAttribute('aria-expanded', !isExpanded);
+                howToUseContent.classList.toggle('active');
+                howToUseToggle.querySelector('span').textContent = isExpanded ? '▼' : '▲';
+            });
+            // Initial state for how-to-use
+            howToUseContent.classList.remove('active');
+            howToUseToggle.setAttribute('aria-expanded', 'false');
+            howToUseToggle.querySelector('span').textContent = '▼';
+
+            // Decode share link on page load
+            decodeShareLink();
+
+            // Initial calculation on page load (from default values or decoded link)
+            calculateAverageReturns();
+            setupSocialSharing(); // Needs initial data
+        });
+        
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            }
+            // Update chart colors on theme change
+            if (returnsChartInstance) {
+                const rootStyle = getComputedStyle(document.documentElement);
+                returnsChartInstance.data.datasets[0].backgroundColor = rootStyle.getPropertyValue('--chart-color-periodic');
+                returnsChartInstance.data.datasets[1].borderColor = rootStyle.getPropertyValue('--chart-color-cumulative');
+                returnsChartInstance.data.datasets[2].borderColor = rootStyle.getPropertyValue('--chart-color-arithmetic');
+                returnsChartInstance.data.datasets[3].borderColor = rootStyle.getPropertyValue('--chart-color-geometric');
+                returnsChartInstance.options.plugins.legend.labels.color = rootStyle.getPropertyValue('--text-color');
+                returnsChartInstance.options.plugins.title.color = rootStyle.getPropertyValue('--text-color');
+                returnsChartInstance.options.scales.x.ticks.color = rootStyle.getPropertyValue('--text-color');
+                returnsChartInstance.options.scales.y.ticks.color = rootStyle.getPropertyValue('--text-color');
+                returnsChartInstance.update();
+            }
+        }
+        
+        // --- Error Handling Utilities ---
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+        }
+
+        function showError(elementId, message) {
+            document.getElementById(elementId).textContent = message;
+        }
+        
+        // --- Core Calculation Logic ---
+        function calculateAverageReturns() {
+            clearErrors(); // Clear previous errors
+
+            const returnsInput = document.getElementById('returnsInput').value.trim();
+            if (!returnsInput) {
+                showError('returns-input-error', 'Please enter some periodic returns.');
+                document.getElementById('results-section').style.display = 'none';
+                return;
+            }
+
+            // Parse input: handle comma/space separation, percentages, and decimals
+            const rawReturns = returnsInput.split(/[, ]+/).filter(s => s !== '');
+            const parsedReturns = [];
+            let isValid = true;
+
+            rawReturns.forEach((r, index) => {
+                let value;
+                const isPercentage = r.includes('%');
+                if (isPercentage) {
+                    value = parseFloat(r.replace('%', '')) / 100;
+                } else {
+                    value = parseFloat(r);
+                }
+
+                if (isNaN(value) || !isFinite(value)) {
+                    showError('returns-input-error', `Invalid entry found: "${rawReturns[index]}". Please enter numbers only.`);
+                    isValid = false;
+                    return;
+                }
+                parsedReturns.push(value);
+            });
+
+            if (!isValid || parsedReturns.length === 0) {
+                if (parsedReturns.length === 0 && isValid) { // Case where filter leaves no valid numbers
+                     showError('returns-input-error', 'No valid periodic returns found. Please enter numbers.');
+                }
+                document.getElementById('results-section').style.display = 'none';
+                return;
+            }
+
+            // Calculate Arithmetic Mean
+            const sumReturns = parsedReturns.reduce((sum, r) => sum + r, 0);
+            const arithmeticMean = sumReturns / parsedReturns.length;
+
+            // Calculate Geometric Mean
+            let productForGeometricMean = 1;
+            let hasNegativeOne = false; // Flag for geometric mean if any return is -100%
+            parsedReturns.forEach(r => {
+                if (r === -1) { // 100% loss
+                    hasNegativeOne = true;
+                }
+                productForGeometricMean *= (1 + r);
+            });
+
+            let geometricMean;
+            if (hasNegativeOne) {
+                geometricMean = -1; // If any period has -100% return, geometric mean is -100%
+            } else if (productForGeometricMean < 0) {
+                 // If the product is negative (e.g., compounding negative returns), geometric mean is undefined in real numbers
+                 geometricMean = NaN;
+                 console.warn("Geometric Mean is undefined for this series of returns (product is negative).");
+            }
+            else {
+                geometricMean = Math.pow(productForGeometricMean, 1 / parsedReturns.length) - 1;
+            }
+
+
+            // Calculate Cumulative Return and populate detailed schedule
+            const detailedSchedule = [];
+            let cumulativeProduct = 1;
+            parsedReturns.forEach((r, index) => {
+                cumulativeProduct *= (1 + r);
+                detailedSchedule.push({
+                    period: index + 1,
+                    originalReturn: rawReturns[index],
+                    decimalReturn: r,
+                    cumulativeReturn: cumulativeProduct - 1 // Convert back to percentage for cumulative
+                });
+            });
+            const cumulativeReturn = cumulativeProduct - 1;
+
+            // Store results in global object
+            currentReturnsData = {
+                rawInputs: rawReturns,
+                periodicReturns: parsedReturns,
+                arithmeticMean: arithmeticMean,
+                geometricMean: geometricMean,
+                cumulativeReturn: cumulativeReturn,
+                totalPeriods: parsedReturns.length,
+                detailedSchedule: detailedSchedule
+            };
+
+            // Update UI
+            updateSummaryCards(currentReturnsData);
+            displayDetailedReturnsTable(currentReturnsData.detailedSchedule);
+            updateChart(currentReturnsData);
+            setupSocialSharing(); // Update sharing links with new data
+
+            document.getElementById('results-section').style.display = 'block';
+        }
+
+        // --- UI Update Functions ---
+        function updateSummaryCards(results) {
+            document.getElementById('arithmeticMean').textContent = formatPercentage(results.arithmeticMean);
+            document.getElementById('geometricMean').textContent = formatPercentage(results.geometricMean);
+            document.getElementById('cumulativeReturn').textContent = formatPercentage(results.cumulativeReturn);
+            document.getElementById('totalPeriods').textContent = results.totalPeriods.toString();
+
+            // Handle NaN/Infinity for display
+            if (isNaN(results.geometricMean)) {
+                document.getElementById('geometricMean').textContent = 'N/A';
+            }
+        }
+        
+        function displayDetailedReturnsTable(schedule) {
+            const tableBody = document.getElementById('returnsTableBody');
+            tableBody.innerHTML = '';
+            
+            schedule.forEach(period => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${period.period}</td>
+                    <td>${period.originalReturn}</td>
+                    <td>${formatPercentage(period.decimalReturn)}</td>
+                    <td>${formatPercentage(period.cumulativeReturn)}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        function updateChart(results) {
+            const ctx = document.getElementById('returnsChart').getContext('2d');
+            
+            // Destroy previous chart if exists
+            if (returnsChartInstance) {
+                returnsChartInstance.destroy();
+            }
+
+            if (results.totalPeriods === 0) { // No meaningful data to chart
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                return;
+            }
+
+            const periodsLabels = Array.from({ length: results.totalPeriods }, (_, i) => `P${i + 1}`);
+            const cumulativeReturnsData = results.detailedSchedule.map(p => p.cumulativeReturn * 100); // Chart.js needs percentage
+            const periodicReturnsChartData = results.periodicReturns.map(r => r * 100);
+
+            const rootStyle = getComputedStyle(document.documentElement);
+            const chartColors = {
+                periodic: rootStyle.getPropertyValue('--chart-color-periodic'),
+                cumulative: rootStyle.getPropertyValue('--chart-color-cumulative'),
+                arithmetic: rootStyle.getPropertyValue('--chart-color-arithmetic'),
+                geometric: rootStyle.getPropertyValue('--chart-color-geometric')
+            };
+
+            returnsChartInstance = new Chart(ctx, {
+                type: 'line', // Line chart for trends
+                data: {
+                    labels: periodsLabels,
+                    datasets: [
+                        {
+                            label: 'Periodic Return',
+                            data: periodicReturnsChartData,
+                            backgroundColor: chartColors.periodic,
+                            borderColor: chartColors.periodic,
+                            type: 'bar', // Bars for individual periods
+                            yAxisID: 'y',
+                        },
+                        {
+                            label: 'Cumulative Return',
+                            data: cumulativeReturnsData,
+                            borderColor: chartColors.cumulative,
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            yAxisID: 'y',
+                            tension: 0.3,
+                            pointRadius: 3
+                        },
+                        {
+                            label: 'Arithmetic Mean',
+                            data: Array(results.totalPeriods).fill(results.arithmeticMean * 100),
+                            borderColor: chartColors.arithmetic,
+                            backgroundColor: 'transparent',
+                            borderDash: [5, 5],
+                            borderWidth: 1,
+                            pointRadius: 0,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Geometric Mean',
+                            data: Array(results.totalPeriods).fill(results.geometricMean * 100),
+                            borderColor: chartColors.geometric,
+                            backgroundColor: 'transparent',
+                            borderDash: [5, 5],
+                            borderWidth: 1,
+                            pointRadius: 0,
+                            yAxisID: 'y'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: rootStyle.getPropertyValue('--text-color')
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Investment Returns Over Time',
+                            color: rootStyle.getPropertyValue('--text-color')
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${formatPercentage(context.raw / 100)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Period',
+                                color: rootStyle.getPropertyValue('--text-color')
+                            },
+                            ticks: {
+                                color: rootStyle.getPropertyValue('--text-color')
+                            },
+                            grid: {
+                                color: 'rgba(100,100,100,0.1)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Return (%)',
+                                color: rootStyle.getPropertyValue('--text-color')
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                },
+                                color: rootStyle.getPropertyValue('--text-color')
+                            },
+                            grid: {
+                                color: 'rgba(100,100,100,0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // --- Formatting Utilities ---
+        function formatPercentage(value) {
+            if (isNaN(value) || !isFinite(value)) {
+                return "N/A";
+            }
+            return (value * 100).toFixed(2) + '%';
+        }
+        
+        // --- Export Functions ---
+        function printSummary() {
+            window.print();
+        }
+        
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'pt', 'letter');
+            let currentY = 40;
+            const margin = 40;
+            const pageWidth = doc.internal.pageSize.width;
+
+            doc.setFontSize(18);
+            doc.text('Average Return Report', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 30;
+
+            doc.setFontSize(12);
+            doc.text(`Calculated On: ${new Date().toLocaleDateString()}`, margin, currentY);
+            currentY += 20;
+
+            // Input Details
+            const inputDetails = [
+                ["Returns Input", document.getElementById('returnsInput').value]
+            ];
+            doc.autoTable({
+                startY: currentY,
+                head: [['Parameter', 'Value']],
+                body: inputDetails,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                margin: { left: margin, right: margin }
+            });
+            currentY = doc.autoTable.previous.finalY + 20;
+
+            // Summary Results
+            const summaryResults = [
+                ["Arithmetic Mean", document.getElementById('arithmeticMean').textContent],
+                ["Geometric Mean", document.getElementById('geometricMean').textContent],
+                ["Cumulative Return", document.getElementById('cumulativeReturn').textContent],
+                ["Total Periods", document.getElementById('totalPeriods').textContent]
+            ];
+            doc.autoTable({
+                startY: currentY,
+                head: [['Result', 'Value']],
+                body: summaryResults,
+                theme: 'grid',
+                headStyles: { fillColor: [46, 204, 113], textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                margin: { left: margin, right: margin }
+            });
+            currentY = doc.autoTable.previous.finalY + 30;
+
+            // Detailed Periodic Returns
+            doc.addPage();
+            currentY = margin;
+            doc.setFontSize(16);
+            doc.text('Detailed Periodic Returns', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 20;
+
+            const detailedTableData = currentReturnsData.detailedSchedule.map(p => [
+                p.period,
+                p.originalReturn,
+                formatPercentage(p.decimalReturn),
+                formatPercentage(p.cumulativeReturn)
+            ]);
+
+            doc.autoTable({
+                startY: currentY,
+                head: [['Period', 'Original Input', 'Decimal Return', 'Cumulative Return']],
+                body: detailedTableData,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                styles: { fontSize: 8, cellPadding: 4 },
+                margin: { left: margin, right: margin },
+                didDrawPage: function(data) {
+                    let pageCount = doc.internal.getNumberOfPages();
+                    doc.setFontSize(8);
+                    doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber + ' of ' + pageCount, data.settings.margin.left, doc.internal.pageSize.height - 20);
+                }
+            });
+            
+            doc.save('average_return_report.pdf');
+        }
+        
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+            
+            // Sheet 1: Summary
+            const summaryData = [
+                ["Average Return Report", ""],
+                ["Calculated On", new Date().toLocaleDateString()],
+                [],
+                ["Input Details", ""],
+                ["Returns Input", document.getElementById('returnsInput').value],
+                [],
+                ["Results", ""],
+                ["Arithmetic Mean", currentReturnsData.arithmeticMean], // Raw value for Excel
+                ["Geometric Mean", currentReturnsData.geometricMean], // Raw value for Excel
+                ["Cumulative Return", currentReturnsData.cumulativeReturn], // Raw value for Excel
+                ["Total Periods", currentReturnsData.totalPeriods]
+            ];
+            const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, summaryWs, "Summary");
+
+            // Sheet 2: Detailed Periodic Returns
+            const detailedScheduleHeaders = ["Period", "Original Input", "Decimal Return", "Cumulative Return"];
+            const detailedScheduleData = [detailedScheduleHeaders];
+            currentReturnsData.detailedSchedule.forEach(p => {
+                detailedScheduleData.push([
+                    p.period,
+                    p.originalReturn,
+                    p.decimalReturn, // Raw value
+                    p.cumulativeReturn // Raw value
+                ]);
+            });
+            const detailedScheduleWs = XLSX.utils.aoa_to_sheet(detailedScheduleData);
+            XLSX.utils.book_append_sheet(wb, detailedScheduleWs, "Detailed Returns");
+            
+            XLSX.writeFile(wb, 'average_return_report.xlsx');
+        }
+        
+        function exportToCSV() {
+            let csvContent = "";
+
+            // Summary data
+            csvContent += "Average Return Report\n";
+            csvContent += `"Calculated On","${new Date().toLocaleDateString()}"\n\n`;
+            csvContent += `"Input Details",\n`;
+            csvContent += `"Returns Input","${document.getElementById('returnsInput').value}"\n\n`;
+            csvContent += `"Results",\n`;
+            csvContent += `"Arithmetic Mean","${currentReturnsData.arithmeticMean.toFixed(4)}"\n`; // More precision for raw
+            csvContent += `"Geometric Mean","${currentReturnsData.geometricMean.toFixed(4)}"\n`; // More precision for raw
+            csvContent += `"Cumulative Return","${currentReturnsData.cumulativeReturn.toFixed(4)}"\n`; // More precision for raw
+            csvContent += `"Total Periods",${currentReturnsData.totalPeriods}\n\n`;
+
+            // Detailed Periodic Returns
+            csvContent += "Detailed Periodic Returns\n";
+            csvContent += "Period,Original Input,Decimal Return,Cumulative Return\n";
+            currentReturnsData.detailedSchedule.forEach(p => {
+                csvContent += `${p.period},"${p.originalReturn}",${p.decimalReturn.toFixed(4)},${p.cumulativeReturn.toFixed(4)}\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'average_return_report.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- Share Link Logic ---
+        function generateShareLink() {
+            const returnsInput = document.getElementById('returnsInput').value.trim();
+            const encodedReturns = btoa(encodeURIComponent(returnsInput)); // Base64 encode
+            const shareUrl = `${window.location.origin}${window.location.pathname}?returns=${encodedReturns}`;
+            return shareUrl;
+        }
+
+        function copyShareLink() {
+            const shareUrl = generateShareLink();
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                alert('Share link copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy share link: ', err);
+                alert('Failed to copy link. Please copy manually: ' + shareUrl);
+            });
+        }
+
+        function decodeShareLink() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const encodedReturns = urlParams.get('returns');
+            if (encodedReturns) {
+                try {
+                    const decodedReturns = decodeURIComponent(atob(encodedReturns));
+                    document.getElementById('returnsInput').value = decodedReturns;
+                    // Recalculate based on shared link's data
+                    calculateAverageReturns();
+                } catch (e) {
+                    console.error("Failed to decode share link parameters:", e);
+                    showError('returns-input-error', 'Invalid share link detected. Please check the URL.');
+                }
+            }
+        }
+
+        function setupSocialSharing() {
+            const arithmeticMean = document.getElementById('arithmeticMean').textContent;
+            const geometricMean = document.getElementById('geometricMean').textContent;
+            const cumulativeReturn = document.getElementById('cumulativeReturn').textContent;
+            const totalPeriods = document.getElementById('totalPeriods').textContent;
+            const shareUrl = generateShareLink(); // Use the dynamically generated share link
+
+            const shareText = `I calculated my investment returns! For ${totalPeriods} periods, the Arithmetic Mean is ${arithmeticMean}, and the Geometric Mean is ${geometricMean}. Cumulative return: ${cumulativeReturn}. Analyze yours here:`;
+            
+            document.getElementById('emailShare').onclick = () => {
+                window.open(`mailto:?subject=Investment Return Calculation Results&body=${encodeURIComponent(shareText + ' ' + shareUrl)}`);
+            };
+            document.getElementById('whatsappShare').onclick = () => {
+                window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`);
+            };
+            document.getElementById('linkedinShare').onclick = () => {
+                window.open(`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent('Advanced Average Return Calculation')}&summary=${encodeURIComponent(shareText)}`);
+            };
+            document.getElementById('twitterShare').onclick = () => {
+                window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`);
+            };
+        }
+    </script>
+</body>
+</html>

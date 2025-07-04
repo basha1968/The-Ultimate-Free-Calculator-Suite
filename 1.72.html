@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional VAT Calculator | Secure Financial Tool</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --info: #2980b9;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), #1a2530);
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            border-radius: var(--border-radius);
+            margin-bottom: 30px;
+            box-shadow: var(--box-shadow);
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+        }
+        
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .calculator-card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .card-title {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .card-title i {
+            margin-right: 10px;
+            color: var(--secondary);
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+        }
+        
+        .info-tooltip {
+            margin-left: 8px;
+            color: var(--secondary);
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .tooltip-text {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--dark);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.85rem;
+            width: 200px;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .info-tooltip:hover .tooltip-text {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        input, select, button {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            margin-top: 10px;
+        }
+        
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        button {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        button.calculate-btn {
+            background: var(--success);
+            padding: 15px;
+            font-size: 1.1rem;
+        }
+        
+        button.calculate-btn:hover {
+            background: #219653;
+        }
+        
+        .results-section {
+            background: #f8f9fa;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-top: 25px;
+        }
+        
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .result-row:last-child {
+            border-bottom: none;
+        }
+        
+        .result-label {
+            font-weight: 600;
+        }
+        
+        .result-value {
+            font-weight: 700;
+            color: var(--secondary);
+        }
+        
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-top: 25px;
+        }
+        
+        .action-btn {
+            background: var(--primary);
+            color: white;
+            border-radius: var(--border-radius);
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .action-btn i {
+            font-size: 1.2rem;
+        }
+        
+        .action-btn:hover {
+            background: #1a2530;
+            transform: translateY(-3px);
+        }
+        
+        .action-btn.print {
+            background: var(--info);
+        }
+        
+        .action-btn.share {
+            background: var(--accent);
+        }
+        
+        .ad-container {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 30px;
+            min-height: 280px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .ad-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .ad-placeholder {
+            width: 100%;
+            height: 250px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border: 2px dashed #dee2e6;
+            border-radius: var(--border-radius);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #6c757d;
+        }
+        
+        .ad-placeholder i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #ced4da;
+        }
+        
+        .history-card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 25px;
+        }
+        
+        .history-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .history-details {
+            flex: 1;
+        }
+        
+        .history-amount {
+            font-weight: 700;
+            color: var(--secondary);
+        }
+        
+        .history-type {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+        }
+        
+        .clear-history {
+            background: transparent;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 8px 15px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 20px;
+            width: auto;
+            display: inline-block;
+        }
+        
+        .clear-history:hover {
+            background: var(--accent);
+            color: white;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 40px;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            border-top: 1px solid #eee;
+        }
+        
+        .security-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #e8f4fc;
+            padding: 8px 15px;
+            border-radius: 30px;
+            margin-top: 15px;
+            color: var(--info);
+            font-weight: 600;
+        }
+        
+        @media (max-width: 600px) {
+            .radio-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .action-buttons {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-calculator"></i> Professional VAT Calculator</h1>
+            <p>Calculate VAT amounts securely with real-time results. All data processed client-side for maximum privacy.</p>
+            <div class="security-badge">
+                <i class="fas fa-lock"></i> 100% Secure Client-Side Processing
+            </div>
+        </header>
+        
+        <div class="main-content">
+            <div class="left-column">
+                <div class="calculator-card">
+                    <div class="card-title">
+                        <i class="fas fa-calculator"></i>
+                        <h2>VAT Calculation</h2>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="amount">
+                            Amount 
+                            <span class="info-tooltip">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltip-text">Enter the base amount before VAT is applied or the total amount including VAT</span>
+                            </span>
+                        </label>
+                        <input type="number" id="amount" placeholder="Enter amount" min="0" step="0.01">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="vatRate">
+                            VAT Rate (%) 
+                            <span class="info-tooltip">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltip-text">Standard VAT rates vary by country. Enter the applicable rate for your region.</span>
+                            </span>
+                        </label>
+                        <input type="number" id="vatRate" value="20" min="0" max="100" step="0.1">
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" id="addVAT" name="vatType" value="add" checked>
+                                <label for="addVAT">Add VAT</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" id="removeVAT" name="vatType" value="remove">
+                                <label for="removeVAT">Remove VAT</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="currency">
+                            Currency 
+                            <span class="info-tooltip">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltip-text">Select your currency for accurate financial reporting</span>
+                            </span>
+                        </label>
+                        <select id="currency">
+                            <option value="USD">US Dollar (USD)</option>
+                            <option value="EUR">Euro (EUR)</option>
+                            <option value="GBP">British Pound (GBP)</option>
+                            <option value="JPY">Japanese Yen (JPY)</option>
+                            <option value="CAD">Canadian Dollar (CAD)</option>
+                            <option value="AUD">Australian Dollar (AUD)</option>
+                        </select>
+                    </div>
+                    
+                    <button class="calculate-btn" id="calculateBtn">
+                        <i class="fas fa-calculator"></i> Calculate VAT
+                    </button>
+                    
+                    <div class="results-section" id="resultsSection" style="display: none;">
+                        <div class="result-row">
+                            <span class="result-label">Net Amount:</span>
+                            <span class="result-value" id="netAmount">$0.00</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">VAT Amount:</span>
+                            <span class="result-value" id="vatAmount">$0.00</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">Gross Amount:</span>
+                            <span class="result-value" id="grossAmount">$0.00</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">VAT Rate:</span>
+                            <span class="result-value" id="vatRateResult">0%</span>
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <div class="action-btn print" id="printBtn">
+                                <i class="fas fa-print"></i>
+                                <span>Print</span>
+                            </div>
+                            <div class="action-btn" id="pdfBtn">
+                                <i class="fas fa-file-pdf"></i>
+                                <span>PDF</span>
+                            </div>
+                            <div class="action-btn" id="excelBtn">
+                                <i class="fas fa-file-excel"></i>
+                                <span>Excel</span>
+                            </div>
+                            <div class="action-btn" id="csvBtn">
+                                <i class="fas fa-file-csv"></i>
+                                <span>CSV</span>
+                            </div>
+                            <div class="action-btn share" id="shareBtn">
+                                <i class="fas fa-share-alt"></i>
+                                <span>Share</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="calculator-card">
+                    <div class="card-title">
+                        <i class="fas fa-shield-alt"></i>
+                        <h2>Security & Privacy</h2>
+                    </div>
+                    <p>This VAT calculator operates with the highest security standards:</p>
+                    <ul style="padding: 15px 30px;">
+                        <li>All calculations are performed client-side - no data is sent to servers</li>
+                        <li>HTTPS encryption ensures secure data transmission</li>
+                        <li>Input validation protects against injection attacks</li>
+                        <li>No cookies or tracking mechanisms are used</li>
+                        <li>Financial data never leaves your device</li>
+                    </ul>
+                    <p style="margin-top: 15px; font-weight: 600; color: var(--success);">
+                        <i class="fas fa-check-circle"></i> Your financial data remains 100% private and secure
+                    </p>
+                </div>
+            </div>
+            
+            <div class="right-column">
+                <div class="ad-container">
+                    <div class="ad-label">Advertisement</div>
+                    <div class="ad-placeholder">
+                        <i class="fas fa-ad"></i>
+                        <h3>Adsterra Ad Space</h3>
+                        <p>300x250 Ad Banner</p>
+                        <p style="font-size: 0.9rem; margin-top: 10px;">Monetization integrated securely</p>
+                    </div>
+                </div>
+                
+                <div class="ad-container">
+                    <div class="ad-label">Advertisement</div>
+                    <div class="ad-placeholder">
+                        <i class="fas fa-ad"></i>
+                        <h3>Yllix Ad Space</h3>
+                        <p>300x250 Ad Banner</p>
+                        <p style="font-size: 0.9rem; margin-top: 10px;">Responsive ad placement</p>
+                    </div>
+                </div>
+                
+                <div class="history-card">
+                    <div class="card-title">
+                        <i class="fas fa-history"></i>
+                        <h2>Calculation History</h2>
+                    </div>
+                    <div id="historyList">
+                        <p id="emptyHistory">No calculations yet. Perform a calculation to see history here.</p>
+                    </div>
+                    <button class="clear-history" id="clearHistory">
+                        <i class="fas fa-trash-alt"></i> Clear History
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Professional VAT Calculator | Secure Financial Tool © 2023</p>
+            <p>All calculations performed client-side. No data is stored or transmitted to servers.</p>
+        </footer>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const amountInput = document.getElementById('amount');
+            const vatRateInput = document.getElementById('vatRate');
+            const vatTypeAdd = document.getElementById('addVAT');
+            const vatTypeRemove = document.getElementById('removeVAT');
+            const currencySelect = document.getElementById('currency');
+            const calculateBtn = document.getElementById('calculateBtn');
+            const resultsSection = document.getElementById('resultsSection');
+            const netAmountEl = document.getElementById('netAmount');
+            const vatAmountEl = document.getElementById('vatAmount');
+            const grossAmountEl = document.getElementById('grossAmount');
+            const vatRateResultEl = document.getElementById('vatRateResult');
+            const printBtn = document.getElementById('printBtn');
+            const pdfBtn = document.getElementById('pdfBtn');
+            const excelBtn = document.getElementById('excelBtn');
+            const csvBtn = document.getElementById('csvBtn');
+            const shareBtn = document.getElementById('shareBtn');
+            const historyList = document.getElementById('historyList');
+            const emptyHistory = document.getElementById('emptyHistory');
+            const clearHistoryBtn = document.getElementById('clearHistory');
+            
+            // Load history from localStorage
+            let calculationHistory = JSON.parse(localStorage.getItem('vatHistory')) || [];
+            renderHistory();
+            
+            // Input validation
+            amountInput.addEventListener('input', function() {
+                if (this.value < 0) this.value = 0;
+            });
+            
+            vatRateInput.addEventListener('input', function() {
+                if (this.value < 0) this.value = 0;
+                if (this.value > 100) this.value = 100;
+            });
+            
+            // Calculate VAT
+            calculateBtn.addEventListener('click', calculateVAT);
+            
+            function calculateVAT() {
+                // Validate inputs
+                const amount = parseFloat(amountInput.value);
+                const vatRate = parseFloat(vatRateInput.value);
+                const currency = currencySelect.value;
+                const currencySymbol = getCurrencySymbol(currency);
+                
+                if (isNaN(amount) || isNaN(vatRate)) {
+                    alert('Please enter valid numbers for amount and VAT rate');
+                    return;
+                }
+                
+                const isAddVAT = vatTypeAdd.checked;
+                let netAmount, vatAmount, grossAmount;
+                
+                if (isAddVAT) {
+                    netAmount = amount;
+                    vatAmount = (netAmount * vatRate) / 100;
+                    grossAmount = netAmount + vatAmount;
+                } else {
+                    grossAmount = amount;
+                    netAmount = grossAmount / (1 + vatRate / 100);
+                    vatAmount = grossAmount - netAmount;
+                }
+                
+                // Format results
+                netAmountEl.textContent = `${currencySymbol}${netAmount.toFixed(2)}`;
+                vatAmountEl.textContent = `${currencySymbol}${vatAmount.toFixed(2)}`;
+                grossAmountEl.textContent = `${currencySymbol}${grossAmount.toFixed(2)}`;
+                vatRateResultEl.textContent = `${vatRate.toFixed(2)}%`;
+                
+                // Show results
+                resultsSection.style.display = 'block';
+                
+                // Save to history
+                const calculation = {
+                    amount,
+                    vatRate,
+                    type: isAddVAT ? 'Add VAT' : 'Remove VAT',
+                    netAmount,
+                    vatAmount,
+                    grossAmount,
+                    currency,
+                    timestamp: new Date().toISOString()
+                };
+                
+                calculationHistory.unshift(calculation);
+                if (calculationHistory.length > 10) {
+                    calculationHistory.pop();
+                }
+                
+                localStorage.setItem('vatHistory', JSON.stringify(calculationHistory));
+                renderHistory();
+            }
+            
+            function getCurrencySymbol(currencyCode) {
+                const symbols = {
+                    'USD': '$',
+                    'EUR': '€',
+                    'GBP': '£',
+                    'JPY': '¥',
+                    'CAD': 'CA$',
+                    'AUD': 'AU$'
+                };
+                return symbols[currencyCode] || '';
+            }
+            
+            // Render calculation history
+            function renderHistory() {
+                if (calculationHistory.length === 0) {
+                    emptyHistory.style.display = 'block';
+                    historyList.innerHTML = '<p id="emptyHistory">No calculations yet. Perform a calculation to see history here.</p>';
+                    return;
+                }
+                
+                emptyHistory.style.display = 'none';
+                historyList.innerHTML = '';
+                
+                calculationHistory.forEach(item => {
+                    const currencySymbol = getCurrencySymbol(item.currency);
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    
+                    historyItem.innerHTML = `
+                        <div class="history-details">
+                            <div class="history-amount">${currencySymbol}${item.amount.toFixed(2)}</div>
+                            <div class="history-type">${item.type} @ ${item.vatRate}%</div>
+                        </div>
+                        <div class="history-result">
+                            <div>${currencySymbol}${item.grossAmount.toFixed(2)}</div>
+                        </div>
+                    `;
+                    
+                    historyList.appendChild(historyItem);
+                });
+            }
+            
+            // Clear history
+            clearHistoryBtn.addEventListener('click', function() {
+                calculationHistory = [];
+                localStorage.removeItem('vatHistory');
+                renderHistory();
+            });
+            
+            // Export and sharing functions
+            printBtn.addEventListener('click', function() {
+                const printContent = `
+                    <div style="padding: 20px; font-family: Arial, sans-serif;">
+                        <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 20px;">
+                            VAT Calculation Report
+                        </h2>
+                        <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+                        <table style="width: 100%; margin-top: 20px; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Net Amount:</strong></td>
+                                <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">${netAmountEl.textContent}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>VAT Amount:</strong></td>
+                                <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">${vatAmountEl.textContent}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Gross Amount:</strong></td>
+                                <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">${grossAmountEl.textContent}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px;"><strong>VAT Rate:</strong></td>
+                                <td style="padding: 8px; text-align: right;">${vatRateResultEl.textContent}</td>
+                            </tr>
+                        </table>
+                        <p style="margin-top: 30px; font-size: 0.9em; color: #7f8c8d; text-align: center;">
+                            Generated by Professional VAT Calculator
+                        </p>
+                    </div>
+                `;
+                
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(`
+                    <html>
+                        <head>
+                            <title>VAT Calculation Report</title>
+                            <style>
+                                body { margin: 0; padding: 15px; font-family: Arial, sans-serif; }
+                            </style>
+                        </head>
+                        <body>
+                            ${printContent}
+                            <script>
+                                window.onload = function() {
+                                    window.print();
+                                    window.onafterprint = function() {
+                                        window.close();
+                                    };
+                                };
+                            <\/script>
+                        </body>
+                    </html>
+                `);
+                printWindow.document.close();
+            });
+            
+            pdfBtn.addEventListener('click', function() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                doc.setFontSize(18);
+                doc.setTextColor(40, 40, 40);
+                doc.text('VAT Calculation Report', 105, 20, null, null, 'center');
+                
+                doc.setFontSize(12);
+                doc.setTextColor(100, 100, 100);
+                doc.text(`Date: ${new Date().toLocaleDateString()}`, 15, 35);
+                
+                // Add results
+                doc.setFontSize(14);
+                doc.setTextColor(30, 30, 30);
+                doc.text('Calculation Results:', 15, 50);
+                
+                doc.setFontSize(12);
+                doc.text(`Net Amount: ${netAmountEl.textContent}`, 20, 65);
+                doc.text(`VAT Amount: ${vatAmountEl.textContent}`, 20, 75);
+                doc.text(`Gross Amount: ${grossAmountEl.textContent}`, 20, 85);
+                doc.text(`VAT Rate: ${vatRateResultEl.textContent}`, 20, 95);
+                
+                // Add footer
+                doc.setFontSize(10);
+                doc.setTextColor(150, 150, 150);
+                doc.text('Generated by Professional VAT Calculator', 105, 280, null, null, 'center');
+                
+                doc.save('vat-calculation-report.pdf');
+            });
+            
+            excelBtn.addEventListener('click', function() {
+                const data = [
+                    ['Description', 'Value'],
+                    ['Net Amount', netAmountEl.textContent],
+                    ['VAT Amount', vatAmountEl.textContent],
+                    ['Gross Amount', grossAmountEl.textContent],
+                    ['VAT Rate', vatRateResultEl.textContent],
+                    ['Date', new Date().toLocaleDateString()],
+                    ['Currency', currencySelect.options[currencySelect.selectedIndex].text]
+                ];
+                
+                const worksheet = XLSX.utils.aoa_to_sheet(data);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'VAT Calculation');
+                XLSX.writeFile(workbook, 'vat-calculation.xlsx');
+            });
+            
+            csvBtn.addEventListener('click', function() {
+                const csvContent = 
+                    "Description,Value\n" +
+                    `Net Amount,${netAmountEl.textContent}\n` +
+                    `VAT Amount,${vatAmountEl.textContent}\n` +
+                    `Gross Amount,${grossAmountEl.textContent}\n` +
+                    `VAT Rate,${vatRateResultEl.textContent}\n` +
+                    `Date,${new Date().toLocaleDateString()}\n` +
+                    `Currency,${currencySelect.options[currencySelect.selectedIndex].text}`;
+                
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                saveAs(blob, 'vat-calculation.csv');
+            });
+            
+            shareBtn.addEventListener('click', function() {
+                const net = netAmountEl.textContent;
+                const vat = vatAmountEl.textContent;
+                const gross = grossAmountEl.textContent;
+                const rate = vatRateResultEl.textContent;
+                
+                const shareText = `VAT Calculation Results:
+Net Amount: ${net}
+VAT Amount: ${vat}
+Gross Amount: ${gross}
+VAT Rate: ${rate}
+
+Calculated with Professional VAT Calculator`;
+                
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'VAT Calculation Results',
+                        text: shareText
+                    }).catch(console.error);
+                } else {
+                    // Fallback for browsers that don't support Web Share API
+                    const textArea = document.createElement('textarea');
+                    textArea.value = shareText;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    alert('Results copied to clipboard!');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

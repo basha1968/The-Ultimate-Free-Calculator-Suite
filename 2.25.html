@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Probability Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.9.1/math.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        :root {
+            --primary: #4a6fc4;
+            --secondary: #6a89cc;
+            --accent: #ff9f43;
+            --text: #2f3542;
+            --bg: #f5f6fa;
+            --card-bg: #ffffff;
+            --border: #dfe4ea;
+            --success: #2ed573;
+            --warning: #ff9f43;
+            --danger: #ff6b6b;
+            --shadow: rgba(99, 99, 99, 0.1);
+        }
+        
+        .dark-mode {
+            --primary: #6a89cc;
+            --secondary: #7e9ff5;
+            --accent: #ff9f43;
+            --text: #f5f6fa;
+            --bg: #1e272e;
+            --card-bg: #2f3640;
+            --border: #353b48;
+            --success: #2ed573;
+            --warning: #ff9f43;
+            --danger: #ff6b6b;
+            --shadow: rgba(0, 0, 0, 0.2);
+        }
+        
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+            transition: background-color 0.3s;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px var(--shadow);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 25px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        
+        .header-content {
+            flex: 1;
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        
+        header p {
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto;
+            opacity: 0.9;
+        }
+        
+        .theme-toggle {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .theme-toggle:hover {
+            transform: rotate(15deg);
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 20px;
+            gap: 20px;
+        }
+        
+        .calculator-section {
+            flex: 1;
+            min-width: 300px;
+            padding: 20px;
+        }
+        
+        .ad-section {
+            flex: 0 0 300px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .ad-container {
+            background: rgba(var(--primary-rgb), 0.05);
+            border-radius: 10px;
+            border: 1px dashed var(--primary);
+            padding: 15px;
+            text-align: center;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .ad-container h3 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .ad-placeholder {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(45deg, rgba(var(--primary-rgb), 0.1), rgba(var(--secondary-rgb), 0.1));
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--primary);
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        
+        .input-card {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px var(--shadow);
+            border: 1px solid var(--border);
+        }
+        
+        .distribution-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+        
+        .dist-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px;
+            background-color: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .dist-btn.active, .dist-btn:hover {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .input-group {
+            margin-bottom: 25px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 1rem;
+        }
+        
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            color: var(--text);
+            outline: none;
+        }
+        
+        input:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.2);
+        }
+        
+        button {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            font-size: 1.1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(var(--primary-rgb), 0.3);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--accent), #ffbe76);
+        }
+        
+        .info-tooltip {
+            display: inline-block;
+            margin-left: 8px;
+            color: var(--primary);
+            cursor: help;
+            position: relative;
+        }
+        
+        .info-tooltip .tooltip-text {
+            visibility: hidden;
+            width: 300px;
+            background-color: var(--card-bg);
+            color: var(--text);
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.9rem;
+            font-weight: normal;
+            border: 1px solid var(--border);
+            box-shadow: 0 5px 15px var(--shadow);
+        }
+        
+        .info-tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .results-section {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            display: none;
+            box-shadow: 0 4px 15px var(--shadow);
+            border: 1px solid var(--border);
+        }
+        
+        .results-section h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.8rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 10px;
+        }
+        
+        .result-card {
+            background-color: var(--bg);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px var(--shadow);
+            border: 1px solid var(--border);
+        }
+        
+        .result-title {
+            color: var(--primary);
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .result-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-align: center;
+            margin: 15px 0;
+        }
+        
+        .formula {
+            background-color: var(--card-bg);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 1.1rem;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        
+        .step-section {
+            background-color: var(--bg);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .step-item {
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+            font-family: monospace;
+            font-size: 1rem;
+        }
+        
+        .step-item:last-child {
+            border-bottom: none;
+        }
+        
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--border);
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: var(--card-bg);
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(30px);
+        }
+        
+        .export-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .export-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background-color: var(--bg);
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+        
+        .export-btn:hover {
+            background-color: rgba(var(--primary-rgb), 0.1);
+        }
+        
+        .chart-container {
+            height: 250px;
+            margin-top: 20px;
+        }
+        
+        .history-container {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 15px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px;
+        }
+        
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .error-message {
+            background-color: rgba(255, 107, 107, 0.1);
+            color: var(--danger);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid var(--danger);
+            display: none;
+        }
+        
+        .disclaimer {
+            background-color: rgba(255, 159, 67, 0.1);
+            border-left: 4px solid var(--accent);
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 25px;
+            font-size: 0.9rem;
+            color: var(--accent);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 25px;
+            color: var(--text);
+            font-size: 0.9rem;
+            background-color: var(--bg);
+            border-top: 1px solid var(--border);
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .ad-section {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            
+            .ad-container {
+                flex: 1;
+                min-width: 250px;
+            }
+            
+            .export-options {
+                flex-direction: column;
+            }
+            
+            header h1 {
+                font-size: 2rem;
+            }
+            
+            .header-container {
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            header {
+                padding: 20px 15px;
+            }
+            
+            header h1 {
+                font-size: 1.6rem;
+            }
+            
+            .ad-section {
+                flex-direction: column;
+            }
+            
+            .dist-btn {
+                min-width: 100px;
+                padding: 10px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-container">
+                <div class="header-content">
+                    <h1><i class="fas fa-calculator"></i> Probability Calculator</h1>
+                    <p>Calculate probabilities for various distributions with step-by-step solutions</p>
+                </div>
+                <div class="theme-toggle" id="theme-toggle">
+                    <i class="fas fa-moon" id="theme-icon"></i>
+                </div>
+            </div>
+        </header>
+        
+        <div class="main-content">
+            <section class="calculator-section">
+                <div class="input-card">
+                    <div class="distribution-selector">
+                        <div class="dist-btn active" data-dist="binomial">Binomial</div>
+                        <div class="dist-btn" data-dist="poisson">Poisson</div>
+                        <div class="dist-btn" data-dist="normal">Normal</div>
+                        <div class="dist-btn" data-dist="conditional">Conditional</div>
+                        <div class="dist-btn" data-dist="bayes">Bayes' Theorem</div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="probability-input">
+                            Distribution Parameters
+                            <span class="info-tooltip">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltip-text">Enter parameters specific to the selected distribution</span>
+                            </span>
+                        </label>
+                        <div id="input-fields">
+                            <!-- Binomial inputs by default -->
+                            <div class="input-row">
+                                <input type="number" id="n-input" placeholder="Trials (n)" min="1" max="1000" step="1">
+                                <input type="number" id="p-input" placeholder="Probability (p)" min="0" max="1" step="0.01">
+                            </div>
+                            <div class="input-row">
+                                <input type="number" id="k-input" placeholder="Successes (k)" min="0" max="1000" step="1">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="toggle-container">
+                        <label for="step-toggle">Show step-by-step solution:</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="step-toggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <button id="calculate-btn">
+                        <i class="fas fa-cogs"></i> Calculate Probability
+                    </button>
+                    
+                    <div class="error-message" id="error-message"></div>
+                    
+                    <div class="disclaimer">
+                        <p><i class="fas fa-shield-alt"></i> <strong>Security Notice:</strong> All calculations are performed locally in your browser. No data is transmitted to any server.</p>
+                    </div>
+                </div>
+                
+                <div class="results-section" id="results-section">
+                    <h2><i class="fas fa-chart-bar"></i> Calculation Results</h2>
+                    
+                    <div class="result-card">
+                        <h3 class="result-title"><i class="fas fa-square-root-alt"></i> Probability Result</h3>
+                        <div class="result-value" id="probability-result">0.0000</div>
+                        <div class="formula" id="formula-display">P(X = k) = C(n, k) * p<sup>k</sup> * (1-p)<sup>n-k</sup></div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <h3 class="result-title"><i class="fas fa-list-ol"></i> Calculation Steps</h3>
+                        <div class="step-section" id="step-section">
+                            <div class="step-item">Select a distribution and enter parameters to see calculation steps</div>
+                        </div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <h3 class="result-title"><i class="fas fa-history"></i> Calculation History</h3>
+                        <div class="history-container" id="history-container">
+                            <div class="history-item">No calculations yet</div>
+                        </div>
+                    </div>
+                    
+                    <div class="export-options">
+                        <button class="export-btn" id="print-btn">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                        <button class="export-btn" id="pdf-btn">
+                            <i class="fas fa-file-pdf"></i> Save as PDF
+                        </button>
+                        <button class="export-btn" id="txt-btn">
+                            <i class="fas fa-file-alt"></i> Save as TXT
+                        </button>
+                        <button class="export-btn" id="csv-btn">
+                            <i class="fas fa-file-csv"></i> Save as CSV
+                        </button>
+                        <button class="export-btn" id="share-btn">
+                            <i class="fas fa-share-alt"></i> Share Results
+                        </button>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="ad-section">
+                <div class="ad-container">
+                    <h3>Sponsored by Adsterra</h3>
+                    <div class="ad-placeholder">
+                        Adsterra Ad Banner (728x90)
+                    </div>
+                    <p>Premium ad for math tools</p>
+                </div>
+                
+                <div class="ad-container">
+                    <h3>Sponsored by Yllix</h3>
+                    <div class="ad-placeholder">
+                        Yllix Ad Space (300x250)
+                    </div>
+                    <p>Educational resources</p>
+                </div>
+                
+                <div class="ad-container">
+                    <h3>Recommended Tools</h3>
+                    <div class="ad-placeholder">
+                        Adsterra Ad Space (300x250)
+                    </div>
+                    <p>Math and calculator tools</p>
+                </div>
+            </section>
+        </div>
+        
+        <footer>
+            <p>&copy; 2023 Probability Calculator | All calculations are performed locally - no data is stored or transmitted</p>
+            <p>This tool follows mathematical principles but does not replace professional advice</p>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const calculateBtn = document.getElementById('calculate-btn');
+        const resultsSection = document.getElementById('results-section');
+        const errorMessage = document.getElementById('error-message');
+        const probabilityResult = document.getElementById('probability-result');
+        const formulaDisplay = document.getElementById('formula-display');
+        const stepSection = document.getElementById('step-section');
+        const historyContainer = document.getElementById('history-container');
+        const stepToggle = document.getElementById('step-toggle');
+        const printBtn = document.getElementById('print-btn');
+        const pdfBtn = document.getElementById('pdf-btn');
+        const txtBtn = document.getElementById('txt-btn');
+        const csvBtn = document.getElementById('csv-btn');
+        const shareBtn = document.getElementById('share-btn');
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const body = document.body;
+        const distButtons = document.querySelectorAll('.dist-btn');
+        const inputFields = document.getElementById('input-fields');
+        
+        // Current state
+        let currentDistribution = 'binomial';
+        let calculationHistory = [];
+        
+        // Event Listeners
+        calculateBtn.addEventListener('click', calculateProbability);
+        printBtn.addEventListener('click', printResults);
+        pdfBtn.addEventListener('click', exportPDF);
+        txtBtn.addEventListener('click', exportTXT);
+        csvBtn.addEventListener('click', exportCSV);
+        shareBtn.addEventListener('click', shareResults);
+        themeToggle.addEventListener('click', toggleTheme);
+        stepToggle.addEventListener('change', toggleSteps);
+        
+        // Initialize distribution buttons
+        distButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                distButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                currentDistribution = button.dataset.dist;
+                updateInputFields();
+            });
+        });
+        
+        // Initialize theme from localStorage
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            if (savedTheme === 'dark') {
+                body.classList.add('dark-mode');
+                updateThemeIcon('dark');
+            } else {
+                updateThemeIcon('light');
+            }
+        }
+        
+        // Toggle between light and dark mode
+        function toggleTheme() {
+            if (body.classList.contains('dark-mode')) {
+                body.classList.remove('dark-mode');
+                localStorage.setItem('theme', 'light');
+                updateThemeIcon('light');
+            } else {
+                body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark');
+                updateThemeIcon('dark');
+            }
+        }
+        
+        // Update theme icon based on current mode
+        function updateThemeIcon(theme) {
+            if (theme === 'dark') {
+                themeIcon.className = 'fas fa-sun';
+                themeIcon.title = 'Switch to Light Mode';
+            } else {
+                themeIcon.className = 'fas fa-moon';
+                themeIcon.title = 'Switch to Dark Mode';
+            }
+        }
+        
+        // Update input fields based on selected distribution
+        function updateInputFields() {
+            let html = '';
+            
+            switch(currentDistribution) {
+                case 'binomial':
+                    html = `
+                        <div class="input-row">
+                            <input type="number" id="n-input" placeholder="Trials (n)" min="1" max="1000" step="1">
+                            <input type="number" id="p-input" placeholder="Probability (p)" min="0" max="1" step="0.01">
+                        </div>
+                        <div class="input-row">
+                            <input type="number" id="k-input" placeholder="Successes (k)" min="0" max="1000" step="1">
+                        </div>
+                    `;
+                    formulaDisplay.innerHTML = "P(X = k) = C(n, k) * p<sup>k</sup> * (1-p)<sup>n-k</sup>";
+                    break;
+                    
+                case 'poisson':
+                    html = `
+                        <div class="input-row">
+                            <input type="number" id="lambda-input" placeholder="Lambda (λ)" min="0" step="0.1">
+                        </div>
+                        <div class="input-row">
+                            <input type="number" id="k-input" placeholder="Occurrences (k)" min="0" step="1">
+                        </div>
+                    `;
+                    formulaDisplay.innerHTML = "P(X = k) = (e<sup>-λ</sup> * λ<sup>k</sup>) / k!";
+                    break;
+                    
+                case 'normal':
+                    html = `
+                        <div class="input-row">
+                            <input type="number" id="mean-input" placeholder="Mean (μ)" step="any">
+                            <input type="number" id="stddev-input" placeholder="Std Dev (σ)" min="0.001" step="any">
+                        </div>
+                        <div class="input-row">
+                            <input type="number" id="x1-input" placeholder="Value (x)" step="any">
+                            <input type="number" id="x2-input" placeholder="To (optional)" step="any">
+                        </div>
+                    `;
+                    formulaDisplay.innerHTML = "f(x) = (1 / (σ√(2π))) * e<sup>-(x-μ)²/(2σ²)</sup>";
+                    break;
+                    
+                case 'conditional':
+                    html = `
+                        <div class="input-row">
+                            <input type="number" id="a-input" placeholder="P(A)" min="0" max="1" step="0.01">
+                            <input type="number" id="b-input" placeholder="P(B)" min="0" max="1" step="0.01">
+                        </div>
+                        <div class="input-row">
+                            <input type="number" id="ab-input" placeholder="P(A∩B)" min="0" max="1" step="0.01">
+                        </div>
+                    `;
+                    formulaDisplay.innerHTML = "P(A|B) = P(A∩B) / P(B)";
+                    break;
+                    
+                case 'bayes':
+                    html = `
+                        <div class="input-row">
+                            <input type="number" id="prior-input" placeholder="Prior P(A)" min="0" max="1" step="0.01">
+                            <input type="number" id="likelihood-input" placeholder="Likelihood P(B|A)" min="0" max="1" step="0.01">
+                        </div>
+                        <div class="input-row">
+                            <input type="number" id="evidence-input" placeholder="Evidence P(B)" min="0" max="1" step="0.01">
+                        </div>
+                    `;
+                    formulaDisplay.innerHTML = "P(A|B) = [P(B|A) * P(A)] / P(B)";
+                    break;
+            }
+            
+            inputFields.innerHTML = html;
+            hideError();
+        }
+        
+        // Toggle step display
+        function toggleSteps() {
+            const steps = document.querySelector('.step-section');
+            if (!stepToggle.checked) {
+                steps.innerHTML = '<div class="step-item">Step-by-step calculation is disabled. Enable the toggle to view detailed steps.</div>';
+            }
+        }
+        
+        // Main calculation function
+        function calculateProbability() {
+            let result = 0;
+            let steps = [];
+            
+            try {
+                switch(currentDistribution) {
+                    case 'binomial':
+                        const n = parseFloat(document.getElementById('n-input').value);
+                        const p = parseFloat(document.getElementById('p-input').value);
+                        const k = parseFloat(document.getElementById('k-input').value);
+                        
+                        if (isNaN(n) || isNaN(p) || isNaN(k)) throw new Error("Please enter all parameters");
+                        if (n < 1 || k < 0 || k > n) throw new Error("Invalid values: n must be ≥1, 0≤k≤n");
+                        if (p < 0 || p > 1) throw new Error("Probability p must be between 0 and 1");
+                        
+                        // Binomial calculation
+                        const combination = math.combinations(n, k);
+                        result = combination * Math.pow(p, k) * Math.pow(1-p, n-k);
+                        
+                        steps = [
+                            `Binomial Distribution: P(X = ${k}) for n = ${n}, p = ${p}`,
+                            `Step 1: Calculate combinations: C(${n}, ${k}) = ${combination}`,
+                            `Step 2: Calculate p^k = ${p}^${k} = ${Math.pow(p, k).toFixed(6)}`,
+                            `Step 3: Calculate (1-p)^(n-k) = ${(1-p).toFixed(4)}^${n-k} = ${Math.pow(1-p, n-k).toFixed(6)}`,
+                            `Step 4: Multiply results: ${combination} × ${Math.pow(p, k).toFixed(6)} × ${Math.pow(1-p, n-k).toFixed(6)}`,
+                            `Result: P(X = ${k}) = ${result.toFixed(6)}`
+                        ];
+                        break;
+                        
+                    case 'poisson':
+                        const lambda = parseFloat(document.getElementById('lambda-input').value);
+                        const kPoisson = parseInt(document.getElementById('k-input').value);
+                        
+                        if (isNaN(lambda) || isNaN(kPoisson)) throw new Error("Please enter all parameters");
+                        if (lambda <= 0) throw new Error("Lambda must be greater than 0");
+                        if (kPoisson < 0) throw new Error("k must be non-negative");
+                        
+                        // Poisson calculation
+                        const numerator = Math.exp(-lambda) * Math.pow(lambda, kPoisson);
+                        const denominator = math.factorial(kPoisson);
+                        result = numerator / denominator;
+                        
+                        steps = [
+                            `Poisson Distribution: P(X = ${kPoisson}) for λ = ${lambda}`,
+                            `Step 1: Calculate e^(-λ) = e^(-${lambda}) = ${Math.exp(-lambda).toFixed(6)}`,
+                            `Step 2: Calculate λ^k = ${lambda}^${kPoisson} = ${Math.pow(lambda, kPoisson).toFixed(6)}`,
+                            `Step 3: Calculate k! = ${kPoisson}! = ${denominator}`,
+                            `Step 4: Multiply numerator: ${Math.exp(-lambda).toFixed(6)} × ${Math.pow(lambda, kPoisson).toFixed(6)} = ${numerator.toFixed(6)}`,
+                            `Step 5: Divide by denominator: ${numerator.toFixed(6)} / ${denominator} = ${result.toFixed(6)}`,
+                            `Result: P(X = ${kPoisson}) = ${result.toFixed(6)}`
+                        ];
+                        break;
+                        
+                    case 'normal':
+                        const mean = parseFloat(document.getElementById('mean-input').value);
+                        const stddev = parseFloat(document.getElementById('stddev-input').value);
+                        const x1 = parseFloat(document.getElementById('x1-input').value);
+                        const x2Input = document.getElementById('x2-input');
+                        const x2 = x2Input.value ? parseFloat(x2Input.value) : null;
+                        
+                        if (isNaN(mean) || isNaN(stddev) || isNaN(x1)) throw new Error("Please enter required parameters");
+                        if (stddev <= 0) throw new Error("Standard deviation must be positive");
+                        
+                        // Normal distribution calculation
+                        if (x2 === null) {
+                            // Calculate PDF at x1
+                            const exponent = -0.5 * Math.pow((x1 - mean) / stddev, 2);
+                            result = (1 / (stddev * Math.sqrt(2 * Math.PI))) * Math.exp(exponent);
+                            
+                            steps = [
+                                `Normal Distribution PDF at x = ${x1}`,
+                                `Step 1: Calculate exponent: -0.5 * ((${x1} - ${mean}) / ${stddev})²`,
+                                `Step 2: Exponent = ${exponent.toFixed(6)}`,
+                                `Step 3: Calculate e^(${exponent.toFixed(6)}) = ${Math.exp(exponent).toFixed(6)}`,
+                                `Step 4: Calculate denominator: ${stddev} * √(2π) = ${(stddev * Math.sqrt(2 * Math.PI)).toFixed(6)}`,
+                                `Step 5: PDF = ${(1 / (stddev * Math.sqrt(2 * Math.PI))).toFixed(6)} × ${Math.exp(exponent).toFixed(6)}`,
+                                `Result: f(${x1}) = ${result.toFixed(6)}`
+                            ];
+                        } else {
+                            // Calculate probability between x1 and x2
+                            const z1 = (x1 - mean) / stddev;
+                            const z2 = (x2 - mean) / stddev;
+                            const p1 = (1 + math.erf(z1 / Math.sqrt(2))) / 2;
+                            const p2 = (1 + math.erf(z2 / Math.sqrt(2))) / 2;
+                            result = Math.abs(p2 - p1);
+                            
+                            steps = [
+                                `Normal Distribution between x = ${x1} and x = ${x2}`,
+                                `Step 1: Calculate z-scores: z1 = (${x1} - ${mean}) / ${stddev} = ${z1.toFixed(4)}`,
+                                `Step 2: z2 = (${x2} - ${mean}) / ${stddev} = ${z2.toFixed(4)}`,
+                                `Step 3: Calculate Φ(z1) = ${p1.toFixed(6)}`,
+                                `Step 4: Calculate Φ(z2) = ${p2.toFixed(6)}`,
+                                `Step 5: P(${x1} < X < ${x2}) = |Φ(z2) - Φ(z1)| = |${p2.toFixed(6)} - ${p1.toFixed(6)}|`,
+                                `Result: ${result.toFixed(6)}`
+                            ];
+                        }
+                        break;
+                        
+                    case 'conditional':
+                        const pA = parseFloat(document.getElementById('a-input').value);
+                        const pB = parseFloat(document.getElementById('b-input').value);
+                        const pAB = parseFloat(document.getElementById('ab-input').value);
+                        
+                        if (isNaN(pA) || isNaN(pB) || isNaN(pAB)) throw new Error("Please enter all probabilities");
+                        if (pA < 0 || pA > 1 || pB < 0 || pB > 1 || pAB < 0 || pAB > 1) 
+                            throw new Error("Probabilities must be between 0 and 1");
+                        if (pAB > pB) throw new Error("P(A∩B) cannot be greater than P(B)");
+                        
+                        // Conditional probability
+                        result = pAB / pB;
+                        
+                        steps = [
+                            `Conditional Probability: P(A|B) = P(A∩B) / P(B)`,
+                            `Step 1: P(A∩B) = ${pAB}`,
+                            `Step 2: P(B) = ${pB}`,
+                            `Step 3: P(A|B) = ${pAB} / ${pB} = ${result.toFixed(6)}`,
+                            `Result: P(A|B) = ${result.toFixed(6)}`
+                        ];
+                        break;
+                        
+                    case 'bayes':
+                        const prior = parseFloat(document.getElementById('prior-input').value);
+                        const likelihood = parseFloat(document.getElementById('likelihood-input').value);
+                        const evidence = parseFloat(document.getElementById('evidence-input').value);
+                        
+                        if (isNaN(prior) || isNaN(likelihood) || isNaN(evidence)) 
+                            throw new Error("Please enter all probabilities");
+                        if (prior < 0 || prior > 1 || likelihood < 0 || likelihood > 1 || evidence < 0 || evidence > 1) 
+                            throw new Error("Probabilities must be between 0 and 1");
+                        
+                        // Bayes' Theorem
+                        result = (likelihood * prior) / evidence;
+                        
+                        steps = [
+                            `Bayes' Theorem: P(A|B) = [P(B|A) * P(A)] / P(B)`,
+                            `Step 1: P(B|A) = ${likelihood}`,
+                            `Step 2: P(A) = ${prior}`,
+                            `Step 3: Numerator = ${likelihood} × ${prior} = ${(likelihood * prior).toFixed(6)}`,
+                            `Step 4: P(B) = ${evidence}`,
+                            `Step 5: P(A|B) = ${(likelihood * prior).toFixed(6)} / ${evidence} = ${result.toFixed(6)}`,
+                            `Result: P(A|B) = ${result.toFixed(6)}`
+                        ];
+                        break;
+                }
+                
+                // Display results
+                hideError();
+                probabilityResult.textContent = result.toFixed(6);
+                displaySteps(steps);
+                addToHistory(currentDistribution, result);
+                resultsSection.style.display = 'block';
+                resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+        
+        // Display calculation steps
+        function displaySteps(steps) {
+            stepSection.innerHTML = '';
+            
+            if (!stepToggle.checked) {
+                stepSection.innerHTML = '<div class="step-item">Step-by-step calculation is disabled. Enable the toggle to view detailed steps.</div>';
+                return;
+            }
+            
+            steps.forEach(step => {
+                const stepElement = document.createElement('div');
+                stepElement.className = 'step-item';
+                stepElement.textContent = step;
+                stepSection.appendChild(stepElement);
+            });
+        }
+        
+        // Add calculation to history
+        function addToHistory(distribution, result) {
+            const historyItem = {
+                distribution,
+                result,
+                timestamp: new Date().toLocaleString()
+            };
+            
+            calculationHistory.unshift(historyItem);
+            if (calculationHistory.length > 10) calculationHistory.pop();
+            
+            updateHistoryDisplay();
+        }
+        
+        // Update history display
+        function updateHistoryDisplay() {
+            historyContainer.innerHTML = '';
+            
+            if (calculationHistory.length === 0) {
+                historyContainer.innerHTML = '<div class="history-item">No calculations yet</div>';
+                return;
+            }
+            
+            calculationHistory.forEach((item, index) => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.innerHTML = `
+                    <strong>${item.distribution.toUpperCase()}</strong>: ${item.result.toFixed(6)}
+                    <div style="font-size: 0.8em; color: var(--primary);">${item.timestamp}</div>
+                `;
+                historyContainer.appendChild(historyItem);
+            });
+        }
+        
+        // Error handling
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            resultsSection.style.display = 'none';
+        }
+        
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+        
+        // Export functions
+        function printResults() {
+            window.print();
+        }
+        
+        function exportPDF() {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            
+            // Add title
+            pdf.setFontSize(22);
+            pdf.setTextColor(74, 111, 196);
+            pdf.text('Probability Calculator Report', 105, 20, null, null, 'center');
+            
+            // Add content
+            pdf.setFontSize(12);
+            pdf.setTextColor(0, 0, 0);
+            
+            // Add result
+            pdf.text(`Distribution: ${currentDistribution.toUpperCase()}`, 20, 40);
+            pdf.text(`Result: ${probabilityResult.textContent}`, 20, 50);
+            
+            // Add steps if visible
+            if (stepToggle.checked) {
+                pdf.text('Calculation Steps:', 20, 70);
+                const steps = Array.from(stepSection.querySelectorAll('.step-item')).map(el => el.textContent);
+                let yPos = 80;
+                
+                steps.forEach((step, index) => {
+                    if (yPos > 250) {
+                        pdf.addPage();
+                        yPos = 20;
+                    }
+                    pdf.text(`${index + 1}. ${step}`, 25, yPos);
+                    yPos += 10;
+                });
+            }
+            
+            // Save the PDF
+            pdf.save(`probability-calculation-${currentDistribution}.pdf`);
+        }
+        
+        function exportTXT() {
+            let content = `Probability Calculator Report\n`;
+            content += `==============================\n\n`;
+            content += `Distribution: ${currentDistribution.toUpperCase()}\n`;
+            content += `Result: ${probabilityResult.textContent}\n\n`;
+            
+            if (stepToggle.checked) {
+                content += `Calculation Steps:\n`;
+                const steps = Array.from(stepSection.querySelectorAll('.step-item')).map(el => el.textContent);
+                steps.forEach((step, index) => {
+                    content += `${index + 1}. ${step}\n`;
+                });
+            }
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `probability-calculation-${currentDistribution}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 0);
+        }
+        
+        function exportCSV() {
+            let content = `Distribution,Result,Timestamp\n`;
+            
+            calculationHistory.forEach(item => {
+                content += `${item.distribution},${item.result},${item.timestamp}\n`;
+            });
+            
+            const blob = new Blob([content], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'probability-history.csv';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 0);
+        }
+        
+        function shareResults() {
+            const result = probabilityResult.textContent;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Probability Calculation Result',
+                    text: `Result for ${currentDistribution} distribution: ${result}`,
+                    url: window.location.href
+                }).catch(console.error);
+            } else {
+                const shareText = `Check out my probability calculation result: ${result}\n${window.location.href}`;
+                prompt('Copy the results to share:', shareText);
+            }
+        }
+        
+        // Initialize calculator
+        window.onload = function() {
+            initTheme();
+            updateInputFields();
+        };
+    </script>
+</body>
+</html>

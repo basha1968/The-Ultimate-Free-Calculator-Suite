@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Percentage Calculator | Precision Calculations</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            /* Light theme variables */
+            --primary-light: #4a6fa5;
+            --secondary-light: #6b8cbc;
+            --accent-light: #e74c3c;
+            --bg-light: #f8f9fa;
+            --card-light: #ffffff;
+            --text-light: #2c3e50;
+            --text-secondary-light: #7f8c8d;
+            --border-light: #e0e0e0;
+            --success-light: #27ae60;
+            --grid-light: rgba(106, 140, 188, 0.1);
+            
+            /* Dark theme variables */
+            --primary-dark: #4a6fa5;
+            --secondary-dark: #2c3e50;
+            --accent-dark: #e74c3c;
+            --bg-dark: #121212;
+            --card-dark: #1e1e1e;
+            --text-dark: #ecf0f1;
+            --text-secondary-dark: #bdc3c7;
+            --border-dark: #2d2d2d;
+            --success-dark: #2ecc71;
+            --grid-dark: rgba(74, 111, 165, 0.1);
+            
+            /* Active theme variables - defaults to light */
+            --primary: var(--primary-light);
+            --secondary: var(--secondary-light);
+            --accent: var(--accent-light);
+            --bg: var(--bg-light);
+            --card: var(--card-light);
+            --text: var(--text-light);
+            --text-secondary: var(--text-secondary-light);
+            --border: var(--border-light);
+            --success: var(--success-light);
+            --grid: var(--grid-light);
+        }
+        
+        .dark-mode {
+            --primary: var(--primary-dark);
+            --secondary: var(--secondary-dark);
+            --accent: var(--accent-dark);
+            --bg: var(--bg-dark);
+            --card: var(--card-dark);
+            --text: var(--text-dark);
+            --text-secondary: var(--text-secondary-dark);
+            --border: var(--border-dark);
+            --success: var(--success-dark);
+            --grid: var(--grid-dark);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+        
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            min-height: 100vh;
+            background-image: 
+                linear-gradient(var(--grid) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            margin-bottom: 20px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo-icon {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+        
+        .logo-text h1 {
+            font-size: 1.8rem;
+            color: var(--primary);
+            font-weight: 700;
+        }
+        
+        .logo-text p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .theme-toggle {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
+        .theme-toggle:hover {
+            background: var(--border);
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 30px;
+        }
+        
+        @media (max-width: 992px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .calculator-card {
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border);
+        }
+        
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary);
+            margin-bottom: 25px;
+            font-size: 1.5rem;
+        }
+        
+        .card-title i {
+            font-size: 1.8rem;
+        }
+        
+        .calculator-types {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .calc-type {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .calc-type:hover {
+            transform: translateY(-3px);
+            border-color: var(--primary);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .calc-type.active {
+            border-color: var(--primary);
+            background: rgba(74, 111, 165, 0.1);
+        }
+        
+        .calc-type i {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--text);
+            font-size: 1.05rem;
+        }
+        
+        input {
+            width: 100%;
+            padding: 15px;
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 1.1rem;
+            color: var(--text);
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .formula-container {
+            background: var(--bg);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 30px 0;
+            border: 1px dashed var(--border);
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            text-align: center;
+            display: none;
+        }
+        
+        .formula {
+            color: var(--accent);
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .result-container {
+            text-align: center;
+            padding: 30px;
+            margin: 30px 0;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 16px;
+            color: white;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .result-label {
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+        
+        .result-value {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .result-description {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 16px 30px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(74, 111, 165, 0.3);
+        }
+        
+        .btn:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74, 111, 165, 0.4);
+        }
+        
+        .btn-secondary {
+            background: var(--text-secondary);
+        }
+        
+        .btn-accent {
+            background: var(--accent);
+        }
+        
+        .btn-success {
+            background: var(--success);
+        }
+        
+        .export-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            margin-left: 5px;
+            cursor: help;
+            color: var(--primary);
+        }
+        
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 280px;
+            background: var(--card);
+            color: var(--text);
+            text-align: left;
+            border-radius: 8px;
+            padding: 15px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.9rem;
+            font-weight: normal;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border);
+        }
+        
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .ad-container {
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        
+        .ad-title {
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+        
+        .ad-placeholder {
+            height: 250px;
+            background: var(--bg);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-bottom: 15px;
+            border: 1px dashed var(--border);
+        }
+        
+        .ad-placeholder i {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: var(--text-secondary);
+        }
+        
+        .ad-placeholder.banner {
+            height: 100px;
+        }
+        
+        .privacy-section {
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            margin-top: 30px;
+            border: 1px solid var(--border);
+        }
+        
+        .privacy-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        
+        .privacy-content {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 30px 0;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 30px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .error-message {
+            color: var(--accent);
+            font-size: 0.9rem;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .disclaimer {
+            background: rgba(231, 76, 60, 0.1);
+            border-left: 4px solid var(--accent);
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+        
+        .mode-indicator {
+            font-size: 0.8rem;
+            margin-top: 5px;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+        
+        .theme-icon {
+            transition: transform 0.5s ease;
+        }
+        
+        .dark-mode .fa-sun {
+            display: none;
+        }
+        
+        .dark-mode .fa-moon {
+            display: inline-block;
+        }
+        
+        .fa-moon {
+            display: none;
+        }
+        
+        .dark-mode .theme-icon {
+            transform: rotate(360deg);
+        }
+        
+        .examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .example-card {
+            background: var(--bg);
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid var(--border);
+        }
+        
+        .example-title {
+            color: var(--primary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        @media print {
+            .ad-container, .theme-toggle, .btn, .sidebar {
+                display: none !important;
+            }
+            
+            body {
+                background: white;
+                color: black;
+            }
+            
+            .calculator-card, .result-container {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+        }
+    </style>
+</head>
+<body class="light-mode">
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-percentage"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>Percentage Calculator</h1>
+                    <p>Precision calculations for professionals</p>
+                </div>
+            </div>
+            <div class="theme-toggle" id="theme-toggle">
+                <i class="fas fa-sun theme-icon"></i>
+                <i class="fas fa-moon theme-icon"></i>
+                <span id="theme-text">Light Mode</span>
+            </div>
+        </header>
+        
+        <div class="main-content">
+            <div class="content-column">
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-calculator"></i> Percentage Calculations</h2>
+                    
+                    <div class="calculator-types">
+                        <div class="calc-type active" data-type="percent-of">
+                            <i class="fas fa-cube"></i>
+                            <h3>X% of Y</h3>
+                            <p>Find percentage of a number</p>
+                        </div>
+                        <div class="calc-type" data-type="percent-what">
+                            <i class="fas fa-search"></i>
+                            <h3>X is what % of Y</h3>
+                            <p>Calculate percentage</p>
+                        </div>
+                        <div class="calc-type" data-type="percent-change">
+                            <i class="fas fa-chart-line"></i>
+                            <h3>X to Y % Change</h3>
+                            <p>Increase/decrease percentage</p>
+                        </div>
+                        <div class="calc-type" data-type="percent-increase">
+                            <i class="fas fa-arrow-up"></i>
+                            <h3>X by Y%</h3>
+                            <p>Increase by percentage</p>
+                        </div>
+                    </div>
+                    
+                    <div id="input-container">
+                        <div class="input-group">
+                            <label for="value1">
+                                Value 1
+                                <span class="tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltip-text">The base value or the original number for calculation</span>
+                                </span>
+                            </label>
+                            <input type="number" id="value1" placeholder="Enter value" required>
+                            <div class="error-message" id="value1-error">Please enter a valid number</div>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="value2">
+                                Value 2
+                                <span class="tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltip-text">The percentage value or the new number for comparison</span>
+                                </span>
+                            </label>
+                            <input type="number" id="value2" placeholder="Enter value" required>
+                            <div class="error-message" id="value2-error">Please enter a valid number</div>
+                        </div>
+                    </div>
+                    
+                    <div class="formula-container" id="formula-container">
+                        <p>The calculation formula:</p>
+                        <p class="formula" id="formula-text">Formula will appear here</p>
+                        <p>Where | | represents absolute value</p>
+                    </div>
+                    
+                    <button class="btn" id="calculate-btn">
+                        <i class="fas fa-calculator"></i> Calculate
+                    </button>
+                    
+                    <div class="result-container" id="result-container">
+                        <div class="result-label">Calculation Result</div>
+                        <div class="result-value" id="result-value">0%</div>
+                        <div class="result-description" id="result-description">Your calculation result</div>
+                        
+                        <div class="export-options">
+                            <button class="btn btn-secondary" id="print-btn">
+                                <i class="fas fa-print"></i> Print
+                            </button>
+                            <button class="btn btn-secondary" id="pdf-btn">
+                                <i class="fas fa-file-pdf"></i> PDF
+                            </button>
+                            <button class="btn btn-secondary" id="txt-btn">
+                                <i class="fas fa-file-alt"></i> TXT
+                            </button>
+                            <button class="btn btn-secondary" id="csv-btn">
+                                <i class="fas fa-file-csv"></i> CSV
+                            </button>
+                            <button class="btn btn-success" id="share-btn">
+                                <i class="fas fa-share-alt"></i> Share
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="examples">
+                        <div class="example-card">
+                            <h3 class="example-title"><i class="fas fa-shopping-cart"></i> Retail Example</h3>
+                            <p>Original Price: $200</p>
+                            <p>Discount: 25%</p>
+                            <p>Discounted Price: $150</p>
+                        </div>
+                        <div class="example-card">
+                            <h3 class="example-title"><i class="fas fa-chart-bar"></i> Business Growth</h3>
+                            <p>Last Year Revenue: $500,000</p>
+                            <p>This Year Revenue: $650,000</p>
+                            <p>Growth: 30% increase</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="privacy-section">
+                    <div class="privacy-header">
+                        <i class="fas fa-shield-alt"></i>
+                        <h3>Security & Privacy</h3>
+                    </div>
+                    <div class="privacy-content">
+                        <p>Your privacy is our priority. All calculations are performed locally in your browser. No data is sent to any server or stored anywhere.</p>
+                        <p>This tool is GDPR and CCPA compliant. We do not use any tracking cookies or collect personal information.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="ad-container">
+                    <div class="ad-title">Sponsored by our partners</div>
+                    <div class="ad-placeholder">
+                        <i class="fas fa-ad"></i>
+                        <div>Adsterra Ad Zone (300x250)</div>
+                    </div>
+                    <small>Advertisement • Your support helps keep this tool free</small>
+                </div>
+                
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-lightbulb"></i> Percentage Tips</h2>
+                    <ul style="padding-left: 20px; margin-top: 15px; color: var(--text);">
+                        <li style="margin-bottom: 10px;">To find X% of a number, multiply the number by X/100</li>
+                        <li style="margin-bottom: 10px;">To calculate percentage increase: ((New - Original)/Original) × 100</li>
+                        <li style="margin-bottom: 10px;">Reverse percentages: Original = New / (1 + Percentage/100)</li>
+                        <li style="margin-bottom: 10px;">Use percentage points when comparing percentages</li>
+                        <li>Compound percentages require sequential calculation</li>
+                    </ul>
+                </div>
+                
+                <div class="ad-container">
+                    <div class="ad-title">Recommended for you</div>
+                    <div class="ad-placeholder banner">
+                        <i class="fas fa-rectangle-ad"></i>
+                        <div>Yllix Ad Banner (300x100)</div>
+                    </div>
+                    <small>Advertisement • Helps support this service</small>
+                </div>
+                
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-history"></i> Recent Calculations</h2>
+                    <p style="color: var(--text-secondary); text-align: center; margin-top: 15px; padding: 20px;">
+                        Calculations are stored locally in your browser for convenience
+                    </p>
+                    <div id="history-container"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>© 2023 Professional Percentage Calculator | Precision Tool for Business and Education</p>
+            <p>All calculations are performed locally in your browser - no personal data is collected or stored</p>
+            <div class="mode-indicator">Current mode: <span id="current-mode">Light</span></div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize the calculator
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up event listeners
+            document.getElementById('calculate-btn').addEventListener('click', calculatePercentage);
+            document.getElementById('print-btn').addEventListener('click', printResults);
+            document.getElementById('pdf-btn').addEventListener('click', saveAsPDF);
+            document.getElementById('txt-btn').addEventListener('click', saveAsTXT);
+            document.getElementById('csv-btn').addEventListener('click', saveAsCSV);
+            document.getElementById('share-btn').addEventListener('click', shareResults);
+            
+            // Set up theme toggle
+            const themeToggle = document.getElementById('theme-toggle');
+            themeToggle.addEventListener('click', toggleTheme);
+            
+            // Set up calculator type selection
+            const calcTypes = document.querySelectorAll('.calc-type');
+            calcTypes.forEach(type => {
+                type.addEventListener('click', function() {
+                    calcTypes.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    updateInputLabels();
+                });
+            });
+            
+            // Check for saved theme preference
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                document.getElementById('theme-text').textContent = 'Dark Mode';
+                document.getElementById('current-mode').textContent = 'Dark';
+            }
+            
+            // Load calculation history
+            loadHistory();
+            
+            // Initialize labels
+            updateInputLabels();
+        });
+        
+        // Toggle between dark and light mode
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            
+            if (isDarkMode) {
+                document.getElementById('theme-text').textContent = 'Dark Mode';
+                document.getElementById('current-mode').textContent = 'Dark';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.getElementById('theme-text').textContent = 'Light Mode';
+                document.getElementById('current-mode').textContent = 'Light';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+        
+        // Update input labels based on selected calculation type
+        function updateInputLabels() {
+            const activeType = document.querySelector('.calc-type.active').dataset.type;
+            const value1Label = document.querySelector('label[for="value1"]');
+            const value2Label = document.querySelector('label[for="value2"]');
+            const formulaContainer = document.getElementById('formula-container');
+            const formulaText = document.getElementById('formula-text');
+            
+            switch(activeType) {
+                case 'percent-of':
+                    value1Label.innerHTML = 'Percentage % <span class="tooltip"><i class="fas fa-info-circle"></i><span class="tooltip-text">The percentage you want to calculate</span></span>';
+                    value2Label.innerHTML = 'Value <span class="tooltip"><i class="fas fa-info-circle"></i><span class="tooltip-text">The number to calculate the percentage of</span></span>';
+                    formulaText.textContent = 'Result = (Percentage / 100) × Value';
+                    formulaContainer.style.display = 'block';
+                    break;
+                    
+                case 'percent-what':
+                    value1Label.innerHTML = 'Part Value <span class="tooltip"><i class="fas fa-info-circle"></i><span class="tooltip-text">The portion you want to find the percentage of</span></span>';
+                    value2Label.innerHTML = 'Whole Value <span class="tooltip"><i class="fas fa-info-circle"></i><span class="tooltip-text">The total or complete value</span></span>';
+                    formulaText.textContent = 'Percentage = (Part / Whole) × 100%';
+                    formulaContainer.style.display = 'block';
+                    break;
+                    
+                case 'percent-change':
+                    value1Label.innerHTML = 'Original Value <span class="tooltip"><i class="fas fa-info-circle"></i><span class="tooltip-text">The starting or initial value</span></span>';
+                    value2Label.innerHTML = 'New Value <span class="tooltip"><i class="fas fa-info-circle"></i><span class="tooltip-text">The final or changed value</span></span>';
+                    formulaText.textContent = 'Change % = [(New - Original) / |Original|] × 100%';
+                    formulaContainer.style.display = 'block';
+                    break;
+                    
+                case 'percent-increase':
+                    value1Label.innerHTML = 'Original Value <span class="tooltip"><i class="fas fa-info-circle"></i><span class="tooltip-text">The starting value to increase</span></span>';
+                    value2Label.innerHTML = 'Percentage % <span class="tooltip"><i class="fas fa-info-circle"></i><span class="tooltip-text">The percentage to increase by</span></span>';
+                    formulaText.textContent = 'Result = Original × (1 + Percentage/100)';
+                    formulaContainer.style.display = 'block';
+                    break;
+            }
+        }
+        
+        // Main calculation function
+        function calculatePercentage() {
+            // Reset errors
+            document.getElementById('value1-error').style.display = 'none';
+            document.getElementById('value2-error').style.display = 'none';
+            
+            // Get input values
+            const value1 = parseFloat(document.getElementById('value1').value);
+            const value2 = parseFloat(document.getElementById('value2').value);
+            
+            // Validate inputs
+            let valid = true;
+            
+            if (isNaN(value1)) {
+                document.getElementById('value1-error').style.display = 'block';
+                valid = false;
+            }
+            
+            if (isNaN(value2)) {
+                document.getElementById('value2-error').style.display = 'block';
+                valid = false;
+            }
+            
+            if (!valid) return;
+            
+            // Get calculation type
+            const activeType = document.querySelector('.calc-type.active').dataset.type;
+            let result, description;
+            
+            // Perform calculation based on type
+            switch(activeType) {
+                case 'percent-of':
+                    result = (value1 / 100) * value2;
+                    description = `${value1}% of ${value2} is`;
+                    break;
+                    
+                case 'percent-what':
+                    result = (value1 / value2) * 100;
+                    description = `${value1} is ${result.toFixed(2)}% of ${value2}`;
+                    break;
+                    
+                case 'percent-change':
+                    const change = ((value2 - value1) / Math.abs(value1)) * 100;
+                    result = change;
+                    description = `From ${value1} to ${value2} is ${change >= 0 ? 'increase' : 'decrease'} of`;
+                    break;
+                    
+                case 'percent-increase':
+                    result = value1 * (1 + (value2 / 100));
+                    description = `${value1} increased by ${value2}% is`;
+                    break;
+            }
+            
+            // Format result
+            let resultDisplay;
+            if (activeType === 'percent-what') {
+                resultDisplay = `${result.toFixed(2)}%`;
+            } else if (activeType === 'percent-change') {
+                resultDisplay = `${result.toFixed(2)}%`;
+            } else if (activeType === 'percent-of' || activeType === 'percent-increase') {
+                resultDisplay = result.toFixed(2);
+            }
+            
+            // Display results
+            document.getElementById('result-value').textContent = resultDisplay;
+            document.getElementById('result-description').textContent = description;
+            
+            // Show results container
+            document.getElementById('result-container').style.display = 'block';
+            
+            // Save to history
+            saveToHistory(activeType, value1, value2, result);
+            
+            // Scroll to results
+            document.getElementById('result-container').scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
+        
+        // Save calculation to history
+        function saveToHistory(type, val1, val2, result) {
+            // Get existing history or create new array
+            const history = JSON.parse(localStorage.getItem('percentageHistory')) || [];
+            
+            // Create description
+            let description;
+            switch(type) {
+                case 'percent-of':
+                    description = `${val1}% of ${val2}`;
+                    break;
+                case 'percent-what':
+                    description = `${val1} as % of ${val2}`;
+                    break;
+                case 'percent-change':
+                    description = `Change from ${val1} to ${val2}`;
+                    break;
+                case 'percent-increase':
+                    description = `${val1} + ${val2}%`;
+                    break;
+            }
+            
+            // Add new calculation to beginning of array
+            history.unshift({
+                type: type,
+                value1: val1,
+                value2: val2,
+                result: result,
+                description: description,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Keep only last 5 calculations
+            if (history.length > 5) {
+                history.pop();
+            }
+            
+            // Save back to localStorage
+            localStorage.setItem('percentageHistory', JSON.stringify(history));
+            
+            // Update UI
+            loadHistory();
+        }
+        
+        // Load history from localStorage
+        function loadHistory() {
+            const historyContainer = document.getElementById('history-container');
+            historyContainer.innerHTML = '';
+            
+            const history = JSON.parse(localStorage.getItem('percentageHistory')) || [];
+            
+            if (history.length === 0) {
+                historyContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 10px;">No calculations yet</p>';
+                return;
+            }
+            
+            history.forEach(item => {
+                const historyItem = document.createElement('div');
+                historyItem.style.padding = '15px';
+                historyItem.style.borderBottom = '1px solid var(--border)';
+                
+                const date = new Date(item.timestamp);
+                const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                // Format result based on type
+                let resultDisplay;
+                if (item.type === 'percent-what' || item.type === 'percent-change') {
+                    resultDisplay = `${item.result.toFixed(2)}%`;
+                } else {
+                    resultDisplay = item.result.toFixed(2);
+                }
+                
+                historyItem.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <strong>${item.description}</strong>
+                        <span style="font-weight: bold; color: var(--primary);">${resultDisplay}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--text-secondary);">
+                        <span>${formattedDate}</span>
+                    </div>
+                `;
+                
+                historyContainer.appendChild(historyItem);
+            });
+        }
+        
+        // Print results function
+        function printResults() {
+            window.print();
+        }
+        
+        // Save as PDF function
+        function saveAsPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(22);
+            doc.setTextColor(74, 111, 165);
+            doc.text("Percentage Calculation Report", 105, 20, null, null, 'center');
+            
+            // Add subtitle
+            doc.setFontSize(12);
+            doc.setTextColor(128, 128, 128);
+            doc.text("Generated on: " + new Date().toLocaleDateString(), 105, 28, null, null, 'center');
+            
+            // Get calculation details
+            const activeType = document.querySelector('.calc-type.active').dataset.type;
+            let typeName;
+            switch(activeType) {
+                case 'percent-of': typeName = "Percentage of a Number"; break;
+                case 'percent-what': typeName = "Percentage Calculation"; break;
+                case 'percent-change': typeName = "Percentage Change"; break;
+                case 'percent-increase': typeName = "Increase by Percentage"; break;
+            }
+            
+            // Add inputs
+            doc.setFontSize(14);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Calculation Type: ${typeName}`, 20, 40);
+            
+            doc.setFontSize(12);
+            doc.text(`Value 1: ${document.getElementById('value1').value}`, 20, 50);
+            doc.text(`Value 2: ${document.getElementById('value2').value}`, 20, 58);
+            
+            // Add results
+            doc.setFontSize(14);
+            doc.text("Calculation Result", 20, 70);
+            
+            doc.setFontSize(12);
+            doc.text(document.getElementById('result-description').textContent, 20, 80);
+            doc.setTextColor(74, 111, 165);
+            doc.setFontSize(16);
+            doc.setFont(undefined, 'bold');
+            doc.text(document.getElementById('result-value').textContent, 20, 90);
+            
+            // Save the PDF
+            doc.save('percentage-calculation-report.pdf');
+        }
+        
+        // Save as TXT function
+        function saveAsTXT() {
+            const content = 
+                `Percentage Calculation Report\n` +
+                `================================\n\n` +
+                `Calculation Type: ${document.querySelector('.calc-type.active h3').textContent}\n` +
+                `Value 1: ${document.getElementById('value1').value}\n` +
+                `Value 2: ${document.getElementById('value2').value}\n\n` +
+                `Result:\n` +
+                `${document.getElementById('result-description').textContent} ${document.getElementById('result-value').textContent}\n\n` +
+                `Generated on: ${new Date().toLocaleString()}`;
+            
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
+            const link = document.createElement('a');
+            
+            link.href = URL.createObjectURL(blob);
+            link.download = 'percentage-calculation-report.txt';
+            link.click();
+        }
+        
+        // Save as CSV function
+        function saveAsCSV() {
+            const content = 
+                "Parameter,Value\n" +
+                `Calculation Type,${document.querySelector('.calc-type.active h3').textContent}\n` +
+                `Value 1,${document.getElementById('value1').value}\n` +
+                `Value 2,${document.getElementById('value2').value}\n` +
+                `Result,${document.getElementById('result-description').textContent} ${document.getElementById('result-value').textContent}\n` +
+                `Date,${new Date().toLocaleString()}`;
+            
+            const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            
+            link.href = URL.createObjectURL(blob);
+            link.download = 'percentage-calculation-report.csv';
+            link.click();
+        }
+        
+        // Share results function
+        function shareResults() {
+            const shareText = `Percentage Calculation Result:\n` +
+                `${document.getElementById('result-description').textContent} ${document.getElementById('result-value').textContent}\n\n` +
+                `Calculated with Professional Percentage Calculator`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Percentage Calculation',
+                    text: shareText,
+                    url: window.location.href
+                })
+                .then(() => console.log('Successful share'))
+                .catch(error => console.log('Error sharing:', error));
+            } else {
+                // Fallback for browsers without Web Share API
+                const textArea = document.createElement('textarea');
+                textArea.value = shareText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                alert('Results copied to clipboard!');
+            }
+        }
+    </script>
+</body>
+</html>

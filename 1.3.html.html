@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Annuity Calculator</title>
+    <!-- Removed Content-Security-Policy meta for simpler local testing; add back securely if deploying -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+            --text: #333;
+            --bg: #f9f9f9;
+            --card-bg: #fff;
+            --border-color: #ddd;
+            --chart-color-1: #3498db; /* Initial Value */
+            --chart-color-2: #e74c3c; /* Total Contributions */
+            --chart-color-3: #2ecc71; /* Total Interest */
+        }
+        
+        [data-theme="dark"] {
+            --primary: #2980b9;
+            --secondary: #27ae60;
+            --dark: #ecf0f1;
+            --light: #34495e;
+            --text: #f5f5f5;
+            --bg: #2c3e50;
+            --card-bg: #34495e;
+            --border-color: #666;
+            --chart-color-1: #4a90e2; /* Adjusted for dark mode contrast */
+            --chart-color-2: #ff6b6b; /* Adjusted for dark mode contrast */
+            --chart-color-3: #4CAF50; /* Adjusted for dark mode contrast */
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--bg);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .calculator-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .calculator-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .input-section, .results-section {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1, h2, h3 {
+            color: var(--primary);
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+            background-color: var(--card-bg);
+            color: var(--text);
+        }
+        
+        .range-slider {
+            width: 100%;
+            margin: 15px 0;
+        }
+        
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--secondary);
+        }
+        
+        .ad-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--light);
+            border-radius: 4px;
+            text-align: center;
+            min-height: 90px;
+            color: var(--text);
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .summary-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .summary-card h3 {
+            margin-top: 0;
+            font-size: 16px;
+        }
+        
+        .summary-card p {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: var(--secondary);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            color: var(--text); /* Ensure table text follows theme */
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color); /* Use theme variable */
+        }
+        
+        th {
+            background-color: var(--dark);
+            color: white;
+        }
+        
+        tr:hover {
+            background-color: rgba(0,0,0,0.05);
+        }
+        [data-theme="dark"] tr:hover {
+            background-color: rgba(255,255,255,0.05);
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            color: var(--primary); /* Tooltip icon color */
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--dark);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+            font-weight: normal;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .export-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .social-sharing {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .social-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 12px;
+            border-radius: 4px;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            transition: opacity 0.3s;
+        }
+        .social-btn:hover {
+            opacity: 0.8;
+        }
+        
+        .email { background-color: #777; }
+        .whatsapp { background-color: #25D366; }
+        .linkedin { background-color: #0077B5; }
+        .twitter { background-color: #1DA1F2; }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color); /* Theme-compatible border */
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: var(--light); /* Use theme variable */
+            border: none;
+            border-radius: 4px 4px 0 0;
+            margin-right: 5px;
+            color: var(--text); /* Use theme variable */
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background-color: var(--primary);
+            color: white;
+            border-bottom: 2px solid var(--primary); /* Emphasize active tab */
+        }
+        .tab:not(.active):hover {
+            background-color: rgba(var(--primary), 0.1); /* Slight hover for non-active tabs */
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .theme-toggle {
+            position: absolute; /* Changed to absolute for simpler top-right placement */
+            top: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 1.2em;
+        }
+        
+        @media print {
+            .no-print, .ad-container, .theme-toggle {
+                display: none !important;
+            }
+            
+            body {
+                background: none;
+                padding: 0;
+            }
+            
+            .calculator-container {
+                display: block;
+            }
+            
+            .input-section {
+                display: none; /* Hide input section in print */
+            }
+            .results-section {
+                box-shadow: none; /* Remove shadow for print */
+                padding: 0;
+            }
+            table {
+                font-size: 10px; /* Smaller font for print tables */
+            }
+            th, td {
+                padding: 8px;
+            }
+            .chart-container canvas {
+                max-width: 500px; /* Constrain chart size for print */
+                max-height: 300px;
+            }
+        }
+        /* Error message style */
+        .error-message {
+            color: var(--danger-color, #e74c3c); /* Use danger color, fallback if not defined */
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle no-print" id="themeToggle">🌓</button>
+    
+    <h1>Advanced Annuity Calculator</h1>
+    
+    <div class="calculator-container">
+        <div class="input-section">
+            <h2>Annuity Parameters</h2>
+            
+            <div class="input-group">
+                <label for="annuityType">
+                    Annuity Type
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">Ordinary annuity: payments at end of period. Annuity due: payments at beginning.</span>
+                    </span>
+                </label>
+                <select id="annuityType">
+                    <option value="ordinary">Ordinary Annuity (End of Period)</option>
+                    <option value="due">Annuity Due (Beginning of Period)</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label for="principal">
+                    Initial Investment / Present Value ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">Lump sum at the start (if any). Leave as 0 if only making periodic payments.</span>
+                    </span>
+                </label>
+                <input type="number" id="principal" min="0" step="100" value="0">
+                <div class="error-message" id="principal-error"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="interestRate">
+                    Annual Interest Rate (%)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">Expected annual rate of return</span>
+                    </span>
+                </label>
+                <input type="number" id="interestRate" min="0" max="100" step="0.01" value="5">
+                <div class="error-message" id="interestRate-error"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="term">
+                    Term (Years)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">Duration of the annuity</span>
+                    </span>
+                </label>
+                <input type="number" id="term" min="1" max="100" step="1" value="20">
+                <div class="error-message" id="term-error"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="paymentFrequency">
+                    Payment Frequency
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">How often payments are made</span>
+                    </span>
+                </label>
+                <select id="paymentFrequency">
+                    <option value="1">Annually</option>
+                    <option value="2">Semi-Annually</option>
+                    <option value="4">Quarterly</option>
+                    <option value="12" selected>Monthly</option>
+                    <option value="52">Weekly</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label for="paymentAmount">
+                    Periodic Payment Amount ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">Amount of each regular contribution. Leave blank to calculate.</span>
+                    </span>
+                </label>
+                <input type="number" id="paymentAmount" step="10" placeholder="e.g., 500 (Optional)">
+                <div class="error-message" id="paymentAmount-error"></div>
+            </div>
+            
+            <button id="calculateBtn">Calculate Annuity</button>
+        </div>
+        
+        <div class="results-section">
+            <h2>Results</h2>
+            
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <h3>Future Value</h3>
+                    <p id="futureValue">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Present Value</h3>
+                    <p id="presentValue">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Periodic Payment</h3>
+                    <p id="calculatedPayment">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Payments Made</h3>
+                    <p id="totalPayments">$0.00</p>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="annuityChart"></canvas>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab active" data-tab="schedule">Payment Schedule</button>
+                <button class="tab" data-tab="summary">Yearly Summary</button>
+            </div>
+            
+            <div class="tab-content active" id="schedule-tab">
+                <div style="overflow-x: auto;">
+                    <table id="scheduleTable">
+                        <thead>
+                            <tr>
+                                <th>Period</th>
+                                <th>Payment Date</th> <!-- Added Payment Date -->
+                                <th>Contribution</th>
+                                <th>Interest Earned</th>
+                                <th>Balance</th>
+                                <th>Cumulative Interest</th> <!-- New -->
+                                <th>Cumulative Contributions</th> <!-- New -->
+                            </tr>
+                        </thead>
+                        <tbody id="scheduleBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="summary-tab">
+                <div style="overflow-x: auto;">
+                    <table id="summaryTable">
+                        <thead>
+                            <tr>
+                                <th>Year</th>
+                                <th>Yearly Contributions</th>
+                                <th>Yearly Interest</th>
+                                <th>Ending Balance</th>
+                                <th>Total Interest to Date</th>
+                                <th>Total Contributions to Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summaryBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="ad-container">
+                Advertisement Space (Adsterra/Yllix)
+            </div>
+
+            <div class="export-options no-print">
+                <button id="printBtn">Print Schedule</button>
+                <button id="pdfBtn">Save as PDF</button>
+                <button id="excelBtn">Save as Excel</button>
+                <button id="csvBtn">Save as CSV</button>
+            </div>
+            
+            <div class="social-sharing no-print">
+                <a href="#" class="social-btn email" id="emailShare">Email</a>
+                <a href="#" class="social-btn whatsapp" id="whatsappShare">WhatsApp</a>
+                <a href="#" class="social-btn linkedin" id="linkedinShare">LinkedIn</a>
+                <a href="#" class="social-btn twitter" id="twitterShare">Twitter</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables to store calculated schedules for export
+        let globalAnnuitySchedule = [];
+        let globalYearlySummary = [];
+        let annuityChartInstance = null; // To manage Chart.js instance
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up theme toggle
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+            
+            // Set up tab functionality
+            setupTabs();
+            
+            // Set up event listeners
+            document.getElementById('calculateBtn').addEventListener('click', calculateAnnuity);
+            document.getElementById('printBtn').addEventListener('click', printSchedule);
+            document.getElementById('pdfBtn').addEventListener('click', exportToPDF);
+            document.getElementById('excelBtn').addEventListener('click', exportToExcel);
+            document.getElementById('csvBtn').addEventListener('click', exportToCSV);
+            
+            // Calculate on initial load
+            calculateAnnuity();
+            setupSocialSharing(); // Needs initial data
+        });
+        
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            }
+            // Update chart colors on theme change
+            if (annuityChartInstance) {
+                const rootStyle = getComputedStyle(document.documentElement);
+                annuityChartInstance.data.datasets[0].backgroundColor = [
+                    rootStyle.getPropertyValue('--chart-color-1'),
+                    rootStyle.getPropertyValue('--chart-color-2'),
+                    rootStyle.getPropertyValue('--chart-color-3')
+                ];
+                annuityChartInstance.options.plugins.legend.labels.color = rootStyle.getPropertyValue('--text');
+                annuityChartInstance.options.plugins.title.color = rootStyle.getPropertyValue('--text');
+                annuityChartInstance.update();
+            }
+        }
+        
+        function setupTabs() {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                });
+            });
+        }
+
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+        }
+
+        function showError(elementId, message) {
+            document.getElementById(elementId + '-error').textContent = message;
+        }
+        
+        function calculateAnnuity() {
+            clearErrors(); // Clear previous errors
+
+            // Get input values
+            const annuityType = document.getElementById('annuityType').value;
+            let principal = parseFloat(document.getElementById('principal').value);
+            let annualRate = parseFloat(document.getElementById('interestRate').value);
+            const term = parseInt(document.getElementById('term').value);
+            const frequency = parseInt(document.getElementById('paymentFrequency').value);
+            let paymentAmountInput = document.getElementById('paymentAmount').value;
+            let paymentAmount = paymentAmountInput ? parseFloat(paymentAmountInput) : null;
+            
+            // Validate inputs
+            let isValid = true;
+            if (isNaN(principal) || principal < 0) {
+                showError('principal', 'Must be a non-negative number.'); isValid = false;
+            }
+            if (isNaN(annualRate) || annualRate < 0 || annualRate > 100) {
+                showError('interestRate', 'Must be between 0 and 100.'); isValid = false;
+            }
+            if (isNaN(term) || term <= 0) {
+                showError('term', 'Must be a positive whole number.'); isValid = false;
+            }
+            if (paymentAmountInput !== '' && (isNaN(paymentAmount) || paymentAmount < 0)) {
+                showError('paymentAmount', 'Must be a non-negative number.'); isValid = false;
+            }
+            
+            if (!isValid) {
+                document.getElementById('results-section').style.display = 'none';
+                return;
+            }
+
+            annualRate /= 100; // Convert percentage to decimal
+            const periodicRate = annualRate / frequency;
+            const periods = term * frequency;
+            
+            let calculatedFutureValue, calculatedPresentValue, calculatedPayment;
+
+            // Determine what to calculate based on provided inputs
+            if (paymentAmount === null || paymentAmount === 0) { // User wants to calculate Periodic Payment
+                // Assume 'principal' is the target Present Value for this calculation.
+                // Or, if target is FV and there's no initial principal for accumulation, assume target FV is what's wanted.
+                // This calculator's UI implies calculating PMT based on an initial 'principal' amount,
+                // treating it like a PV-based annuity for decumulation, or an accumulation to reach 'principal' as a target FV if 0 initial is given.
+                // Let's assume if PMT is empty, it calculates PMT required to liquidate the initial 'principal' over 'term'.
+                // If initial 'principal' is 0, it means PMT to accumulate to some assumed FV, but that's not explicitly in UI.
+                // So, if paymentAmount is empty, we calculate PMT required to liquidate the 'principal' over 'term'.
+                // If principal is 0 and payment is 0, then we can't calculate anything meaningful for payment.
+                if (principal === 0 && annualRate === 0) { // Special case for FV, as well
+                     showError('principal', 'Cannot calculate payment if principal is 0 and rate is 0.');
+                     showError('paymentAmount', 'Set a periodic payment or principal/rate to calculate.');
+                     document.getElementById('results-section').style.display = 'none';
+                     return;
+                }
+                
+                calculatedPayment = calculatePayment_PV(principal, periodicRate, periods, annuityType);
+                calculatedPresentValue = principal;
+                calculatedFutureValue = calculateFutureValue(calculatedPayment, periodicRate, periods, annuityType, principal); // Calculate corresponding FV
+                
+            } else { // User provided Periodic Payment. Calculate FV and PV.
+                calculatedPayment = paymentAmount;
+                calculatedFutureValue = calculateFutureValue(calculatedPayment, periodicRate, periods, annuityType, principal);
+                calculatedPresentValue = calculatePresentValue(calculatedPayment, periodicRate, periods, annuityType);
+            }
+            
+            // Generate full schedule
+            const schedule = generateAnnuitySchedule(principal, calculatedPayment, periodicRate, periods, annuityType);
+            globalAnnuitySchedule = schedule; // Store for exports
+            
+            // Generate yearly summary from the detailed schedule
+            globalYearlySummary = generateYearlySummaryFromSchedule(globalAnnuitySchedule, frequency);
+
+            // Update UI with calculated values
+            updateSummaryCards(calculatedFutureValue, calculatedPresentValue, calculatedPayment, globalAnnuitySchedule);
+            displayScheduleTable(globalAnnuitySchedule, frequency);
+            displayYearlySummary(globalYearlySummary);
+            updateChart(principal, calculatedPayment, globalAnnuitySchedule);
+            setupSocialSharing(); // Update sharing links with new data
+
+            document.getElementById('results-section').style.display = 'block';
+        }
+        
+        // --- Financial Calculation Functions ---
+
+        // Helper for power (1+r)^n
+        function pow1plusR(rate, periods) {
+            return Math.pow(1 + rate, periods);
+        }
+
+        // FV = P * [((1 + r)^n - 1) / r] * (1 + r*type_factor) + PV_0 * (1 + r)^n
+        // type_factor is 1 for annuity due, 0 for ordinary
+        function calculateFutureValue(payment, rate, periods, type, initialPrincipal = 0) {
+            let annuityFactor;
+            const typeFactor = (type === 'due' ? 1 : 0); // 1 for due, 0 for ordinary
+            
+            if (rate === 0) {
+                annuityFactor = periods;
+            } else {
+                annuityFactor = (pow1plusR(rate, periods) - 1) / rate;
+            }
+            
+            return (payment * annuityFactor * (1 + rate * typeFactor)) + (initialPrincipal * pow1plusR(rate, periods));
+        }
+        
+        // PV = P * [(1 - (1 + r)^-n) / r] * (1 + r*type_factor)
+        function calculatePresentValue(payment, rate, periods, type) {
+            let annuityFactor;
+            const typeFactor = (type === 'due' ? 1 : 0);
+            
+            if (rate === 0) {
+                annuityFactor = periods;
+            } else {
+                annuityFactor = (1 - Math.pow(1 + rate, -periods)) / rate;
+            }
+            
+            return payment * annuityFactor * (1 + rate * typeFactor);
+        }
+
+        // P = PV / [(1 - (1 + r)^-n) / r] / (1 + r*type_factor)
+        function calculatePayment_PV(targetPV, rate, periods, type) {
+            let annuityFactor;
+            const typeFactor = (type === 'due' ? 1 : 0);
+
+            if (targetPV === 0) return 0; // If no target PV, no payment needed.
+            if (rate === 0) {
+                return targetPV / periods;
+            } else {
+                annuityFactor = (1 - Math.pow(1 + rate, -periods)) / rate;
+                return targetPV / (annuityFactor * (1 + rate * typeFactor));
+            }
+        }
+        
+        // --- Annuity Schedule Generation ---
+        function generateAnnuitySchedule(initialPrincipal, periodicPayment, periodicRate, totalPeriods, annuityType) {
+            const schedule = [];
+            let currentBalance = initialPrincipal;
+            let cumulativeInterest = 0;
+            let cumulativeContributions = 0;
+            const initialDate = new Date(); // Use current date for schedule generation
+
+            for (let i = 1; i <= totalPeriods; i++) {
+                let interestEarnedThisPeriod = 0;
+                let paymentContributionsThisPeriod = periodicPayment;
+
+                // For Annuity Due, payment happens at the beginning of the period, BEFORE interest.
+                if (annuityType === 'due') {
+                    currentBalance += paymentContributionsThisPeriod;
+                    cumulativeContributions += paymentContributionsThisPeriod;
+                }
+                
+                // Calculate interest on the balance *before* end-of-period payment (for ordinary)
+                // or *after* beginning-of-period payment (for due)
+                if (currentBalance > 0 && periodicRate > 0) {
+                    interestEarnedThisPeriod = currentBalance * periodicRate;
+                    currentBalance += interestEarnedThisPeriod;
+                    cumulativeInterest += interestEarnedThisPeriod;
+                }
+
+                // For Ordinary Annuity, payment happens at the end of the period, AFTER interest.
+                if (annuityType === 'ordinary') {
+                    currentBalance += paymentContributionsThisPeriod;
+                    cumulativeContributions += paymentContributionsThisPeriod;
+                }
+                
+                // Ensure balance is precisely 0 for very small numbers due to floating point
+                if (Math.abs(currentBalance) < 0.01) {
+                    currentBalance = 0;
+                }
+
+                // Determine payment date for this period
+                const paymentDate = new Date(initialDate);
+                const freq = parseInt(document.getElementById('paymentFrequency').value);
+                if (freq === 12) paymentDate.setMonth(initialDate.getMonth() + i);
+                else if (freq === 2) paymentDate.setMonth(initialDate.getMonth() + i * 6);
+                else if (freq === 4) paymentDate.setMonth(initialDate.getMonth() + i * 3);
+                else if (freq === 52) paymentDate.setDate(initialDate.getDate() + i * 7);
+                else if (freq === 1) paymentDate.setFullYear(initialDate.getFullYear() + i);
+
+
+                schedule.push({
+                    period: i,
+                    paymentDate: paymentDate,
+                    contribution: parseFloat(paymentContributionsThisPeriod.toFixed(2)),
+                    interestEarned: parseFloat(interestEarnedThisPeriod.toFixed(2)),
+                    endingBalance: parseFloat(currentBalance.toFixed(2)),
+                    cumulativeInterest: parseFloat(cumulativeInterest.toFixed(2)),
+                    cumulativeContributions: parseFloat(cumulativeContributions.toFixed(2))
+                });
+            }
+            return schedule;
+        }
+        
+        // --- Schedule Display Functions ---
+        function updateSummaryCards(futureValue, presentValue, payment, schedule) {
+            document.getElementById('futureValue').textContent = formatCurrency(futureValue);
+            document.getElementById('presentValue').textContent = formatCurrency(presentValue);
+            document.getElementById('calculatedPayment').textContent = formatCurrency(payment);
+            document.getElementById('totalPayments').textContent = formatCurrency(schedule.length * payment);
+        }
+        
+        function displayScheduleTable(schedule, frequency) {
+            const tableBody = document.getElementById('scheduleBody');
+            tableBody.innerHTML = '';
+            
+            // Only show every Nth payment if there are many, plus first and last
+            const showAllThreshold = 12 * 5; // e.g., show all if 5 years or less of monthly payments
+            const showAll = schedule.length <= showAllThreshold;
+            
+            schedule.forEach((period, i) => {
+                const isEndOfYear = (i + 1) % frequency === 0;
+                const isFirstOrLast = i === 0 || i === schedule.length - 1;
+
+                if (showAll || isEndOfYear || isFirstOrLast) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${period.period}</td>
+                        <td>${period.paymentDate.toLocaleDateString()}</td>
+                        <td>${formatCurrency(period.contribution)}</td>
+                        <td>${formatCurrency(period.interestEarned)}</td>
+                        <td>${formatCurrency(period.endingBalance)}</td>
+                        <td>${formatCurrency(period.cumulativeInterest)}</td>
+                        <td>${formatCurrency(period.cumulativeContributions)}</td>
+                    `;
+                    tableBody.appendChild(row);
+                }
+            });
+        }
+        
+        function generateYearlySummaryFromSchedule(schedule, frequency) {
+            const yearlySummary = [];
+            if (schedule.length === 0) return yearlySummary;
+
+            let currentYear = schedule[0].paymentDate.getFullYear();
+            let yearContributions = 0;
+            let yearInterest = 0;
+            let lastBalanceInYear = schedule[0].endingBalance; // Initialize with balance after first period
+            
+            // Track cumulative totals for the start of the current year segment
+            let cumulativeInterestStartOfYear = 0;
+            let cumulativeContributionsStartOfYear = 0;
+
+            schedule.forEach((period, index) => {
+                const periodYear = period.paymentDate.getFullYear();
+
+                if (periodYear !== currentYear) {
+                    // Push data for the completed year
+                    yearlySummary.push({
+                        year: currentYear,
+                        yearlyContributions: parseFloat(yearContributions.toFixed(2)),
+                        yearlyInterest: parseFloat(yearInterest.toFixed(2)),
+                        endingBalance: parseFloat(lastBalanceInYear.toFixed(2)),
+                        totalInterestToDate: parseFloat(period.cumulativeInterest.toFixed(2)) - parseFloat(period.interestEarned.toFixed(2)), // Cumulative interest up to end of previous year
+                        totalContributionsToDate: parseFloat(period.cumulativeContributions.toFixed(2)) - parseFloat(period.contribution.toFixed(2)) // Cumulative contributions up to end of previous year
+                    });
+                    // Reset for the new year
+                    currentYear = periodYear;
+                    yearContributions = 0;
+                    yearInterest = 0;
+                }
+                
+                yearContributions += period.contribution;
+                yearInterest += period.interestEarned;
+                lastBalanceInYear = period.endingBalance; // Always keep the latest balance for the current year
+            });
+
+            // Add the data for the last (current) year
+            yearlySummary.push({
+                year: currentYear,
+                yearlyContributions: parseFloat(yearContributions.toFixed(2)),
+                yearlyInterest: parseFloat(yearInterest.toFixed(2)),
+                endingBalance: parseFloat(lastBalanceInYear.toFixed(2)),
+                totalInterestToDate: parseFloat(schedule[schedule.length - 1].cumulativeInterest.toFixed(2)),
+                totalContributionsToDate: parseFloat(schedule[schedule.length - 1].cumulativeContributions.toFixed(2))
+            });
+
+            return yearlySummary;
+        }
+
+        function displayYearlySummary(summary) {
+            const tableBody = document.getElementById('summaryBody');
+            tableBody.innerHTML = '';
+            
+            summary.forEach(year => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${year.year}</td>
+                    <td>${formatCurrency(year.yearlyContributions)}</td>
+                    <td>${formatCurrency(year.yearlyInterest)}</td>
+                    <td>${formatCurrency(year.endingBalance)}</td>
+                    <td>${formatCurrency(year.totalInterestToDate)}</td>
+                    <td>${formatCurrency(year.totalContributionsToDate)}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        function updateChart(initialPrincipal, calculatedPayment, schedule) {
+            const ctx = document.getElementById('annuityChart').getContext('2d');
+            
+            // Destroy previous chart if exists
+            if (annuityChartInstance) {
+                annuityChartInstance.destroy();
+            }
+
+            if (schedule.length === 0) { // No data to chart
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                return;
+            }
+
+            const finalBalance = schedule[schedule.length - 1].endingBalance;
+            const totalInterestEarned = schedule[schedule.length - 1].cumulativeInterest;
+            const totalContributions = schedule[schedule.length - 1].cumulativeContributions;
+            
+            const labels = ['Initial Investment', 'Total Contributions', 'Total Interest Earned'];
+            const data = [initialPrincipal, totalContributions - initialPrincipal, totalInterestEarned];
+
+            // Filter out zero values if they're not relevant
+            const filteredLabels = [];
+            const filteredData = [];
+            for(let i = 0; i < data.length; i++) {
+                if (data[i] > 0.01) { // Check for values greater than a small epsilon
+                    filteredData.push(data[i]);
+                    filteredLabels.push(labels[i]);
+                }
+            }
+
+            const rootStyle = getComputedStyle(document.documentElement);
+            const backgroundColors = [
+                rootStyle.getPropertyValue('--chart-color-1'),
+                rootStyle.getPropertyValue('--chart-color-2'),
+                rootStyle.getPropertyValue('--chart-color-3')
+            ];
+
+            annuityChartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: filteredLabels,
+                    datasets: [{
+                        data: filteredData,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // Allow custom height/width from CSS
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: rootStyle.getPropertyValue('--text') // Dynamic text color
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? Math.round((context.raw / total) * 100) : 0;
+                                    return `${context.label}: ${formatCurrency(context.raw)} (${percentage}%)`;
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Future Value Breakdown',
+                            color: rootStyle.getPropertyValue('--text') // Dynamic title color
+                        }
+                    }
+                }
+            });
+        }
+        
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        }
+        
+        // --- Export Functions ---
+        function printSchedule() {
+            window.print();
+        }
+        
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'pt', 'letter');
+            let currentY = 40;
+            const margin = 40;
+            const pageWidth = doc.internal.pageSize.width;
+
+            doc.setFontSize(18);
+            doc.text('Annuity Calculation Report', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 30;
+
+            doc.setFontSize(12);
+            doc.text(`Calculated On: ${new Date().toLocaleDateString()}`, margin, currentY);
+            currentY += 20;
+
+            // Input Details
+            const inputDetails = [
+                ["Annuity Type", document.getElementById('annuityType').options[document.getElementById('annuityType').selectedIndex].text],
+                ["Initial Investment", formatCurrency(parseFloat(document.getElementById('principal').value))],
+                ["Annual Interest Rate", `${document.getElementById('interestRate').value}%`],
+                ["Term (Years)", document.getElementById('term').value],
+                ["Payment Frequency", document.getElementById('paymentFrequency').options[document.getElementById('paymentFrequency').selectedIndex].text],
+                ["Periodic Payment Input", document.getElementById('paymentAmount').value === '' ? 'Calculated' : formatCurrency(parseFloat(document.getElementById('paymentAmount').value))]
+            ];
+            doc.autoTable({
+                startY: currentY,
+                head: [['Parameter', 'Value']],
+                body: inputDetails,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                margin: { left: margin, right: margin }
+            });
+            currentY = doc.autoTable.previous.finalY + 20;
+
+            // Summary Results
+            const summaryResults = [
+                ["Future Value", document.getElementById('futureValue').textContent],
+                ["Present Value", document.getElementById('presentValue').textContent],
+                ["Calculated Periodic Payment", document.getElementById('calculatedPayment').textContent],
+                ["Total Payments Made", document.getElementById('totalPayments').textContent]
+            ];
+            doc.autoTable({
+                startY: currentY,
+                head: [['Result', 'Value']],
+                body: summaryResults,
+                theme: 'grid',
+                headStyles: { fillColor: [46, 204, 113], textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                margin: { left: margin, right: margin }
+            });
+            currentY = doc.autoTable.previous.finalY + 30;
+
+            // Detailed Schedule
+            doc.addPage();
+            currentY = margin;
+            doc.setFontSize(16);
+            doc.text('Detailed Annuity Schedule', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 20;
+
+            const scheduleTableData = globalAnnuitySchedule.map(p => [
+                p.period,
+                p.paymentDate.toLocaleDateString('en-US'),
+                p.contribution.toFixed(2),
+                p.interestEarned.toFixed(2),
+                p.endingBalance.toFixed(2),
+                p.cumulativeInterest.toFixed(2),
+                p.cumulativeContributions.toFixed(2)
+            ]);
+
+            doc.autoTable({
+                startY: currentY,
+                head: [['Period', 'Date', 'Contribution', 'Interest', 'Balance', 'Cum. Interest', 'Cum. Contributions']],
+                body: scheduleTableData,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                styles: { fontSize: 8, cellPadding: 4 },
+                margin: { left: margin, right: margin },
+                didDrawPage: function(data) {
+                    let pageCount = doc.internal.getNumberOfPages();
+                    doc.setFontSize(8);
+                    doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber + ' of ' + pageCount, data.settings.margin.left, doc.internal.pageSize.height - 20);
+                }
+            });
+
+            // Yearly Summary
+            doc.addPage();
+            currentY = margin;
+            doc.setFontSize(16);
+            doc.text('Yearly Annuity Summary', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 20;
+
+            const yearlySummaryTableData = globalYearlySummary.map(y => [
+                y.year,
+                y.yearlyContributions.toFixed(2),
+                y.yearlyInterest.toFixed(2),
+                y.endingBalance.toFixed(2),
+                y.totalInterestToDate.toFixed(2),
+                y.totalContributionsToDate.toFixed(2)
+            ]);
+
+            doc.autoTable({
+                startY: currentY,
+                head: [['Year', 'Yearly Contributions', 'Yearly Interest', 'Ending Balance', 'Total Interest', 'Total Contributions']],
+                body: yearlySummaryTableData,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                styles: { fontSize: 8, cellPadding: 4 },
+                margin: { left: margin, right: margin },
+                didDrawPage: function(data) {
+                    let pageCount = doc.internal.getNumberOfPages();
+                    doc.setFontSize(8);
+                    doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber + ' of ' + pageCount, data.settings.margin.left, doc.internal.pageSize.height - 20);
+                }
+            });
+            
+            doc.save('annuity_report.pdf');
+        }
+        
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+            
+            // Sheet 1: Summary
+            const summaryData = [
+                ["Annuity Calculation Summary", ""],
+                ["Calculated On", new Date().toLocaleDateString()],
+                [],
+                ["Input Details", ""],
+                ["Annuity Type", document.getElementById('annuityType').options[document.getElementById('annuityType').selectedIndex].text],
+                ["Initial Investment", parseFloat(document.getElementById('principal').value)],
+                ["Annual Interest Rate", `${document.getElementById('interestRate').value}%`],
+                ["Term (Years)", document.getElementById('term').value],
+                ["Payment Frequency", document.getElementById('paymentFrequency').options[document.getElementById('paymentFrequency').selectedIndex].text],
+                ["Periodic Payment Input", document.getElementById('paymentAmount').value === '' ? 'Calculated' : parseFloat(document.getElementById('paymentAmount').value)],
+                [],
+                ["Results", ""],
+                ["Future Value", document.getElementById('futureValue').textContent],
+                ["Present Value", document.getElementById('presentValue').textContent],
+                ["Calculated Periodic Payment", document.getElementById('calculatedPayment').textContent],
+                ["Total Payments Made", document.getElementById('totalPayments').textContent]
+            ];
+            const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, summaryWs, "Summary");
+
+            // Sheet 2: Detailed Schedule
+            const detailedScheduleHeaders = ["Period", "Payment Date", "Contribution", "Interest Earned", "Balance", "Cumulative Interest", "Cumulative Contributions"];
+            const detailedScheduleData = [detailedScheduleHeaders];
+            globalAnnuitySchedule.forEach(p => {
+                detailedScheduleData.push([
+                    p.period,
+                    p.paymentDate.toLocaleDateString('en-US'),
+                    p.contribution,
+                    p.interestEarned,
+                    p.endingBalance,
+                    p.cumulativeInterest,
+                    p.cumulativeContributions
+                ]);
+            });
+            const detailedScheduleWs = XLSX.utils.aoa_to_sheet(detailedScheduleData);
+            XLSX.utils.book_append_sheet(wb, detailedScheduleWs, "Detailed Schedule");
+
+            // Sheet 3: Yearly Summary
+            const yearlySummaryHeaders = ["Year", "Yearly Contributions", "Yearly Interest", "Ending Balance", "Total Interest to Date", "Total Contributions to Date"];
+            const yearlySummaryData = [yearlySummaryHeaders];
+            globalYearlySummary.forEach(y => {
+                yearlySummaryData.push([
+                    y.year,
+                    y.yearlyContributions,
+                    y.yearlyInterest,
+                    y.endingBalance,
+                    y.totalInterestToDate,
+                    y.totalContributionsToDate
+                ]);
+            });
+            const yearlySummaryWs = XLSX.utils.aoa_to_sheet(yearlySummaryData);
+            XLSX.utils.book_append_sheet(wb, yearlySummaryWs, "Yearly Summary");
+            
+            XLSX.writeFile(wb, 'annuity_report.xlsx');
+        }
+        
+        function exportToCSV() {
+            let csvContent = "";
+
+            // Summary data
+            csvContent += "Annuity Calculation Summary\n";
+            csvContent += `"Calculated On","${new Date().toLocaleDateString()}"\n\n`;
+            csvContent += `"Input Details",\n`;
+            csvContent += `"Annuity Type","${document.getElementById('annuityType').options[document.getElementById('annuityType').selectedIndex].text}"\n`;
+            csvContent += `"Initial Investment",${document.getElementById('principal').value}\n`;
+            csvContent += `"Annual Interest Rate",${document.getElementById('interestRate').value}%\n`;
+            csvContent += `"Term (Years)",${document.getElementById('term').value}\n`;
+            csvContent += `"Payment Frequency","${document.getElementById('paymentFrequency').options[document.getElementById('paymentFrequency').selectedIndex].text}"\n`;
+            csvContent += `"Periodic Payment Input","${document.getElementById('paymentAmount').value === '' ? 'Calculated' : document.getElementById('paymentAmount').value}"\n\n`;
+            csvContent += `"Results",\n`;
+            csvContent += `"Future Value","${document.getElementById('futureValue').textContent}"\n`;
+            csvContent += `"Present Value","${document.getElementById('presentValue').textContent}"\n`;
+            csvContent += `"Calculated Periodic Payment","${document.getElementById('calculatedPayment').textContent}"\n`;
+            csvContent += `"Total Payments Made","${document.getElementById('totalPayments').textContent}"\n\n`;
+
+            // Detailed Schedule
+            csvContent += "Detailed Annuity Schedule\n";
+            csvContent += "Period,Payment Date,Contribution,Interest Earned,Balance,Cumulative Interest,Cumulative Contributions\n";
+            globalAnnuitySchedule.forEach(p => {
+                csvContent += `${p.period},"${p.paymentDate.toLocaleDateString('en-US')}",${p.contribution.toFixed(2)},${p.interestEarned.toFixed(2)},${p.endingBalance.toFixed(2)},${p.cumulativeInterest.toFixed(2)},${p.cumulativeContributions.toFixed(2)}\n`;
+            });
+            csvContent += "\n";
+
+            // Yearly Summary
+            csvContent += "Yearly Annuity Summary\n";
+            csvContent += "Year,Yearly Contributions,Yearly Interest,Ending Balance,Total Interest to Date,Total Contributions to Date\n";
+            globalYearlySummary.forEach(y => {
+                csvContent += `${y.year},${y.yearlyContributions.toFixed(2)},${y.yearlyInterest.toFixed(2)},${y.endingBalance.toFixed(2)},${y.totalInterestToDate.toFixed(2)},${y.totalContributionsToDate.toFixed(2)}\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'annuity_report.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        function setupSocialSharing() {
+            // Get data after calculation
+            const principal = parseFloat(document.getElementById('principal').value);
+            const interestRate = parseFloat(document.getElementById('interestRate').value);
+            const term = parseFloat(document.getElementById('term').value);
+            const frequencyText = document.getElementById('paymentFrequency').options[document.getElementById('paymentFrequency').selectedIndex].text;
+            const calculatedPayment = document.getElementById('calculatedPayment').textContent;
+            const futureValue = document.getElementById('futureValue').textContent;
+            const annuityTypeText = document.getElementById('annuityType').options[document.getElementById('annuityType').selectedIndex].text;
+
+            // Construct a meaningful share text
+            let shareText = `Check out my annuity calculation results for a ${term}-year ${annuityTypeText} with ${interestRate}% annual interest:`;
+            if (principal > 0) {
+                shareText += ` Starting with $${principal.toLocaleString('en-US')},`;
+            } else {
+                shareText += ` With`;
+            }
+            shareText += ` periodic payments of ${calculatedPayment} (${frequencyText}), the Future Value is ${futureValue}.`;
+            shareText += ` Calculate yours here:`;
+
+            const shareUrl = window.location.href; // Current page URL
+            
+            document.getElementById('emailShare').href = `mailto:?subject=Annuity Calculation Results&body=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
+            document.getElementById('whatsappShare').href = `https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
+            // LinkedIn shares the current page URL, with optional title/summary
+            document.getElementById('linkedinShare').href = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent('Advanced Annuity Calculation')}&summary=${encodeURIComponent(shareText)}`;
+            document.getElementById('twitterShare').href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+        }
+    </script>
+</body>
+</html>

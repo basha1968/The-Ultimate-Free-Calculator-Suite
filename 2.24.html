@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prime Factorization Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #2a4d69);
+            color: #e6f7ff;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        body.light-mode {
+            background: linear-gradient(135deg, #a1c4fd, #c2e9fb);
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(0, 20, 40, 0.85);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(64, 156, 255, 0.3);
+        }
+        
+        body.light-mode .container {
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        header {
+            background: linear-gradient(90deg, #0d1b2a, #1b3a4b);
+            color: #e0f7ff;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            border-bottom: 2px solid #00a8cc;
+        }
+        
+        body.light-mode header {
+            background: linear-gradient(90deg, #1e3c72, #2a5298);
+            color: #f8f9fa;
+        }
+        
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        
+        .header-content {
+            flex: 1;
+        }
+        
+        header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(0, 168, 204, 0.7);
+            letter-spacing: 1px;
+        }
+        
+        body.light-mode header h1 {
+            text-shadow: 0 0 10px rgba(0, 100, 255, 0.4);
+            color: #ffffff;
+        }
+        
+        header p {
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin: 0 auto;
+            opacity: 0.9;
+            color: #a6e3ff;
+        }
+        
+        body.light-mode header p {
+            color: #e0f0ff;
+        }
+        
+        .theme-toggle {
+            background: rgba(0, 40, 80, 0.7);
+            border: 2px solid #00a8cc;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .theme-toggle:hover {
+            transform: rotate(15deg);
+            background: rgba(0, 80, 160, 0.7);
+        }
+        
+        body.light-mode .theme-toggle {
+            background: rgba(200, 230, 255, 0.8);
+            border: 2px solid #1e88e5;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 20px;
+            gap: 20px;
+        }
+        
+        .calculator-section {
+            flex: 1;
+            min-width: 300px;
+            padding: 20px;
+        }
+        
+        .ad-section {
+            flex: 0 0 300px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .ad-container {
+            background: rgba(10, 40, 70, 0.7);
+            border-radius: 10px;
+            border: 1px solid #00a8cc;
+            padding: 15px;
+            text-align: center;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        body.light-mode .ad-container {
+            background: rgba(230, 240, 255, 0.8);
+            border: 1px solid #64b5f6;
+        }
+        
+        .ad-container h3 {
+            color: #4cc9f0;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        
+        body.light-mode .ad-container h3 {
+            color: #1976d2;
+        }
+        
+        .ad-placeholder {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(45deg, #1a3b5a, #2a5b7a);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #4cc9f0;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        body.light-mode .ad-placeholder {
+            background: linear-gradient(45deg, #bbdefb, #90caf9);
+            color: #0d47a1;
+        }
+        
+        .input-card {
+            background: rgba(10, 30, 50, 0.6);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 168, 204, 0.4);
+        }
+        
+        body.light-mode .input-card {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(30, 136, 229, 0.4);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .input-group {
+            margin-bottom: 25px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4cc9f0;
+            font-size: 1.1rem;
+        }
+        
+        body.light-mode .input-group label {
+            color: #1976d2;
+        }
+        
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 14px;
+            background: rgba(0, 20, 40, 0.7);
+            border: 2px solid #0077b6;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            color: #e6f7ff;
+            outline: none;
+        }
+        
+        body.light-mode input {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #64b5f6;
+            color: #333;
+        }
+        
+        input:focus {
+            border-color: #00a8cc;
+            box-shadow: 0 0 0 3px rgba(0, 168, 204, 0.3);
+        }
+        
+        body.light-mode input:focus {
+            border-color: #2196f3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3);
+        }
+        
+        button {
+            background: linear-gradient(90deg, #0077b6, #00a8cc);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            font-size: 1.1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        body.light-mode button {
+            background: linear-gradient(90deg, #1976d2, #2196f3);
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 168, 204, 0.4);
+        }
+        
+        body.light-mode button:hover {
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(90deg, #1b3a4b, #2a5b7a);
+        }
+        
+        body.light-mode .btn-secondary {
+            background: linear-gradient(90deg, #64b5f6, #90caf9);
+        }
+        
+        .info-tooltip {
+            display: inline-block;
+            margin-left: 8px;
+            color: #00a8cc;
+            cursor: help;
+            position: relative;
+        }
+        
+        body.light-mode .info-tooltip {
+            color: #1976d2;
+        }
+        
+        .info-tooltip .tooltip-text {
+            visibility: hidden;
+            width: 300px;
+            background: rgba(0, 20, 40, 0.9);
+            color: #e6f7ff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.9rem;
+            font-weight: normal;
+            border: 1px solid #0077b6;
+        }
+        
+        body.light-mode .info-tooltip .tooltip-text {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            border: 1px solid #64b5f6;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .info-tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .results-section {
+            background: rgba(10, 40, 70, 0.6);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            display: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 168, 204, 0.4);
+        }
+        
+        body.light-mode .results-section {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(30, 136, 229, 0.4);
+        }
+        
+        .results-section h2 {
+            color: #4cc9f0;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.8rem;
+            border-bottom: 2px solid #00a8cc;
+            padding-bottom: 10px;
+        }
+        
+        body.light-mode .results-section h2 {
+            color: #1976d2;
+            border-bottom: 2px solid #2196f3;
+        }
+        
+        .result-card {
+            background: rgba(0, 30, 60, 0.7);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(0, 168, 204, 0.3);
+        }
+        
+        body.light-mode .result-card {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(30, 136, 229, 0.3);
+        }
+        
+        .result-title {
+            color: #00a8cc;
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        body.light-mode .result-title {
+            color: #1976d2;
+        }
+        
+        .prime-factors {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        .prime-factor {
+            background: linear-gradient(135deg, #0077b6, #00a8cc);
+            color: white;
+            font-size: 1.3rem;
+            font-weight: bold;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        body.light-mode .prime-factor {
+            background: linear-gradient(135deg, #1976d2, #2196f3);
+        }
+        
+        .exponent {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #ff9e00;
+            color: #1a2a6c;
+            font-size: 0.9rem;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .factor-container {
+            position: relative;
+        }
+        
+        .exponentiation {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ff9e00;
+            margin: 0 10px;
+        }
+        
+        .step-section {
+            background: rgba(0, 20, 40, 0.6);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        body.light-mode .step-section {
+            background: rgba(240, 248, 255, 0.9);
+        }
+        
+        .step-item {
+            padding: 10px;
+            border-bottom: 1px solid rgba(0, 168, 204, 0.3);
+            font-family: monospace;
+            font-size: 1.1rem;
+        }
+        
+        body.light-mode .step-item {
+            border-bottom: 1px solid rgba(30, 136, 229, 0.3);
+            color: #333;
+        }
+        
+        .step-item:last-child {
+            border-bottom: none;
+        }
+        
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #1b3a4b;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        body.light-mode .slider {
+            background-color: #bbdefb;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: #e6f7ff;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #00a8cc;
+        }
+        
+        body.light-mode input:checked + .slider {
+            background-color: #2196f3;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(30px);
+        }
+        
+        .export-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .export-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: rgba(0, 40, 80, 0.7);
+            color: #4cc9f0;
+            border: 2px solid #00a8cc;
+        }
+        
+        body.light-mode .export-btn {
+            background: rgba(230, 240, 255, 0.9);
+            color: #1976d2;
+            border: 2px solid #64b5f6;
+        }
+        
+        .export-btn:hover {
+            background: rgba(0, 80, 160, 0.7);
+        }
+        
+        body.light-mode .export-btn:hover {
+            background: rgba(200, 230, 255, 0.9);
+        }
+        
+        .chart-container {
+            height: 250px;
+            margin-top: 20px;
+        }
+        
+        .error-message {
+            background: rgba(231, 76, 60, 0.2);
+            color: #ff6b6b;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #e74c3c;
+            display: none;
+        }
+        
+        body.light-mode .error-message {
+            background: rgba(255, 235, 238, 0.9);
+            color: #d32f2f;
+            border-left: 4px solid #d32f2f;
+        }
+        
+        .disclaimer {
+            background: rgba(255, 193, 7, 0.1);
+            border-left: 4px solid #ff9e00;
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 25px;
+            font-size: 0.9rem;
+            color: #ffd166;
+        }
+        
+        body.light-mode .disclaimer {
+            background: rgba(255, 248, 225, 0.9);
+            border-left: 4px solid #ffb300;
+            color: #5d4037;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 25px;
+            color: #a6e3ff;
+            font-size: 0.9rem;
+            background: rgba(0, 20, 40, 0.7);
+            border-top: 1px solid rgba(0, 168, 204, 0.3);
+        }
+        
+        body.light-mode footer {
+            background: rgba(240, 248, 255, 0.9);
+            color: #546e7a;
+            border-top: 1px solid rgba(30, 136, 229, 0.3);
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .ad-section {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            
+            .ad-container {
+                flex: 1;
+                min-width: 250px;
+            }
+            
+            .export-options {
+                flex-direction: column;
+            }
+            
+            header h1 {
+                font-size: 2.2rem;
+            }
+            
+            .header-container {
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            header {
+                padding: 20px 15px;
+            }
+            
+            header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .ad-section {
+                flex-direction: column;
+            }
+            
+            .prime-factor {
+                width: 50px;
+                height: 50px;
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body class="dark-mode">
+    <div class="container">
+        <header>
+            <div class="header-container">
+                <div class="header-content">
+                    <h1><i class="fas fa-calculator"></i> Prime Factorization Calculator</h1>
+                    <p>Decompose any integer into its prime factors with our high-performance algorithm</p>
+                </div>
+                <div class="theme-toggle" id="theme-toggle">
+                    <i class="fas fa-sun" id="theme-icon"></i>
+                </div>
+            </div>
+        </header>
+        
+        <div class="main-content">
+            <section class="calculator-section">
+                <div class="input-card">
+                    <div class="input-group">
+                        <label for="number-input">
+                            Enter a number (up to 15 digits)
+                            <span class="info-tooltip">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltip-text">Enter a positive integer greater than 1. Maximum value: 999,999,999,999,999</span>
+                            </span>
+                        </label>
+                        <input type="text" id="number-input" placeholder="e.g., 123456789" maxlength="15">
+                    </div>
+                    
+                    <div class="toggle-container">
+                        <label for="step-toggle">Show step-by-step factorization:</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="step-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <button id="calculate-btn">
+                        <i class="fas fa-cogs"></i> Factorize Number
+                    </button>
+                    
+                    <div class="error-message" id="error-message"></div>
+                    
+                    <div class="disclaimer">
+                        <p><i class="fas fa-shield-alt"></i> <strong>Security Notice:</strong> All calculations are performed locally in your browser. No data is transmitted to any server.</p>
+                    </div>
+                </div>
+                
+                <div class="results-section" id="results-section">
+                    <h2><i class="fas fa-chart-bar"></i> Factorization Results</h2>
+                    
+                    <div class="result-card">
+                        <h3 class="result-title"><i class="fas fa-square-root-alt"></i> Prime Factors</h3>
+                        <div class="prime-factors" id="prime-factors-container">
+                            <!-- Prime factors will be inserted here -->
+                        </div>
+                        <p id="factorization-text" style="text-align: center; margin-top: 20px; font-size: 1.2rem;"></p>
+                    </div>
+                    
+                    <div class="result-card">
+                        <h3 class="result-title"><i class="fas fa-list-ol"></i> Factorization Steps</h3>
+                        <div class="step-section" id="step-section">
+                            <!-- Steps will be inserted here -->
+                        </div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <h3 class="result-title"><i class="fas fa-chart-pie"></i> Factor Distribution</h3>
+                        <div class="chart-container">
+                            <canvas id="factor-chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="export-options">
+                        <button class="export-btn" id="print-btn">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                        <button class="export-btn" id="pdf-btn">
+                            <i class="fas fa-file-pdf"></i> Save as PDF
+                        </button>
+                        <button class="export-btn" id="txt-btn">
+                            <i class="fas fa-file-alt"></i> Save as TXT
+                        </button>
+                        <button class="export-btn" id="csv-btn">
+                            <i class="fas fa-file-csv"></i> Save as CSV
+                        </button>
+                        <button class="export-btn" id="png-btn">
+                            <i class="fas fa-image"></i> Save as PNG
+                        </button>
+                        <button class="export-btn" id="share-btn">
+                            <i class="fas fa-share-alt"></i> Share Results
+                        </button>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="ad-section">
+                <div class="ad-container">
+                    <h3>Sponsored by Adsterra</h3>
+                    <div class="ad-placeholder">
+                        Adsterra Ad Banner (728x90)
+                    </div>
+                    <p>Premium ad for math tools</p>
+                </div>
+                
+                <div class="ad-container">
+                    <h3>Sponsored by Yllix</h3>
+                    <div class="ad-placeholder">
+                        Yllix Ad Space (300x250)
+                    </div>
+                    <p>Educational resources</p>
+                </div>
+                
+                <div class="ad-container">
+                    <h3>Recommended Tools</h3>
+                    <div class="ad-placeholder">
+                        Adsterra Ad Space (300x250)
+                    </div>
+                    <p>Math and calculator tools</p>
+                </div>
+            </section>
+        </div>
+        
+        <footer>
+            <p>&copy; 2023 Prime Factorization Calculator | All calculations are performed locally - no data is stored or transmitted</p>
+            <p>This tool follows mathematical principles but does not replace professional mathematical advice</p>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const calculateBtn = document.getElementById('calculate-btn');
+        const resultsSection = document.getElementById('results-section');
+        const errorMessage = document.getElementById('error-message');
+        const primeFactorsContainer = document.getElementById('prime-factors-container');
+        const stepSection = document.getElementById('step-section');
+        const factorizationText = document.getElementById('factorization-text');
+        const numberInput = document.getElementById('number-input');
+        const stepToggle = document.getElementById('step-toggle');
+        const printBtn = document.getElementById('print-btn');
+        const pdfBtn = document.getElementById('pdf-btn');
+        const txtBtn = document.getElementById('txt-btn');
+        const csvBtn = document.getElementById('csv-btn');
+        const pngBtn = document.getElementById('png-btn');
+        const shareBtn = document.getElementById('share-btn');
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const body = document.body;
+        
+        // Chart instance
+        let factorChart = null;
+        
+        // Event Listeners
+        calculateBtn.addEventListener('click', calculateFactorization);
+        printBtn.addEventListener('click', printResults);
+        pdfBtn.addEventListener('click', exportPDF);
+        txtBtn.addEventListener('click', exportTXT);
+        csvBtn.addEventListener('click', exportCSV);
+        pngBtn.addEventListener('click', exportPNG);
+        shareBtn.addEventListener('click', shareResults);
+        themeToggle.addEventListener('click', toggleTheme);
+        
+        // Initialize theme from localStorage
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark-mode';
+            body.className = savedTheme;
+            updateThemeIcon(savedTheme);
+        }
+        
+        // Toggle between light and dark mode
+        function toggleTheme() {
+            if (body.classList.contains('dark-mode')) {
+                body.classList.remove('dark-mode');
+                body.classList.add('light-mode');
+                localStorage.setItem('theme', 'light-mode');
+                updateThemeIcon('light-mode');
+            } else {
+                body.classList.remove('light-mode');
+                body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark-mode');
+                updateThemeIcon('dark-mode');
+            }
+        }
+        
+        // Update theme icon based on current mode
+        function updateThemeIcon(theme) {
+            if (theme === 'dark-mode') {
+                themeIcon.className = 'fas fa-sun';
+                themeIcon.title = 'Switch to Light Mode';
+            } else {
+                themeIcon.className = 'fas fa-moon';
+                themeIcon.title = 'Switch to Dark Mode';
+            }
+        }
+        
+        // Only allow numeric input
+        numberInput.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+        
+        // Main factorization function
+        function calculateFactorization() {
+            // Get input value
+            const inputValue = numberInput.value.trim();
+            
+            // Validate input
+            if (!inputValue) {
+                showError("Please enter a number");
+                return;
+            }
+            
+            const number = BigInt(inputValue);
+            
+            if (number <= 1) {
+                showError("Please enter a number greater than 1");
+                return;
+            }
+            
+            if (number > BigInt("999999999999999")) {
+                showError("Number exceeds 15-digit limit");
+                return;
+            }
+            
+            hideError();
+            
+            // Calculate prime factors
+            const { factors, steps } = factorize(number);
+            
+            // Display results
+            displayPrimeFactors(factors);
+            displayFactorizationSteps(steps);
+            createFactorChart(factors);
+            
+            // Show results section
+            resultsSection.style.display = 'block';
+            
+            // Scroll to results
+            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        // Factorization algorithm using trial division
+        function factorize(n) {
+            let num = n;
+            const factors = {};
+            const steps = [];
+            let divisor = BigInt(2);
+            
+            steps.push(`Starting factorization of ${n.toString()}...`);
+            
+            while (num > BigInt(1)) {
+                if (num % divisor === BigInt(0)) {
+                    factors[divisor] = (factors[divisor] || 0) + 1;
+                    steps.push(`${num.toString()} ÷ ${divisor.toString()} = ${(num / divisor).toString()} (Factor found: ${divisor})`);
+                    num = num / divisor;
+                } else {
+                    divisor += BigInt(1);
+                    // Optimization: Skip even numbers after 2
+                    if (divisor > BigInt(2)) divisor += BigInt(1);
+                    // Check if divisor squared is greater than num
+                    if (divisor * divisor > num) {
+                        if (num > BigInt(1)) {
+                            factors[num] = (factors[num] || 0) + 1;
+                            steps.push(`Final prime factor: ${num.toString()}`);
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            steps.push(`Factorization complete!`);
+            return { factors, steps };
+        }
+        
+        // Display prime factors visually
+        function displayPrimeFactors(factors) {
+            primeFactorsContainer.innerHTML = '';
+            let factorizationString = '';
+            
+            const factorEntries = Object.entries(factors);
+            
+            for (let i = 0; i < factorEntries.length; i++) {
+                const [factor, exponent] = factorEntries[i];
+                
+                const factorElement = document.createElement('div');
+                factorElement.className = 'factor-container';
+                
+                const primeElement = document.createElement('div');
+                primeElement.className = 'prime-factor';
+                primeElement.textContent = factor;
+                
+                if (exponent > 1) {
+                    const exponentElement = document.createElement('div');
+                    exponentElement.className = 'exponent';
+                    exponentElement.textContent = exponent;
+                    factorElement.appendChild(exponentElement);
+                }
+                
+                factorElement.appendChild(primeElement);
+                primeFactorsContainer.appendChild(factorElement);
+                
+                // Build factorization string
+                factorizationString += factor;
+                if (exponent > 1) factorizationString += `<sup>${exponent}</sup>`;
+                if (i < factorEntries.length - 1) factorizationString += ' × ';
+            }
+            
+            factorizationText.innerHTML = `Prime Factorization: ${factorizationString}`;
+        }
+        
+        // Display factorization steps
+        function displayFactorizationSteps(steps) {
+            stepSection.innerHTML = '';
+            
+            if (!stepToggle.checked) {
+                stepSection.innerHTML = '<p class="step-item">Step-by-step calculation is disabled. Enable the toggle above to view the factorization steps.</p>';
+                return;
+            }
+            
+            steps.forEach(step => {
+                const stepElement = document.createElement('div');
+                stepElement.className = 'step-item';
+                stepElement.textContent = step;
+                stepSection.appendChild(stepElement);
+            });
+        }
+        
+        // Create chart for factor distribution
+        function createFactorChart(factors) {
+            const ctx = document.getElementById('factor-chart').getContext('2d');
+            
+            // Destroy previous chart if exists
+            if (factorChart) {
+                factorChart.destroy();
+            }
+            
+            const labels = Object.keys(factors);
+            const data = Object.values(factors);
+            const backgroundColors = [
+                '#4cc9f0', '#4361ee', '#3a0ca3', '#7209b7', '#f72585',
+                '#4895ef', '#560bad', '#b5179e', '#f15bb5', '#fee440'
+            ];
+            
+            factorChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels.map(factor => `Prime ${factor}`),
+                    datasets: [{
+                        data: data,
+                        backgroundColor: backgroundColors,
+                        borderColor: '#03071e',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: body.classList.contains('light-mode') ? '#333' : '#e6f7ff',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Prime Factor Distribution',
+                            color: body.classList.contains('light-mode') ? '#1976d2' : '#4cc9f0',
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Exponent: ${context.parsed}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Error handling
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            resultsSection.style.display = 'none';
+        }
+        
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+        
+        // Export functions
+        function printResults() {
+            window.print();
+        }
+        
+        function exportPDF() {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            
+            // Add title
+            pdf.setFontSize(22);
+            pdf.setTextColor(0, 168, 204);
+            pdf.text('Prime Factorization Report', 105, 20, null, null, 'center');
+            
+            // Add content
+            pdf.setFontSize(12);
+            pdf.setTextColor(0, 0, 0);
+            
+            // Add factorization result
+            const inputValue = numberInput.value.trim();
+            pdf.text(`Number: ${inputValue}`, 20, 40);
+            pdf.text(`Prime Factors: ${factorizationText.textContent.replace('Prime Factorization: ', '')}`, 20, 50);
+            
+            // Add steps if visible
+            if (stepToggle.checked) {
+                pdf.text('Factorization Steps:', 20, 70);
+                const steps = Array.from(stepSection.querySelectorAll('.step-item')).map(el => el.textContent);
+                let yPos = 80;
+                
+                steps.forEach((step, index) => {
+                    if (yPos > 250) {
+                        pdf.addPage();
+                        yPos = 20;
+                    }
+                    pdf.text(`${index + 1}. ${step}`, 25, yPos);
+                    yPos += 10;
+                });
+            }
+            
+            // Save the PDF
+            pdf.save(`prime-factorization-${inputValue}.pdf`);
+        }
+        
+        function exportTXT() {
+            const inputValue = numberInput.value.trim();
+            let content = `Prime Factorization Report\n`;
+            content += `==========================\n\n`;
+            content += `Number: ${inputValue}\n`;
+            content += `Prime Factors: ${factorizationText.textContent.replace('Prime Factorization: ', '')}\n\n`;
+            
+            if (stepToggle.checked) {
+                content += `Factorization Steps:\n`;
+                const steps = Array.from(stepSection.querySelectorAll('.step-item')).map(el => el.textContent);
+                steps.forEach((step, index) => {
+                    content += `${index + 1}. ${step}\n`;
+                });
+            }
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `prime-factorization-${inputValue}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 0);
+        }
+        
+        function exportCSV() {
+            const inputValue = numberInput.value.trim();
+            let content = `Prime,Exponent\n`;
+            
+            const factorEntries = Object.entries(factorize(BigInt(inputValue)).factors);
+            factorEntries.forEach(([factor, exponent]) => {
+                content += `${factor},${exponent}\n`;
+            });
+            
+            const blob = new Blob([content], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `prime-factors-${inputValue}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 0);
+        }
+        
+        function exportPNG() {
+            html2canvas(document.getElementById('results-section')).then(canvas => {
+                const image = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.href = image;
+                link.download = 'prime-factorization-results.png';
+                link.click();
+            });
+        }
+        
+        function shareResults() {
+            const inputValue = numberInput.value.trim();
+            const factorization = factorizationText.textContent.replace('Prime Factorization: ', '');
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Prime Factorization Results',
+                    text: `Prime factors of ${inputValue}: ${factorization}`,
+                    url: window.location.href
+                }).catch(console.error);
+            } else {
+                // Fallback for browsers without Web Share API
+                const shareText = `Check out the prime factorization of ${inputValue}: ${factorization}\n${window.location.href}`;
+                prompt('Copy the results to share:', shareText);
+            }
+        }
+        
+        // Initialize with example value and theme
+        window.onload = function() {
+            numberInput.value = "123456789";
+            initTheme();
+        };
+    </script>
+</body>
+</html>

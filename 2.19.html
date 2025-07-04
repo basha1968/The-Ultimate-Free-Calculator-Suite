@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ovulation Calculator | Fertility Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            /* Light theme variables */
+            --primary-light: #8e44ad;
+            --secondary-light: #9b59b6;
+            --accent-light: #e84393;
+            --bg-light: #f8f9fa;
+            --card-light: #ffffff;
+            --text-light: #343a40;
+            --text-secondary-light: #6c757d;
+            --border-light: #e9ecef;
+            --success-light: #27ae60;
+            --warning-light: #f39c12;
+            --danger-light: #e74c3c;
+            --info-light: #3498db;
+            
+            /* Dark theme variables */
+            --primary-dark: #9b59b6;
+            --secondary-dark: #8e44ad;
+            --accent-dark: #fd79a8;
+            --bg-dark: #121212;
+            --card-dark: #1e1e1e;
+            --text-dark: #e0e0e0;
+            --text-secondary-dark: #b0b0b0;
+            --border-dark: #2d2d2d;
+            --success-dark: #2ecc71;
+            --warning-dark: #f1c40f;
+            --danger-dark: #e74c3c;
+            --info-dark: #3498db;
+            
+            /* Active theme variables - defaults to light */
+            --primary: var(--primary-light);
+            --secondary: var(--secondary-light);
+            --accent: var(--accent-light);
+            --bg: var(--bg-light);
+            --card: var(--card-light);
+            --text: var(--text-light);
+            --text-secondary: var(--text-secondary-light);
+            --border: var(--border-light);
+            --success: var(--success-light);
+            --warning: var(--warning-light);
+            --danger: var(--danger-light);
+            --info: var(--info-light);
+        }
+        
+        .dark-mode {
+            --primary: var(--primary-dark);
+            --secondary: var(--secondary-dark);
+            --accent: var(--accent-dark);
+            --bg: var(--bg-dark);
+            --card: var(--card-dark);
+            --text: var(--text-dark);
+            --text-secondary: var(--text-secondary-dark);
+            --border: var(--border-dark);
+            --success: var(--success-dark);
+            --warning: var(--warning-dark);
+            --danger: var(--danger-dark);
+            --info: var(--info-dark);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+        
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo-icon {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+        
+        .logo-text h1 {
+            font-size: 1.8rem;
+            color: var(--primary);
+        }
+        
+        .logo-text p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .theme-toggle {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text);
+        }
+        
+        .theme-toggle:hover {
+            background: var(--border);
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 30px;
+        }
+        
+        @media (max-width: 992px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .calculator-card {
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border);
+        }
+        
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary);
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        
+        .card-title i {
+            font-size: 1.8rem;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text);
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 1rem;
+            color: var(--text);
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 25px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(142, 68, 173, 0.25);
+        }
+        
+        .btn-secondary {
+            background: var(--text-secondary);
+        }
+        
+        .btn-accent {
+            background: var(--accent);
+        }
+        
+        .btn-info {
+            background: var(--info);
+        }
+        
+        .results-container {
+            display: none;
+            margin-top: 30px;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .result-card {
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .result-card.highlight {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-left: 4px solid var(--accent);
+        }
+        
+        .result-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            opacity: 0.8;
+        }
+        
+        .result-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+        
+        .calendar-view {
+            margin: 30px 0;
+        }
+        
+        .calendar-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--primary);
+            font-size: 1.3rem;
+        }
+        
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+        
+        .calendar-header {
+            text-align: center;
+            font-weight: 600;
+            padding: 10px 0;
+            color: var(--primary);
+        }
+        
+        .calendar-day {
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            background: var(--bg);
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        
+        .calendar-day:hover {
+            transform: scale(1.05);
+            z-index: 2;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .period {
+            background: #ff7979;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .fertile {
+            background: #ff9ff3;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .ovulation {
+            background: var(--accent);
+            color: white;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .today {
+            border: 3px solid var(--success);
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        
+        .export-section {
+            margin-top: 30px;
+            border-top: 1px solid var(--border);
+            padding-top: 20px;
+        }
+        
+        .export-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+        
+        .ad-container {
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        
+        .ad-title {
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+        
+        .ad-placeholder {
+            height: 250px;
+            background: var(--bg);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-bottom: 15px;
+            border: 1px dashed var(--border);
+        }
+        
+        .ad-placeholder.banner {
+            height: 100px;
+        }
+        
+        .privacy-section {
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            margin-top: 30px;
+            border: 1px solid var(--border);
+        }
+        
+        .privacy-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        
+        .privacy-content {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            margin-left: 5px;
+            cursor: help;
+            color: var(--primary);
+        }
+        
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 250px;
+            background: var(--card);
+            color: var(--text);
+            text-align: center;
+            border-radius: 8px;
+            padding: 15px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.9rem;
+            font-weight: normal;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border);
+        }
+        
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 30px 0;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 30px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .error-message {
+            color: var(--danger);
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .disclaimer {
+            background: rgba(255, 200, 18, 0.1);
+            border-left: 4px solid var(--warning);
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+        
+        .mode-indicator {
+            font-size: 0.8rem;
+            margin-top: 5px;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+        
+        .theme-icon {
+            transition: transform 0.5s ease;
+        }
+        
+        .dark-mode .fa-sun {
+            display: none;
+        }
+        
+        .dark-mode .fa-moon {
+            display: inline-block;
+        }
+        
+        .fa-moon {
+            display: none;
+        }
+        
+        .dark-mode .theme-icon {
+            transform: rotate(360deg);
+        }
+    </style>
+</head>
+<body class="light-mode">
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-venus"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>Ovulation Calculator</h1>
+                    <p>Track your fertility with precision</p>
+                </div>
+            </div>
+            <div class="theme-toggle" id="theme-toggle">
+                <i class="fas fa-sun theme-icon"></i>
+                <i class="fas fa-moon theme-icon"></i>
+                <span id="theme-text">Light Mode</span>
+            </div>
+        </header>
+        
+        <div class="main-content">
+            <div class="content-column">
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-calculator"></i> Calculate Your Fertility Window</h2>
+                    
+                    <div class="disclaimer">
+                        <p><strong>Medical Disclaimer:</strong> This calculator provides estimates based on statistical models. Individual results may vary. Consult your healthcare provider for medical advice.</p>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="last-period">First day of last menstrual period</label>
+                        <input type="date" id="last-period" required>
+                        <div class="error-message" id="date-error">Please select a valid date</div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="cycle-length">
+                            Average cycle length (days) 
+                            <span class="tooltip">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltip-text">Number of days from day 1 of your period to day 1 of your next period</span>
+                            </span>
+                        </label>
+                        <input type="number" id="cycle-length" min="20" max="45" value="28" required>
+                        <div class="error-message" id="cycle-error">Please enter a value between 20-45 days</div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="luteal-phase">
+                            Luteal phase length (days) 
+                            <span class="tooltip">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltip-text">Length of time between ovulation and your next period (usually 10-16 days)</span>
+                            </span>
+                        </label>
+                        <input type="number" id="luteal-phase" min="10" max="16" value="14">
+                    </div>
+                    
+                    <button class="btn" id="calculate-btn">
+                        <i class="fas fa-calculator"></i> Calculate Fertility Window
+                    </button>
+                    
+                    <div class="results-container" id="results-container">
+                        <h2 class="card-title"><i class="fas fa-chart-line"></i> Your Fertility Analysis</h2>
+                        
+                        <div class="results-grid">
+                            <div class="result-card">
+                                <div class="result-label">Next Period Start</div>
+                                <div class="result-value" id="next-period">-</div>
+                            </div>
+                            
+                            <div class="result-card">
+                                <div class="result-label">Fertility Window</div>
+                                <div class="result-value" id="fertile-window">-</div>
+                            </div>
+                            
+                            <div class="result-card highlight">
+                                <div class="result-label">Most Likely Ovulation Date</div>
+                                <div class="result-value" id="ovulation-date">-</div>
+                            </div>
+                            
+                            <div class="result-card">
+                                <div class="result-label">Pregnancy Test Day</div>
+                                <div class="result-value" id="test-day">-</div>
+                            </div>
+                        </div>
+                        
+                        <div class="calendar-view">
+                            <h3 class="calendar-title">Your Fertility Calendar</h3>
+                            <div class="calendar" id="calendar-container">
+                                <!-- Calendar will be generated here -->
+                            </div>
+                            
+                            <div class="legend">
+                                <div class="legend-item">
+                                    <div class="legend-color" style="background: var(--bg); border: 1px solid var(--border);"></div>
+                                    <span>Normal Days</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color" style="background: #ff7979;"></div>
+                                    <span>Period</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color" style="background: #ff9ff3;"></div>
+                                    <span>Fertile Window</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color" style="background: var(--accent);"></div>
+                                    <span>Ovulation Day</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color" style="border: 3px solid var(--success);"></div>
+                                    <span>Today</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="export-section">
+                            <h3 class="card-title"><i class="fas fa-share-alt"></i> Export & Share Results</h3>
+                            <div class="export-options">
+                                <button class="btn btn-secondary" id="print-btn">
+                                    <i class="fas fa-print"></i> Print
+                                </button>
+                                <button class="btn btn-secondary" id="pdf-btn">
+                                    <i class="fas fa-file-pdf"></i> Save as PDF
+                                </button>
+                                <button class="btn btn-accent" id="share-btn">
+                                    <i class="fas fa-share"></i> Share Results
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="privacy-section">
+                    <div class="privacy-header">
+                        <i class="fas fa-shield-alt"></i>
+                        <h3>Security & Privacy</h3>
+                    </div>
+                    <div class="privacy-content">
+                        <p>Your privacy is important to us. All data you enter is processed locally on your device and never stored on our servers. We use industry-standard encryption for any data transmission.</p>
+                        <p>This tool is GDPR and CCPA compliant. We only use essential cookies for functionality. Third-party advertising partners may use cookies with your consent.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="ad-container">
+                    <div class="ad-title">Sponsored by our partners</div>
+                    <div class="ad-placeholder">
+                        <div>Adsterra Ad Zone (300x250)</div>
+                    </div>
+                    <small>Advertisement • Your support helps keep this tool free</small>
+                </div>
+                
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-heartbeat"></i> Fertility Tips</h2>
+                    <ul style="padding-left: 20px; margin-top: 15px; color: var(--text);">
+                        <li style="margin-bottom: 10px;">Track your basal body temperature daily for more accuracy</li>
+                        <li style="margin-bottom: 10px;">The fertile window is typically 5 days before ovulation and the day of ovulation</li>
+                        <li style="margin-bottom: 10px;">Stress, illness, and travel can affect your cycle</li>
+                        <li style="margin-bottom: 10px;">Regular exercise and balanced diet support reproductive health</li>
+                        <li>Consider ovulation predictor kits for more precise tracking</li>
+                    </ul>
+                </div>
+                
+                <div class="ad-container">
+                    <div class="ad-title">Recommended for you</div>
+                    <div class="ad-placeholder banner">
+                        <div>Yllix Ad Banner (300x100)</div>
+                    </div>
+                    <small>Advertisement • Helps support this service</small>
+                </div>
+                
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-history"></i> Cycle History</h2>
+                    <p style="color: var(--text-secondary); text-align: center; margin-top: 15px;">Log in to save and track your cycle history across devices</p>
+                    <button class="btn btn-info" style="width: 100%; margin-top: 15px;">
+                        <i class="fas fa-user"></i> Create Account
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>© 2023 Ovulation Calculator Pro | This tool provides estimates only and is not medical advice</p>
+            <p>All calculations are performed locally in your browser - no personal data is collected or stored</p>
+            <div class="mode-indicator">Current mode: <span id="current-mode">Light</span></div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize the calculator
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set today's date as default for last period
+            const today = new Date();
+            document.getElementById('last-period').valueAsDate = today;
+            
+            // Set up event listeners
+            document.getElementById('calculate-btn').addEventListener('click', calculateOvulation);
+            document.getElementById('print-btn').addEventListener('click', printResults);
+            document.getElementById('pdf-btn').addEventListener('click', saveAsPDF);
+            document.getElementById('share-btn').addEventListener('click', shareResults);
+            
+            // Set up theme toggle
+            const themeToggle = document.getElementById('theme-toggle');
+            themeToggle.addEventListener('click', toggleTheme);
+            
+            // Check for saved theme preference
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                document.getElementById('theme-text').textContent = 'Dark Mode';
+                document.getElementById('current-mode').textContent = 'Dark';
+            }
+        });
+        
+        // Toggle between dark and light mode
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            
+            if (isDarkMode) {
+                document.getElementById('theme-text').textContent = 'Dark Mode';
+                document.getElementById('current-mode').textContent = 'Dark';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.getElementById('theme-text').textContent = 'Light Mode';
+                document.getElementById('current-mode').textContent = 'Light';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+        
+        // Main calculation function
+        function calculateOvulation() {
+            // Reset errors
+            document.getElementById('date-error').style.display = 'none';
+            document.getElementById('cycle-error').style.display = 'none';
+            
+            // Get input values
+            const lastPeriod = new Date(document.getElementById('last-period').value);
+            const cycleLength = parseInt(document.getElementById('cycle-length').value);
+            const lutealPhase = parseInt(document.getElementById('luteal-phase').value) || 14;
+            
+            // Validate inputs
+            if (isNaN(lastPeriod.getTime())) {
+                document.getElementById('date-error').style.display = 'block';
+                return;
+            }
+            
+            if (isNaN(cycleLength) || cycleLength < 20 || cycleLength > 45) {
+                document.getElementById('cycle-error').style.display = 'block';
+                return;
+            }
+            
+            // Calculate key dates
+            const ovulationDate = new Date(lastPeriod);
+            ovulationDate.setDate(ovulationDate.getDate() + (cycleLength - lutealPhase));
+            
+            const fertileStart = new Date(ovulationDate);
+            fertileStart.setDate(fertileStart.getDate() - 5);
+            
+            const fertileEnd = new Date(ovulationDate);
+            fertileEnd.setDate(fertileEnd.getDate() + 1);
+            
+            const nextPeriod = new Date(lastPeriod);
+            nextPeriod.setDate(nextPeriod.getDate() + cycleLength);
+            
+            const testDay = new Date(nextPeriod);
+            testDay.setDate(testDay.getDate() + 1);
+            
+            // Display results
+            document.getElementById('next-period').textContent = formatDate(nextPeriod);
+            document.getElementById('fertile-window').textContent = `${formatDate(fertileStart)} - ${formatDate(fertileEnd)}`;
+            document.getElementById('ovulation-date').textContent = formatDate(ovulationDate);
+            document.getElementById('test-day').textContent = formatDate(testDay);
+            
+            // Generate calendar
+            generateCalendar(lastPeriod, nextPeriod, fertileStart, fertileEnd, ovulationDate);
+            
+            // Show results
+            document.getElementById('results-container').style.display = 'block';
+            
+            // Scroll to results
+            document.getElementById('results-container').scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
+        
+        // Format date as Month Day, Year
+        function formatDate(date) {
+            const options = { month: 'short', day: 'numeric', year: 'numeric' };
+            return date.toLocaleDateString('en-US', options);
+        }
+        
+        // Generate calendar view
+        function generateCalendar(lastPeriod, nextPeriod, fertileStart, fertileEnd, ovulationDate) {
+            const calendarContainer = document.getElementById('calendar-container');
+            calendarContainer.innerHTML = '';
+            
+            // Create calendar header
+            const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            daysOfWeek.forEach(day => {
+                const headerDay = document.createElement('div');
+                headerDay.className = 'calendar-header';
+                headerDay.textContent = day;
+                calendarContainer.appendChild(headerDay);
+            });
+            
+            // Set calendar start date (one week before last period)
+            const startDate = new Date(lastPeriod);
+            startDate.setDate(startDate.getDate() - 7);
+            
+            // Set calendar end date (one week after next period)
+            const endDate = new Date(nextPeriod);
+            endDate.setDate(endDate.getDate() + 7);
+            
+            // Today's date for highlighting
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            // Generate calendar days
+            const tempDate = new Date(startDate);
+            while (tempDate <= endDate) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day';
+                dayElement.textContent = tempDate.getDate();
+                
+                // Highlight today
+                if (tempDate.getTime() === today.getTime()) {
+                    dayElement.classList.add('today');
+                }
+                
+                // Highlight period days
+                if (tempDate >= lastPeriod && tempDate < new Date(lastPeriod.getTime() + 5 * 24 * 60 * 60 * 1000)) {
+                    dayElement.classList.add('period');
+                }
+                
+                // Highlight next period
+                if (tempDate >= nextPeriod && tempDate < new Date(nextPeriod.getTime() + 5 * 24 * 60 * 60 * 1000)) {
+                    dayElement.classList.add('period');
+                }
+                
+                // Highlight fertile window
+                if (tempDate >= fertileStart && tempDate <= fertileEnd) {
+                    dayElement.classList.add('fertile');
+                }
+                
+                // Highlight ovulation day
+                if (tempDate.getTime() === ovulationDate.getTime()) {
+                    dayElement.classList.add('ovulation');
+                }
+                
+                // Add tooltip for details
+                dayElement.title = getDayDescription(tempDate, lastPeriod, nextPeriod, fertileStart, fertileEnd, ovulationDate);
+                
+                calendarContainer.appendChild(dayElement);
+                
+                // Move to next day
+                tempDate.setDate(tempDate.getDate() + 1);
+            }
+        }
+        
+        // Get description for calendar day tooltip
+        function getDayDescription(date, lastPeriod, nextPeriod, fertileStart, fertileEnd, ovulationDate) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (date.getTime() === today.getTime()) {
+                return "Today";
+            }
+            if (date >= lastPeriod && date < new Date(lastPeriod.getTime() + 5 * 24 * 60 * 60 * 1000)) {
+                return "Menstrual period";
+            }
+            if (date >= nextPeriod && date < new Date(nextPeriod.getTime() + 5 * 24 * 60 * 60 * 1000)) {
+                return "Expected period";
+            }
+            if (date.getTime() === ovulationDate.getTime()) {
+                return "Most likely ovulation day (highest fertility)";
+            }
+            if (date >= fertileStart && date <= fertileEnd) {
+                if (date < ovulationDate) {
+                    return `Fertile window (${Math.floor((ovulationDate - date) / (1000 * 60 * 60 * 24))} days before ovulation)`;
+                } else if (date > ovulationDate) {
+                    return "Fertile window (day after ovulation)";
+                }
+            }
+            return "";
+        }
+        
+        // Print results function
+        function printResults() {
+            window.print();
+        }
+        
+        // Save as PDF function
+        function saveAsPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(22);
+            doc.setTextColor(142, 68, 173);
+            doc.text("Ovulation Calendar Report", 105, 20, null, null, 'center');
+            
+            // Add subtitle
+            doc.setFontSize(12);
+            doc.setTextColor(128, 128, 128);
+            doc.text("Generated on: " + new Date().toLocaleDateString(), 105, 28, null, null, 'center');
+            
+            // Add results
+            doc.setFontSize(14);
+            doc.setTextColor(0, 0, 0);
+            doc.text("Your Fertility Analysis", 20, 40);
+            
+            doc.setFontSize(12);
+            doc.text(`Next Period Start: ${document.getElementById('next-period').textContent}`, 20, 50);
+            doc.text(`Fertility Window: ${document.getElementById('fertile-window').textContent}`, 20, 58);
+            doc.text(`Most Likely Ovulation Date: ${document.getElementById('ovulation-date').textContent}`, 20, 66);
+            doc.text(`Pregnancy Test Day: ${document.getElementById('test-day').textContent}`, 20, 74);
+            
+            // Add disclaimer
+            doc.setFontSize(10);
+            doc.setTextColor(128, 128, 128);
+            doc.text("Disclaimer: This report provides estimates only and is not medical advice. Results are based on the information provided and may vary for individuals.", 20, 90, {maxWidth: 170});
+            
+            // Save the PDF
+            doc.save('ovulation-calendar-report.pdf');
+        }
+        
+        // Share results function
+        function shareResults() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'My Ovulation Calendar',
+                    text: 'Check out my fertility window calculated with Ovulation Calculator Pro',
+                    url: window.location.href
+                })
+                .then(() => console.log('Successful share'))
+                .catch(error => console.log('Error sharing:', error));
+            } else {
+                alert('Web Share API not supported in your browser. You can manually copy the URL to share.');
+            }
+        }
+    </script>
+</body>
+</html>

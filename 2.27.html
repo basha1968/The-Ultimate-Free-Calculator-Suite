@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureRandom Pro - Advanced Random Number Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --accent: #4cc9f0;
+            --text: #333;
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --border: #e0e0e0;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --success: #2ec4b6;
+            --warning: #ff9f1c;
+            --danger: #e71d36;
+        }
+
+        .dark-mode {
+            --primary: #4895ef;
+            --secondary: #3f37c9;
+            --accent: #4cc9f0;
+            --text: #f8f9fa;
+            --bg: #121212;
+            --card-bg: #1e1e1e;
+            --border: #333;
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .logo i {
+            font-size: 2.5rem;
+            color: var(--primary);
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--accent);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        @media (min-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 5px 15px var(--shadow);
+            padding: 25px;
+            border: 1px solid var(--border);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: var(--bg);
+            color: var(--text);
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        .error {
+            color: var(--danger);
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 30px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(30px);
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background-color: var(--secondary);
+        }
+
+        .btn-secondary {
+            background-color: var(--accent);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--secondary);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+        }
+
+        .result-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 25px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+
+        .result-label {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .statistics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 5px 0;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .monetization-card, .export-card {
+            grid-column: 1;
+        }
+
+        @media (min-width: 768px) {
+            .monetization-card, .export-card {
+                grid-column: span 2;
+            }
+        }
+
+        .ad-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .ad-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .ad-box {
+            background-color: var(--bg);
+            border: 1px dashed var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .ad-label {
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+
+        .ad-placeholder {
+            padding: 15px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 8px;
+            margin: 10px 0;
+            width: 100%;
+        }
+
+        .ad-code {
+            font-size: 0.9rem;
+            color: var(--text);
+            background-color: var(--card-bg);
+            padding: 10px;
+            border-radius: 5px;
+            width: 100%;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .export-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 3px 10px var(--shadow);
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            border-top: 1px solid var(--border);
+            margin-top: 30px;
+            color: var(--text);
+            font-size: 0.9rem;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .ad-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--primary);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+            animation: fadeInOut 3s ease-in-out;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translate(-50%, -20px); }
+            10% { opacity: 1; transform: translate(-50%, 0); }
+            90% { opacity: 1; transform: translate(-50%, 0); }
+            100% { opacity: 0; transform: translate(-50%, -20px); }
+        }
+
+        .param-group {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 8px;
+        }
+
+        .dist-params {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            margin-left: 5px;
+            color: var(--accent);
+            cursor: help;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--card-bg);
+            color: var(--text);
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 10px var(--shadow);
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .security-badge {
+            display: inline-block;
+            background: var(--success);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="notification" id="notification">Result copied to clipboard!</div>
+        
+        <header>
+            <div class="logo">
+                <i class="fas fa-random"></i>
+                <div>
+                    <h1>SecureRandom Pro</h1>
+                    <p class="subtitle">Advanced, cryptographically secure random number generator</p>
+                </div>
+            </div>
+        </header>
+
+        <div class="theme-toggle" id="themeToggle">
+            <i class="fas fa-moon"></i>
+        </div>
+
+        <div class="main-content">
+            <div class="card generator-card">
+                <h2 class="section-title"><i class="fas fa-dice"></i> Generator Settings</h2>
+                
+                <div class="input-group">
+                    <label for="minValue">Minimum Value</label>
+                    <input type="number" id="minValue" value="1" step="0.01">
+                    <div class="error" id="errorMin">Please enter a valid number</div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="maxValue">Maximum Value</label>
+                    <input type="number" id="maxValue" value="100" step="0.01">
+                    <div class="error" id="errorMax">Please enter a valid number</div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="count">Number of Results</label>
+                    <input type="number" id="count" value="10" min="1" max="10000">
+                    <div class="error" id="errorCount">Please enter a number between 1 and 10000</div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="distribution">Distribution Type</label>
+                    <select id="distribution">
+                        <option value="uniform">Uniform Distribution</option>
+                        <option value="normal">Normal (Gaussian) Distribution</option>
+                        <option value="exponential">Exponential Distribution</option>
+                        <option value="binomial">Binomial Distribution</option>
+                    </select>
+                </div>
+                
+                <div id="normalParams" class="param-group">
+                    <div class="dist-params">
+                        <div>
+                            <label for="mean">Mean (μ)</label>
+                            <input type="number" id="mean" value="50" step="0.01">
+                        </div>
+                        <div>
+                            <label for="stddev">Standard Deviation (σ)</label>
+                            <input type="number" id="stddev" value="10" step="0.01" min="0.01">
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="exponentialParams" class="param-group">
+                    <div class="dist-params">
+                        <div>
+                            <label for="lambda">Lambda (λ)</label>
+                            <input type="number" id="lambda" value="0.5" step="0.01" min="0.01">
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="binomialParams" class="param-group">
+                    <div class="dist-params">
+                        <div>
+                            <label for="trials">Number of Trials</label>
+                            <input type="number" id="trials" value="10" min="1">
+                        </div>
+                        <div>
+                            <label for="probability">Probability of Success</label>
+                            <input type="number" id="probability" value="0.5" step="0.01" min="0.01" max="0.99">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="toggle-group">
+                    <label for="cryptoMode">Cryptographic Security</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="cryptoMode" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <span id="cryptoLabel">Enabled <span class="security-badge">Secure</span></span>
+                </div>
+                
+                <button class="btn" id="generateBtn" style="width: 100%;">
+                    <i class="fas fa-bolt"></i> Generate Random Numbers
+                </button>
+            </div>
+            
+            <div class="card results-card">
+                <h2 class="section-title"><i class="fas fa-chart-bar"></i> Results & Statistics</h2>
+                
+                <div class="result-label">
+                    <span>Generated Numbers</span>
+                    <button class="btn btn-secondary" id="copyBtn">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                </div>
+                <div class="result-box" id="resultBox">
+                    <!-- Results will appear here -->
+                </div>
+                
+                <div class="statistics">
+                    <div class="stat-card">
+                        <div class="stat-label">Minimum</div>
+                        <div class="stat-value" id="statMin">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Maximum</div>
+                        <div class="stat-value" id="statMax">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Mean</div>
+                        <div class="stat-value" id="statMean">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Standard Deviation</div>
+                        <div class="stat-value" id="statStdDev">0</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card monetization-card">
+                <h2 class="section-title"><i class="fas fa-ad"></i> Monetization Integration</h2>
+                <div class="ad-toggle">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="adToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <span>Show Ads</span>
+                </div>
+                <div class="ad-container" id="adContainer">
+                    <div class="ad-box">
+                        <div class="ad-label">Adsterra Banner Ad</div>
+                        <div class="ad-placeholder">
+                            <i class="fas fa-ad" style="font-size: 3rem; color: var(--accent);"></i>
+                            <p>Advertisement Space (728×90)</p>
+                        </div>
+                        <div class="ad-code">Adsterra Code: &lt;script&gt;...&lt;/script&gt;</div>
+                    </div>
+                    <div class="ad-box">
+                        <div class="ad-label">Yllix Interstitial Ad</div>
+                        <div class="ad-placeholder">
+                            <i class="fas fa-rectangle-ad" style="font-size: 3rem; color: var(--accent);"></i>
+                            <p>Advertisement Space (300×600)</p>
+                        </div>
+                        <div class="ad-code">Yllix Code: &lt;script&gt;...&lt;/script&gt;</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card export-card">
+                <h2 class="section-title"><i class="fas fa-share-alt"></i> Export & Sharing</h2>
+                <div class="export-options">
+                    <button class="btn" id="printBtn">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+                    <button class="btn btn-secondary" id="txtBtn">
+                        <i class="fas fa-file-alt"></i> TXT
+                    </button>
+                    <button class="btn" id="csvBtn">
+                        <i class="fas fa-file-csv"></i> CSV
+                    </button>
+                    <button class="btn btn-secondary" id="jsonBtn">
+                        <i class="fas fa-code"></i> JSON
+                    </button>
+                    <button class="btn" id="pdfBtn">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </button>
+                    <button class="btn btn-secondary" id="shareBtn">
+                        <i class="fas fa-share"></i> Share
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <div class="footer-links">
+                <a href="#"><i class="fas fa-lock"></i> Privacy Policy</a>
+                <a href="#"><i class="fas fa-file-contract"></i> Terms of Service</a>
+                <a href="#"><i class="fas fa-envelope"></i> Contact Us</a>
+            </div>
+            <p>© 2023 SecureRandom Pro. All rights reserved.</p>
+            <p><strong>Disclaimer:</strong> This tool provides cryptographically secure random numbers when security mode is enabled. For non-cryptographic mode, the generated numbers are suitable for statistical purposes but not for security-sensitive applications. All processing occurs client-side - no data is stored or transmitted.</p>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const minValueInput = document.getElementById('minValue');
+        const maxValueInput = document.getElementById('maxValue');
+        const countInput = document.getElementById('count');
+        const distributionSelect = document.getElementById('distribution');
+        const generateBtn = document.getElementById('generateBtn');
+        const resultBox = document.getElementById('resultBox');
+        const errorMin = document.getElementById('errorMin');
+        const errorMax = document.getElementById('errorMax');
+        const errorCount = document.getElementById('errorCount');
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = themeToggle.querySelector('i');
+        const adToggle = document.getElementById('adToggle');
+        const adContainer = document.getElementById('adContainer');
+        const printBtn = document.getElementById('printBtn');
+        const pdfBtn = document.getElementById('pdfBtn');
+        const txtBtn = document.getElementById('txtBtn');
+        const csvBtn = document.getElementById('csvBtn');
+        const jsonBtn = document.getElementById('jsonBtn');
+        const shareBtn = document.getElementById('shareBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const notification = document.getElementById('notification');
+        const cryptoMode = document.getElementById('cryptoMode');
+        const cryptoLabel = document.getElementById('cryptoLabel');
+        
+        // Distribution parameters
+        const normalParams = document.getElementById('normalParams');
+        const exponentialParams = document.getElementById('exponentialParams');
+        const binomialParams = document.getElementById('binomialParams');
+        
+        // Statistics elements
+        const statMin = document.getElementById('statMin');
+        const statMax = document.getElementById('statMax');
+        const statMean = document.getElementById('statMean');
+        const statStdDev = document.getElementById('statStdDev');
+        
+        // Initialize variables
+        let generatedNumbers = [];
+        let isSecureMode = true;
+
+        // Event Listeners
+        generateBtn.addEventListener('click', generateNumbers);
+        distributionSelect.addEventListener('change', toggleDistributionParams);
+        themeToggle.addEventListener('click', toggleTheme);
+        adToggle.addEventListener('change', toggleAds);
+        printBtn.addEventListener('click', printResults);
+        pdfBtn.addEventListener('click', saveAsPDF);
+        txtBtn.addEventListener('click', saveAsTXT);
+        csvBtn.addEventListener('click', saveAsCSV);
+        jsonBtn.addEventListener('click', saveAsJSON);
+        shareBtn.addEventListener('click', shareResults);
+        copyBtn.addEventListener('click', copyResults);
+        cryptoMode.addEventListener('change', toggleCryptoMode);
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleDistributionParams();
+        });
+
+        // Toggle distribution parameters based on selection
+        function toggleDistributionParams() {
+            // Hide all parameter groups
+            normalParams.style.display = 'none';
+            exponentialParams.style.display = 'none';
+            binomialParams.style.display = 'none';
+            
+            // Show the selected one
+            const distribution = distributionSelect.value;
+            if (distribution === 'normal') {
+                normalParams.style.display = 'block';
+            } else if (distribution === 'exponential') {
+                exponentialParams.style.display = 'block';
+            } else if (distribution === 'binomial') {
+                binomialParams.style.display = 'block';
+            }
+        }
+        
+        // Toggle cryptographic mode
+        function toggleCryptoMode() {
+            isSecureMode = cryptoMode.checked;
+            cryptoLabel.innerHTML = isSecureMode ? 
+                'Enabled <span class="security-badge">Secure</span>' : 
+                'Disabled <span class="security-badge">Statistical Only</span>';
+        }
+
+        // Validate inputs
+        function validateInputs() {
+            const min = parseFloat(minValueInput.value);
+            const max = parseFloat(maxValueInput.value);
+            const count = parseInt(countInput.value);
+            let valid = true;
+            
+            // Reset errors
+            errorMin.style.display = 'none';
+            errorMax.style.display = 'none';
+            errorCount.style.display = 'none';
+            
+            // Validate min and max
+            if (isNaN(min)) {
+                errorMin.textContent = 'Please enter a valid number';
+                errorMin.style.display = 'block';
+                valid = false;
+            }
+            
+            if (isNaN(max)) {
+                errorMax.textContent = 'Please enter a valid number';
+                errorMax.style.display = 'block';
+                valid = false;
+            }
+            
+            if (min >= max) {
+                errorMin.textContent = 'Min must be less than max';
+                errorMin.style.display = 'block';
+                valid = false;
+            }
+            
+            // Validate count
+            if (isNaN(count) || count < 1 || count > 10000) {
+                errorCount.textContent = 'Please enter a number between 1 and 10000';
+                errorCount.style.display = 'block';
+                valid = false;
+            }
+            
+            return valid;
+        }
+
+        // Generate random numbers
+        function generateNumbers() {
+            if (!validateInputs()) return;
+            
+            const min = parseFloat(minValueInput.value);
+            const max = parseFloat(maxValueInput.value);
+            const count = parseInt(countInput.value);
+            const distribution = distributionSelect.value;
+            
+            generatedNumbers = [];
+            
+            // Generate based on distribution
+            if (distribution === 'uniform') {
+                generatedNumbers = generateUniform(min, max, count);
+            } else if (distribution === 'normal') {
+                const mean = parseFloat(document.getElementById('mean').value);
+                const stddev = parseFloat(document.getElementById('stddev').value);
+                generatedNumbers = generateNormal(min, max, mean, stddev, count);
+            } else if (distribution === 'exponential') {
+                const lambda = parseFloat(document.getElementById('lambda').value);
+                generatedNumbers = generateExponential(min, max, lambda, count);
+            } else if (distribution === 'binomial') {
+                const trials = parseInt(document.getElementById('trials').value);
+                const probability = parseFloat(document.getElementById('probability').value);
+                generatedNumbers = generateBinomial(min, max, trials, probability, count);
+            }
+            
+            // Format and display results
+            displayResults();
+            
+            // Calculate and display statistics
+            calculateStatistics();
+        }
+        
+        // Generate uniform distribution numbers
+        function generateUniform(min, max, count) {
+            const numbers = [];
+            const range = max - min;
+            
+            for (let i = 0; i < count; i++) {
+                let rand;
+                if (isSecureMode) {
+                    // Cryptographically secure random number
+                    const array = new Uint32Array(1);
+                    window.crypto.getRandomValues(array);
+                    rand = array[0] / 4294967296; // Convert to [0, 1)
+                } else {
+                    // Standard Math.random()
+                    rand = Math.random();
+                }
+                numbers.push(min + rand * range);
+            }
+            
+            return numbers;
+        }
+        
+        // Generate normal distribution numbers (using Box-Muller transform)
+        function generateNormal(min, max, mean, stddev, count) {
+            const numbers = [];
+            
+            for (let i = 0; i < count; i++) {
+                let u1, u2;
+                
+                if (isSecureMode) {
+                    const array = new Uint32Array(2);
+                    window.crypto.getRandomValues(array);
+                    u1 = array[0] / 4294967296;
+                    u2 = array[1] / 4294967296;
+                } else {
+                    u1 = Math.random();
+                    u2 = Math.random();
+                }
+                
+                // Box-Muller transform
+                const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+                let num = mean + z0 * stddev;
+                
+                // Clamp to min/max range
+                num = Math.max(min, Math.min(max, num));
+                numbers.push(num);
+            }
+            
+            return numbers;
+        }
+        
+        // Generate exponential distribution numbers
+        function generateExponential(min, max, lambda, count) {
+            const numbers = [];
+            
+            for (let i = 0; i < count; i++) {
+                let rand;
+                if (isSecureMode) {
+                    const array = new Uint32Array(1);
+                    window.crypto.getRandomValues(array);
+                    rand = array[0] / 4294967296;
+                } else {
+                    rand = Math.random();
+                }
+                
+                // Exponential distribution formula
+                let num = -Math.log(1 - rand) / lambda;
+                
+                // Clamp to min/max range
+                num = Math.max(min, Math.min(max, num));
+                numbers.push(num);
+            }
+            
+            return numbers;
+        }
+        
+        // Generate binomial distribution numbers
+        function generateBinomial(min, max, trials, probability, count) {
+            const numbers = [];
+            
+            for (let i = 0; i < count; i++) {
+                let successes = 0;
+                
+                for (let j = 0; j < trials; j++) {
+                    let rand;
+                    if (isSecureMode) {
+                        const array = new Uint32Array(1);
+                        window.crypto.getRandomValues(array);
+                        rand = array[0] / 4294967296;
+                    } else {
+                        rand = Math.random();
+                    }
+                    
+                    if (rand < probability) {
+                        successes++;
+                    }
+                }
+                
+                // Scale to fit within min/max
+                const scaled = min + (successes / trials) * (max - min);
+                numbers.push(scaled);
+            }
+            
+            return numbers;
+        }
+        
+        // Display results in the result box
+        function displayResults() {
+            resultBox.textContent = generatedNumbers.map(num => num.toFixed(4)).join(', ');
+        }
+        
+        // Calculate statistics
+        function calculateStatistics() {
+            if (generatedNumbers.length === 0) return;
+            
+            // Basic stats
+            const min = Math.min(...generatedNumbers);
+            const max = Math.max(...generatedNumbers);
+            const sum = generatedNumbers.reduce((a, b) => a + b, 0);
+            const mean = sum / generatedNumbers.length;
+            
+            // Standard deviation
+            const variance = generatedNumbers.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / generatedNumbers.length;
+            const stddev = Math.sqrt(variance);
+            
+            // Update display
+            statMin.textContent = min.toFixed(4);
+            statMax.textContent = max.toFixed(4);
+            statMean.textContent = mean.toFixed(4);
+            statStdDev.textContent = stddev.toFixed(4);
+        }
+
+        // Toggle between dark and light mode
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            if (document.body.classList.contains('dark-mode')) {
+                themeIcon.className = 'fas fa-sun';
+            } else {
+                themeIcon.className = 'fas fa-moon';
+            }
+        }
+
+        // Toggle ad visibility
+        function toggleAds() {
+            adContainer.style.display = adToggle.checked ? 'grid' : 'none';
+        }
+
+        // Print results
+        function printResults() {
+            showNotification('Opening print dialog...');
+            setTimeout(() => {
+                window.print();
+            }, 500);
+        }
+
+        // Save as PDF
+        function saveAsPDF() {
+            if (generatedNumbers.length === 0) {
+                showNotification('No results to export');
+                return;
+            }
+            
+            showNotification('Generating PDF...');
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(18);
+            doc.text('SecureRandom Pro Report', 105, 15, null, null, 'center');
+            
+            doc.setFontSize(12);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, 105, 25, null, null, 'center');
+            
+            doc.setFontSize(14);
+            doc.text('Parameters:', 20, 40);
+            doc.text(`Min: ${minValueInput.value}`, 20, 50);
+            doc.text(`Max: ${maxValueInput.value}`, 20, 60);
+            doc.text(`Count: ${countInput.value}`, 20, 70);
+            doc.text(`Distribution: ${distributionSelect.options[distributionSelect.selectedIndex].text}`, 20, 80);
+            doc.text(`Security: ${isSecureMode ? 'Cryptographic' : 'Standard'}`, 20, 90);
+            
+            doc.setFontSize(14);
+            doc.text('Generated Numbers:', 20, 110);
+            
+            let y = 120;
+            const numbersPerLine = 5;
+            for (let i = 0; i < generatedNumbers.length; i += numbersPerLine) {
+                const line = generatedNumbers.slice(i, i + numbersPerLine).map(num => num.toFixed(4)).join(', ');
+                doc.text(line, 20, y);
+                y += 10;
+            }
+            
+            doc.save('random-numbers-report.pdf');
+        }
+
+        // Save as TXT
+        function saveAsTXT() {
+            if (generatedNumbers.length === 0) {
+                showNotification('No results to export');
+                return;
+            }
+            
+            showNotification('Generating TXT file...');
+            const content = generatedNumbers.map(num => num.toFixed(4)).join('\n');
+            const blob = new Blob([content], {type: 'text/plain'});
+            const link = document.createElement('a');
+            link.download = 'random-numbers.txt';
+            link.href = URL.createObjectURL(blob);
+            link.click();
+        }
+        
+        // Save as CSV
+        function saveAsCSV() {
+            if (generatedNumbers.length === 0) {
+                showNotification('No results to export');
+                return;
+            }
+            
+            showNotification('Generating CSV file...');
+            const content = 'Index,Value\n' + generatedNumbers.map((num, i) => `${i + 1},${num.toFixed(4)}`).join('\n');
+            const blob = new Blob([content], {type: 'text/csv'});
+            const link = document.createElement('a');
+            link.download = 'random-numbers.csv';
+            link.href = URL.createObjectURL(blob);
+            link.click();
+        }
+        
+        // Save as JSON
+        function saveAsJSON() {
+            if (generatedNumbers.length === 0) {
+                showNotification('No results to export');
+                return;
+            }
+            
+            showNotification('Generating JSON file...');
+            const data = {
+                parameters: {
+                    min: parseFloat(minValueInput.value),
+                    max: parseFloat(maxValueInput.value),
+                    count: parseInt(countInput.value),
+                    distribution: distributionSelect.value,
+                    security: isSecureMode ? 'cryptographic' : 'standard',
+                    timestamp: new Date().toISOString()
+                },
+                numbers: generatedNumbers
+            };
+            
+            const content = JSON.stringify(data, null, 2);
+            const blob = new Blob([content], {type: 'application/json'});
+            const link = document.createElement('a');
+            link.download = 'random-numbers.json';
+            link.href = URL.createObjectURL(blob);
+            link.click();
+        }
+
+        // Share results
+        function shareResults() {
+            if (generatedNumbers.length === 0) {
+                showNotification('No results to share');
+                return;
+            }
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Random Numbers from SecureRandom Pro',
+                    text: `Check out these random numbers: ${generatedNumbers.slice(0, 5).map(num => num.toFixed(2)).join(', ')}...`,
+                    url: window.location.href
+                }).catch(console.error);
+            } else {
+                // Fallback for browsers that don't support Web Share API
+                const textArea = document.createElement('textarea');
+                textArea.value = `Random Numbers:\n${generatedNumbers.map(num => num.toFixed(4)).join('\n')}\n\nGenerated by SecureRandom Pro: ${window.location.href}`;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                showNotification('Results copied to clipboard!');
+            }
+        }
+        
+        // Copy results to clipboard
+        function copyResults() {
+            if (generatedNumbers.length === 0) {
+                showNotification('No results to copy');
+                return;
+            }
+            
+            const text = generatedNumbers.map(num => num.toFixed(4)).join(', ');
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    showNotification('Results copied to clipboard!');
+                })
+                .catch(err => {
+                    console.error('Failed to copy: ', err);
+                    showNotification('Failed to copy results');
+                });
+        }
+
+        // Show notification
+        function showNotification(message) {
+            notification.textContent = message;
+            notification.style.display = 'block';
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

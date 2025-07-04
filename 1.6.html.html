@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Auto Lease Calculator</title>
+    <!-- 
+        Content-Security-Policy: For production deployment, configure this via your web server (e.g., Nginx, Apache) 
+        for best practice. If using a meta tag, ensure all CDN domains (Chart.js, jsPDF, SheetJS) are whitelisted.
+        For this single-file, self-contained solution, inline scripts/styles require 'unsafe-inline'.
+        Example for meta (adjust for your specific ad networks if they inject more):
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com cdn.jsdelivr.net cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src * data:; media-src *; connect-src *;">
+    -->
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        /* CSS Variables for theming */
+        :root {
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --danger: #e74c3c;
+            --dark-heading-bg: #2c3e50; /* Used for table headers in light mode */
+            --light-bg-secondary: #ecf0f1; /* Used for ad containers, tab non-active */
+            --text-color: #333;
+            --bg-color: #f9f9f9;
+            --card-bg: #fff;
+            --border-color: #ddd;
+            --chart-color-depreciation: #3498db; /* Blue */
+            --chart-color-finance: #e74c3c; /* Red */
+            --chart-color-tax: #f39c12; /* Orange */
+            --chart-color-fees: #9b59b6; /* Purple */
+        }
+        
+        /* Dark Theme Variables */
+        [data-theme="dark"] {
+            --primary: #2980b9;
+            --secondary: #27ae60;
+            --danger: #c0392b;
+            --dark-heading-bg: #34495e; /* Adjusted for dark mode table headers */
+            --light-bg-secondary: #4a667e; /* Adjusted for dark mode ad containers/tabs */
+            --text-color: #ecf0f1;
+            --bg-color: #2c3e50;
+            --card-bg: #34495e;
+            --border-color: #555;
+            --chart-color-depreciation: #4a90e2; 
+            --chart-color-finance: #ff6b6b;
+            --chart-color-tax: #f9c26b;
+            --chart-color-fees: #c792ea;
+        }
+        
+        /* Global Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            transition: all 0.3s ease; /* Smooth transition for theme change */
+        }
+        
+        .calculator-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .calculator-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .input-section, .results-section {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1, h2, h3 {
+            color: var(--primary);
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            transition: border-color 0.3s, background-color 0.3s, color 0.3s;
+        }
+        
+        /* Buttons */
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--secondary);
+        }
+        
+        /* Ad Containers */
+        .ad-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--light-bg-secondary);
+            border-radius: 4px;
+            text-align: center;
+            min-height: 90px;
+            color: var(--text-color);
+            display: flex; /* For centering text */
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            border: 1px dashed var(--border-color);
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .summary-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .summary-card h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: var(--text-color); /* Use theme variable */
+        }
+        
+        .summary-card p {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: var(--primary); /* Use primary color */
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            color: var(--text-color);
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background-color: var(--dark-heading-bg); /* Use dark card bg for table headers */
+            color: white;
+        }
+        
+        tr:hover {
+            background-color: rgba(0,0,0,0.05); /* Light mode hover */
+        }
+        [data-theme="dark"] tr:hover {
+            background-color: rgba(255,255,255,0.05); /* Dark mode hover */
+        }
+        
+        /* Tooltips */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            color: var(--primary);
+            font-size: 0.9em;
+            margin-left: 5px;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 250px; /* Wider for more text */
+            background-color: var(--dark-heading-bg);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+            font-weight: normal;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Export & Share Options */
+        .export-options, .social-sharing {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .social-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 12px;
+            border-radius: 4px;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            transition: opacity 0.3s;
+        }
+        .social-btn:hover {
+            opacity: 0.8;
+        }
+        
+        .email { background-color: #777; }
+        .whatsapp { background-color: #25D366; }
+        .linkedin { background-color: #0077B5; }
+        .twitter { background-color: #1DA1F2; }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: var(--light-bg-secondary);
+            border: none;
+            border-radius: 4px 4px 0 0;
+            margin-right: 5px;
+            color: var(--text-color);
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background-color: var(--primary);
+            color: white;
+            border-bottom: 2px solid var(--primary);
+        }
+        .tab:not(.active):hover {
+            background-color: rgba(var(--primary), 0.1); /* Subtle hover for non-active */
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: absolute; 
+            top: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 1.2em;
+            width: 40px; /* Fixed width/height for round button */
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        /* Error Messages */
+        .error-message {
+            color: var(--danger);
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        /* Print Specific Styles */
+        @media print {
+            .no-print, .ad-container, .theme-toggle {
+                display: none !important;
+            }
+            body {
+                background: none;
+                padding: 0;
+                color: black; /* Force black text for print */
+            }
+            .calculator-container {
+                display: block;
+            }
+            .input-section {
+                display: none; /* Hide input section in print */
+            }
+            .results-section {
+                box-shadow: none; /* Remove shadow for print */
+                padding: 0;
+            }
+            table {
+                font-size: 10px; /* Smaller font for print tables */
+                color: black;
+            }
+            th, td {
+                padding: 8px;
+                border-color: #ccc; /* Lighter border for print */
+            }
+            th {
+                background-color: #eee !important; /* Lighter header for print */
+                color: black !important;
+            }
+            tr:hover {
+                background-color: transparent !important;
+            }
+            .chart-container canvas {
+                max-width: 500px; /* Constrain chart size for print */
+                max-height: 300px;
+                display: block; /* Ensure chart is block level for print */
+                margin: 0 auto;
+            }
+            .summary-card h3, .summary-card p {
+                color: black !important; /* Ensure readable colors in print */
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle no-print" id="themeToggle">🌓</button>
+    
+    <h1>Advanced Auto Lease Calculator</h1>
+    
+    <div class="calculator-container">
+        <div class="input-section">
+            <h2>Lease Details</h2>
+            
+            <div class="input-group">
+                <label for="vehiclePrice">
+                    Vehicle Price (MSRP) ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">Manufacturer's Suggested Retail Price of the vehicle.</span>
+                    </span>
+                </label>
+                <input type="number" id="vehiclePrice" min="1000" step="500" value="35000">
+                <div class="error-message" id="vehiclePrice-error"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="downPayment">
+                    Down Payment ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">Amount paid upfront at the beginning of the lease. Reduces the capitalized cost.</span>
+                    </span>
+                </label>
+                <input type="number" id="downPayment" min="0" step="100" value="2000">
+                <div class="error-message" id="downPayment-error"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="leaseTerm">
+                    Lease Term (Months)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">The total duration of the lease agreement in months.</span>
+                    </span>
+                </label>
+                <input type="number" id="leaseTerm" min="12" max="60" step="12" value="36">
+                <div class="error-message" id="leaseTerm-error"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="moneyFactor">
+                    Money Factor (e.g., 0.0025)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">The lease equivalent of an interest rate. Multiply by 2400 to get the annual interest rate (e.g., 0.0025 * 2400 = 6%).</span>
+                    </span>
+                </label>
+                <input type="number" id="moneyFactor" min="0" max="0.02" step="0.00001" value="0.0021">
+                <div class="error-message" id="moneyFactor-error"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="residualValue">
+                    Residual Value (%)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">The estimated value of the vehicle at the end of the lease term, as a percentage of the MSRP.</span>
+                    </span>
+                </label>
+                <input type="number" id="residualValue" min="10" max="90" step="1" value="55">
+                <div class="error-message" id="residualValue-error"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="salesTaxRate">
+                    Sales Tax Rate (%)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">The sales tax percentage applied to the monthly payment (common in many states).</span>
+                    </span>
+                </label>
+                <input type="number" id="salesTaxRate" min="0" max="20" step="0.1" value="7">
+                <div class="error-message" id="salesTaxRate-error"></div>
+            </div>
+
+            <div class="input-group">
+                <label for="upfrontFees">
+                    Upfront Fees ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">Acquisition fees, documentation fees, etc. These are added to the capitalized cost.</span>
+                    </span>
+                </label>
+                <input type="number" id="upfrontFees" min="0" step="10" value="795">
+                <div class="error-message" id="upfrontFees-error"></div>
+            </div>
+
+            <div class="input-group">
+                <label for="periodicFees">
+                    Other Monthly Fees ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">Monthly service fees, tag fees, etc., added to your payment.</span>
+                    </span>
+                </label>
+                <input type="number" id="periodicFees" min="0" step="1" value="15">
+                <div class="error-message" id="periodicFees-error"></div>
+            </div>
+
+            <div class="input-group">
+                <label for="optionalAddOns">
+                    Optional Add-ons (e.g., extended warranty) ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">Any additional items financed into the lease (e.g., extended warranty, maintenance plans).</span>
+                    </span>
+                </label>
+                <input type="number" id="optionalAddOns" min="0" step="100" value="0">
+                <div class="error-message" id="optionalAddOns-error"></div>
+            </div>
+            
+            <button id="calculateBtn">Calculate Lease Payment</button>
+        </div>
+        
+        <div class="results-section">
+            <h2>Lease Summary</h2>
+            
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <h3>Monthly Lease Payment</h3>
+                    <p id="monthlyLeasePayment">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Lease Cost</h3>
+                    <p id="totalLeaseCost">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Depreciation</h3>
+                    <p id="totalDepreciation">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Finance Charges</h3>
+                    <p id="totalFinanceCharges">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Sales Tax</h3>
+                    <p id="totalSalesTax">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Fees</h3>
+                    <p id="totalFees">$0.00</p>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="leaseCostChart"></canvas>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab active" data-tab="schedule">Lease Schedule</button>
+                <button class="tab" data-tab="summary">Cost Breakdown</button>
+            </div>
+            
+            <div class="tab-content active" id="schedule-tab">
+                <h3>Detailed Lease Schedule</h3>
+                <div style="overflow-x: auto;">
+                    <table id="scheduleTable">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Payment Date</th>
+                                <th>Monthly Depr.</th>
+                                <th>Monthly Finance</th>
+                                <th>Monthly Tax</th>
+                                <th>Monthly Fees</th>
+                                <th>Total Payment</th>
+                                <th>Remaining Book Value</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scheduleBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="summary-tab">
+                <h3>Lease Cost Breakdown (Table)</h3>
+                <div style="overflow-x: auto;">
+                    <table id="costBreakdownTable">
+                        <thead>
+                            <tr>
+                                <th>Cost Category</th>
+                                <th>Amount</th>
+                                <th>Percentage of Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="costBreakdownBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="ad-container">
+                Advertisement Space (Adsterra Header/Footer)
+                <small>This space is reserved for ad network code (e.g., 728x90).</small>
+            </div>
+
+            <div class="export-options no-print">
+                <button id="printBtn">Print Summary</button>
+                <button id="pdfBtn">Save as PDF</button>
+                <button id="excelBtn">Save as Excel</button>
+                <button id="csvBtn">Save as CSV</button>
+                <button id="txtBtn">Save as TXT</button>
+            </div>
+            
+            <div class="social-sharing no-print">
+                <a href="#" class="social-btn email" id="emailShare">Email</a>
+                <a href="#" class="social-btn whatsapp" id="whatsappShare">WhatsApp</a>
+                <a href="#" class="social-btn linkedin" id="linkedinShare">LinkedIn</a>
+                <a href="#" class="social-btn twitter" id="twitterShare">Twitter</a>
+            </div>
+
+            <div class="ad-container" style="height: 250px;">
+                Advertisement Space (Yllix Sidebar/Floating)
+                <small>This space is reserved for ad network code (e.g., 300x250).</small>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables to store current calculation results for export and chart
+        let currentLeaseResults = {};
+        let leaseSchedule = [];
+        let leaseCostChartInstance = null; // To manage Chart.js instance
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up theme toggle
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+            
+            // Set up tab functionality
+            setupTabs();
+            
+            // Set up event listeners for calculation and exports
+            document.getElementById('calculateBtn').addEventListener('click', calculateLease);
+            document.getElementById('printBtn').addEventListener('click', printSummary);
+            document.getElementById('pdfBtn').addEventListener('click', exportToPDF);
+            document.getElementById('excelBtn').addEventListener('click', exportToExcel);
+            document.getElementById('csvBtn').addEventListener('click', exportToCSV);
+            document.getElementById('txtBtn').addEventListener('click', exportToTXT);
+            
+            // Initial calculation on page load
+            calculateLease();
+            setupSocialSharing(); // Needs initial data
+        });
+        
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            }
+            // Update chart colors on theme change
+            if (leaseCostChartInstance) {
+                const rootStyle = getComputedStyle(document.documentElement);
+                leaseCostChartInstance.data.datasets[0].backgroundColor = [
+                    rootStyle.getPropertyValue('--chart-color-depreciation'),
+                    rootStyle.getPropertyValue('--chart-color-finance'),
+                    rootStyle.getPropertyValue('--chart-color-tax'),
+                    rootStyle.getPropertyValue('--chart-color-fees')
+                ];
+                leaseCostChartInstance.options.plugins.legend.labels.color = rootStyle.getPropertyValue('--text-color');
+                leaseCostChartInstance.options.plugins.title.color = rootStyle.getPropertyValue('--text-color');
+                leaseCostChartInstance.update();
+            }
+        }
+        
+        function setupTabs() {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                });
+            });
+        }
+
+        // --- Error Handling Utilities ---
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+        }
+
+        function showError(elementId, message) {
+            document.getElementById(elementId + '-error').textContent = message;
+        }
+        
+        // --- Core Lease Calculation Logic ---
+        function calculateLease() {
+            clearErrors(); // Clear previous errors
+
+            // Get input values
+            const vehiclePrice = parseFloat(document.getElementById('vehiclePrice').value);
+            const downPayment = parseFloat(document.getElementById('downPayment').value);
+            const leaseTerm = parseInt(document.getElementById('leaseTerm').value); // in months
+            let moneyFactor = parseFloat(document.getElementById('moneyFactor').value);
+            let residualValuePercent = parseFloat(document.getElementById('residualValue').value);
+            let salesTaxRate = parseFloat(document.getElementById('salesTaxRate').value);
+            const upfrontFees = parseFloat(document.getElementById('upfrontFees').value);
+            const periodicFees = parseFloat(document.getElementById('periodicFees').value);
+            const optionalAddOns = parseFloat(document.getElementById('optionalAddOns').value);
+            
+            // Convert percentages/money factor to decimals
+            residualValuePercent /= 100;
+            salesTaxRate /= 100;
+            
+            // --- Input Validation ---
+            let isValid = true;
+            if (isNaN(vehiclePrice) || vehiclePrice <= 0) {
+                showError('vehiclePrice', 'Must be a positive number.'); isValid = false;
+            }
+            if (isNaN(downPayment) || downPayment < 0 || downPayment >= vehiclePrice) {
+                showError('downPayment', 'Must be non-negative and less than vehicle price.'); isValid = false;
+            }
+            if (isNaN(leaseTerm) || leaseTerm < 12 || leaseTerm > 60 || leaseTerm % 1 !== 0) {
+                showError('leaseTerm', 'Must be a whole number between 12 and 60 months.'); isValid = false;
+            }
+            if (isNaN(moneyFactor) || moneyFactor < 0) {
+                showError('moneyFactor', 'Must be a non-negative number.'); isValid = false;
+            }
+            if (isNaN(residualValuePercent) || residualValuePercent <= 0 || residualValuePercent >= 1) {
+                showError('residualValue', 'Must be between 0% and 100%.'); isValid = false;
+            }
+            if (isNaN(salesTaxRate) || salesTaxRate < 0 || salesTaxRate > 1) {
+                showError('salesTaxRate', 'Must be between 0% and 100%.'); isValid = false;
+            }
+            if (isNaN(upfrontFees) || upfrontFees < 0) {
+                showError('upfrontFees', 'Must be a non-negative number.'); isValid = false;
+            }
+            if (isNaN(periodicFees) || periodicFees < 0) {
+                showError('periodicFees', 'Must be a non-negative number.'); isValid = false;
+            }
+            if (isNaN(optionalAddOns) || optionalAddOns < 0) {
+                showError('optionalAddOns', 'Must be a non-negative number.'); isValid = false;
+            }
+            
+            if (!isValid) {
+                document.getElementById('results-section').style.display = 'none';
+                return;
+            }
+
+            // --- Lease Calculation Steps ---
+            const residualValueDollar = vehiclePrice * residualValuePercent;
+            const grossCapitalizedCost = vehiclePrice + optionalAddOns + upfrontFees;
+            const adjustedCapitalizedCost = grossCapitalizedCost - downPayment;
+
+            const totalDepreciationAmount = adjustedCapitalizedCost - residualValueDollar;
+            const monthlyDepreciation = totalDepreciationAmount / leaseTerm;
+
+            const monthlyFinanceCharge = (adjustedCapitalizedCost + residualValueDollar) * moneyFactor;
+            
+            const baseMonthlyPayment = monthlyDepreciation + monthlyFinanceCharge;
+            const monthlySalesTax = baseMonthlyPayment * salesTaxRate;
+            
+            const totalMonthlyPayment = baseMonthlyPayment + monthlySalesTax + periodicFees;
+
+            // --- Calculate Totals ---
+            const totalDepreciation = monthlyDepreciation * leaseTerm;
+            const totalFinanceCharges = monthlyFinanceCharge * leaseTerm;
+            const totalSalesTax = monthlySalesTax * leaseTerm;
+            const totalOtherPeriodicFees = periodicFees * leaseTerm;
+            const totalFees = upfrontFees + totalOtherPeriodicFees; // Sum of all fees
+            const totalLeaseCost = (totalMonthlyPayment * leaseTerm) + downPayment; // Sum of all payments plus down payment
+
+            // Store results in global object for export
+            currentLeaseResults = {
+                vehiclePrice: vehiclePrice,
+                downPayment: downPayment,
+                leaseTerm: leaseTerm,
+                moneyFactor: moneyFactor,
+                residualValuePercent: residualValuePercent,
+                residualValueDollar: residualValueDollar,
+                salesTaxRate: salesTaxRate,
+                upfrontFees: upfrontFees,
+                periodicFees: periodicFees,
+                optionalAddOns: optionalAddOns,
+                
+                grossCapitalizedCost: grossCapitalizedCost,
+                adjustedCapitalizedCost: adjustedCapitalizedCost,
+                totalDepreciationAmount: totalDepreciationAmount,
+                monthlyDepreciation: monthlyDepreciation,
+                monthlyFinanceCharge: monthlyFinanceCharge,
+                baseMonthlyPayment: baseMonthlyPayment,
+                monthlySalesTax: monthlySalesTax,
+                totalMonthlyPayment: totalMonthlyPayment,
+
+                totalDepreciation: totalDepreciation,
+                totalFinanceCharges: totalFinanceCharges,
+                totalSalesTax: totalSalesTax,
+                totalFees: totalFees,
+                totalLeaseCost: totalLeaseCost
+            };
+
+            // Generate detailed lease schedule
+            leaseSchedule = generateLeaseSchedule(currentLeaseResults);
+            
+            // Update UI
+            updateSummaryCards(currentLeaseResults);
+            updateChart(currentLeaseResults);
+            displayScheduleTable(leaseSchedule);
+            displayCostBreakdownTable(currentLeaseResults);
+            setupSocialSharing(); // Update sharing links with new data
+
+            document.getElementById('results-section').style.display = 'block';
+        }
+
+        // --- Lease Schedule Generation ---
+        function generateLeaseSchedule(results) {
+            const schedule = [];
+            const { 
+                adjustedCapitalizedCost, residualValueDollar, monthlyDepreciation, monthlyFinanceCharge, 
+                monthlySalesTax, periodicFees, totalMonthlyPayment, leaseTerm 
+            } = results;
+
+            let currentBookValue = adjustedCapitalizedCost;
+            const startDate = new Date(); // Using current date as a baseline
+
+            for (let i = 1; i <= leaseTerm; i++) {
+                currentBookValue -= monthlyDepreciation; // Book value reduces by depreciation
+                
+                const paymentDate = new Date(startDate);
+                paymentDate.setMonth(startDate.getMonth() + i); // Increment month
+
+                schedule.push({
+                    month: i,
+                    paymentDate: paymentDate,
+                    monthlyDepreciation: monthlyDepreciation,
+                    monthlyFinanceCharge: monthlyFinanceCharge,
+                    monthlySalesTax: monthlySalesTax,
+                    monthlyFees: periodicFees,
+                    totalPayment: totalMonthlyPayment,
+                    remainingBookValue: Math.max(residualValueDollar, currentBookValue) // Ensure it doesn't go below residual
+                });
+            }
+            return schedule;
+        }
+        
+        // --- UI Update Functions ---
+        function updateSummaryCards(results) {
+            document.getElementById('monthlyLeasePayment').textContent = formatCurrency(results.totalMonthlyPayment);
+            document.getElementById('totalLeaseCost').textContent = formatCurrency(results.totalLeaseCost);
+            document.getElementById('totalDepreciation').textContent = formatCurrency(results.totalDepreciation);
+            document.getElementById('totalFinanceCharges').textContent = formatCurrency(results.totalFinanceCharges);
+            document.getElementById('totalSalesTax').textContent = formatCurrency(results.totalSalesTax);
+            document.getElementById('totalFees').textContent = formatCurrency(results.totalFees);
+        }
+        
+        function updateChart(results) {
+            const ctx = document.getElementById('leaseCostChart').getContext('2d');
+            
+            // Destroy previous chart if exists
+            if (leaseCostChartInstance) {
+                leaseCostChartInstance.destroy();
+            }
+
+            if (results.totalLeaseCost <= 0) { // No meaningful data to chart
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                return;
+            }
+
+            const labels = ['Depreciation', 'Finance Charges', 'Sales Tax', 'Total Fees (Upfront + Periodic)'];
+            const data = [results.totalDepreciation, results.totalFinanceCharges, results.totalSalesTax, results.totalFees];
+
+            // Filter out zero values for chart if they are not relevant for visual representation
+            const filteredLabels = [];
+            const filteredData = [];
+            const backgroundColors = [];
+            const rootStyle = getComputedStyle(document.documentElement);
+            const chartColors = [
+                rootStyle.getPropertyValue('--chart-color-depreciation'),
+                rootStyle.getPropertyValue('--chart-color-finance'),
+                rootStyle.getPropertyValue('--chart-color-tax'),
+                rootStyle.getPropertyValue('--chart-color-fees')
+            ];
+
+            for(let i = 0; i < data.length; i++) {
+                if (Math.abs(data[i]) > 0.01) { // Filter out very small values (near zero)
+                    filteredData.push(data[i]);
+                    filteredLabels.push(labels[i]);
+                    backgroundColors.push(chartColors[i]);
+                }
+            }
+
+            leaseCostChartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: filteredLabels,
+                    datasets: [{
+                        data: filteredData,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: rootStyle.getPropertyValue('--text-color')
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                    return `${context.label}: ${formatCurrency(value)} (${percentage}%)`;
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Total Lease Cost Breakdown',
+                            color: rootStyle.getPropertyValue('--text-color')
+                        }
+                    }
+                }
+            });
+        }
+
+        function displayScheduleTable(schedule) {
+            const tableBody = document.getElementById('scheduleBody');
+            tableBody.innerHTML = '';
+            
+            // Only show every 12th payment if there are many, plus first and last
+            const showAllThreshold = 12 * 3; // Show all if 3 years or less (36 months)
+            const showAll = schedule.length <= showAllThreshold;
+            
+            schedule.forEach((period, i) => {
+                const isEndOfYear = (i + 1) % 12 === 0;
+                const isFirstOrLast = i === 0 || i === schedule.length - 1;
+
+                if (showAll || isEndOfYear || isFirstOrLast) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${period.month}</td>
+                        <td>${period.paymentDate.toLocaleDateString()}</td>
+                        <td>${formatCurrency(period.monthlyDepreciation)}</td>
+                        <td>${formatCurrency(period.monthlyFinanceCharge)}</td>
+                        <td>${formatCurrency(period.monthlySalesTax)}</td>
+                        <td>${formatCurrency(period.monthlyFees)}</td>
+                        <td>${formatCurrency(period.totalPayment)}</td>
+                        <td>${formatCurrency(period.remainingBookValue)}</td>
+                    `;
+                    tableBody.appendChild(row);
+                }
+            });
+        }
+
+        function displayCostBreakdownTable(results) {
+            const tableBody = document.getElementById('costBreakdownBody');
+            tableBody.innerHTML = '';
+
+            const data = [
+                { category: 'Down Payment', amount: results.downPayment },
+                { category: 'Total Depreciation', amount: results.totalDepreciation },
+                { category: 'Total Finance Charges', amount: results.totalFinanceCharges },
+                { category: 'Total Sales Tax', amount: results.totalSalesTax },
+                { category: 'Upfront Fees', amount: results.upfrontFees },
+                { category: 'Other Periodic Fees', amount: results.periodicFees * results.leaseTerm },
+                { category: 'Optional Add-ons', amount: results.optionalAddOns }
+            ];
+
+            const total = data.reduce((sum, item) => sum + item.amount, 0);
+
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                const percentage = total > 0 ? (item.amount / total * 100).toFixed(2) : 0;
+                row.innerHTML = `
+                    <td>${item.category}</td>
+                    <td>${formatCurrency(item.amount)}</td>
+                    <td>${percentage}%</td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            // Add a total row
+            const totalRow = document.createElement('tr');
+            totalRow.innerHTML = `
+                <td><strong>Total Lease Cost</strong></td>
+                <td><strong>${formatCurrency(results.totalLeaseCost)}</strong></td>
+                <td><strong>100.00%</strong></td>
+            `;
+            tableBody.appendChild(totalRow);
+        }
+        
+        // --- Formatting Utilities ---
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        }
+
+        function formatPercentage(value) {
+            return value.toFixed(2) + '%';
+        }
+        
+        // --- Export Functions ---
+        function printSummary() {
+            window.print();
+        }
+        
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'pt', 'letter');
+            let currentY = 40;
+            const margin = 40;
+            const pageWidth = doc.internal.pageSize.width;
+
+            doc.setFontSize(18);
+            doc.text('Auto Lease Report', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 30;
+
+            doc.setFontSize(12);
+            doc.text(`Calculated On: ${new Date().toLocaleDateString()}`, margin, currentY);
+            currentY += 20;
+
+            // Input Details
+            const inputDetails = [
+                ["Vehicle Price (MSRP)", formatCurrency(currentLeaseResults.vehiclePrice)],
+                ["Down Payment", formatCurrency(currentLeaseResults.downPayment)],
+                ["Lease Term (Months)", currentLeaseResults.leaseTerm],
+                ["Money Factor", currentLeaseResults.moneyFactor.toFixed(5)],
+                ["Residual Value", formatPercentage(currentLeaseResults.residualValuePercent * 100)],
+                ["Sales Tax Rate", formatPercentage(currentLeaseResults.salesTaxRate * 100)],
+                ["Upfront Fees", formatCurrency(currentLeaseResults.upfrontFees)],
+                ["Other Monthly Fees", formatCurrency(currentLeaseResults.periodicFees)],
+                ["Optional Add-ons", formatCurrency(currentLeaseResults.optionalAddOns)]
+            ];
+            doc.autoTable({
+                startY: currentY,
+                head: [['Parameter', 'Value']],
+                body: inputDetails,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                margin: { left: margin, right: margin }
+            });
+            currentY = doc.autoTable.previous.finalY + 20;
+
+            // Summary Results
+            const summaryResults = [
+                ["Monthly Lease Payment", document.getElementById('monthlyLeasePayment').textContent],
+                ["Total Lease Cost", document.getElementById('totalLeaseCost').textContent],
+                ["Total Depreciation", document.getElementById('totalDepreciation').textContent],
+                ["Total Finance Charges", document.getElementById('totalFinanceCharges').textContent],
+                ["Total Sales Tax", document.getElementById('totalSalesTax').textContent],
+                ["Total Fees", document.getElementById('totalFees').textContent]
+            ];
+            doc.autoTable({
+                startY: currentY,
+                head: [['Result', 'Value']],
+                body: summaryResults,
+                theme: 'grid',
+                headStyles: { fillColor: [46, 204, 113], textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                margin: { left: margin, right: margin }
+            });
+            currentY = doc.autoTable.previous.finalY + 30;
+
+            // Detailed Schedule
+            doc.addPage();
+            currentY = margin;
+            doc.setFontSize(16);
+            doc.text('Detailed Lease Schedule', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 20;
+
+            const scheduleTableData = leaseSchedule.map(p => [
+                p.month,
+                p.paymentDate.toLocaleDateString('en-US'),
+                p.monthlyDepreciation.toFixed(2),
+                p.monthlyFinanceCharge.toFixed(2),
+                p.monthlySalesTax.toFixed(2),
+                p.monthlyFees.toFixed(2),
+                p.totalPayment.toFixed(2),
+                p.remainingBookValue.toFixed(2)
+            ]);
+
+            doc.autoTable({
+                startY: currentY,
+                head: [['Month', 'Date', 'Depr.', 'Finance', 'Tax', 'Fees', 'Total Pmt', 'Remaining Value']],
+                body: scheduleTableData,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                styles: { fontSize: 7, cellPadding: 3 }, // Smaller font/padding for many columns
+                margin: { left: margin, right: margin },
+                didDrawPage: function(data) {
+                    let pageCount = doc.internal.getNumberOfPages();
+                    doc.setFontSize(8);
+                    doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber + ' of ' + pageCount, data.settings.margin.left, doc.internal.pageSize.height - 20);
+                }
+            });
+            
+            doc.save('auto_lease_report.pdf');
+        }
+        
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+            
+            // Sheet 1: Summary
+            const summaryData = [
+                ["Auto Lease Report", ""],
+                ["Calculated On", new Date().toLocaleDateString()],
+                [],
+                ["Input Details", ""],
+                ["Vehicle Price (MSRP)", currentLeaseResults.vehiclePrice],
+                ["Down Payment", currentLeaseResults.downPayment],
+                ["Lease Term (Months)", currentLeaseResults.leaseTerm],
+                ["Money Factor", currentLeaseResults.moneyFactor],
+                ["Residual Value (%)", currentLeaseResults.residualValuePercent * 100],
+                ["Sales Tax Rate (%)", currentLeaseResults.salesTaxRate * 100],
+                ["Upfront Fees", currentLeaseResults.upfrontFees],
+                ["Other Monthly Fees", currentLeaseResults.periodicFees],
+                ["Optional Add-ons", currentLeaseResults.optionalAddOns],
+                [],
+                ["Results", ""],
+                ["Monthly Lease Payment", currentLeaseResults.totalMonthlyPayment.toFixed(2)],
+                ["Total Lease Cost", currentLeaseResults.totalLeaseCost.toFixed(2)],
+                ["Total Depreciation", currentLeaseResults.totalDepreciation.toFixed(2)],
+                ["Total Finance Charges", currentLeaseResults.totalFinanceCharges.toFixed(2)],
+                ["Total Sales Tax", currentLeaseResults.totalSalesTax.toFixed(2)],
+                ["Total Fees", currentLeaseResults.totalFees.toFixed(2)]
+            ];
+            const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, summaryWs, "Lease Summary");
+
+            // Sheet 2: Detailed Schedule
+            const detailedScheduleHeaders = [
+                "Month", "Payment Date", "Monthly Depreciation", "Monthly Finance Charge", 
+                "Monthly Sales Tax", "Monthly Fees", "Total Monthly Payment", "Remaining Book Value"
+            ];
+            const detailedScheduleData = [detailedScheduleHeaders];
+            leaseSchedule.forEach(p => {
+                detailedScheduleData.push([
+                    p.month,
+                    p.paymentDate.toLocaleDateString('en-US'),
+                    p.monthlyDepreciation,
+                    p.monthlyFinanceCharge,
+                    p.monthlySalesTax,
+                    p.monthlyFees,
+                    p.totalPayment,
+                    p.remainingBookValue
+                ]);
+            });
+            const detailedScheduleWs = XLSX.utils.aoa_to_sheet(detailedScheduleData);
+            XLSX.utils.book_append_sheet(wb, detailedScheduleWs, "Lease Schedule");
+            
+            XLSX.writeFile(wb, 'auto_lease_report.xlsx');
+        }
+        
+        function exportToCSV() {
+            let csvContent = "";
+
+            // Summary data
+            csvContent += "Auto Lease Report\n";
+            csvContent += `"Calculated On","${new Date().toLocaleDateString()}"\n\n`;
+            csvContent += `"Input Details",\n`;
+            csvContent += `"Vehicle Price (MSRP)",${currentLeaseResults.vehiclePrice}\n`;
+            csvContent += `"Down Payment",${currentLeaseResults.downPayment}\n`;
+            csvContent += `"Lease Term (Months)",${currentLeaseResults.leaseTerm}\n`;
+            csvContent += `"Money Factor",${currentLeaseResults.moneyFactor}\n`;
+            csvContent += `"Residual Value (%)",${currentLeaseResults.residualValuePercent * 100}\n`;
+            csvContent += `"Sales Tax Rate (%)",${currentLeaseResults.salesTaxRate * 100}\n`;
+            csvContent += `"Upfront Fees",${currentLeaseResults.upfrontFees}\n`;
+            csvContent += `"Other Monthly Fees",${currentLeaseResults.periodicFees}\n`;
+            csvContent += `"Optional Add-ons",${currentLeaseResults.optionalAddOns}\n\n`;
+            csvContent += `"Results",\n`;
+            csvContent += `"Monthly Lease Payment","${currentLeaseResults.totalMonthlyPayment.toFixed(2)}"\n`;
+            csvContent += `"Total Lease Cost","${currentLeaseResults.totalLeaseCost.toFixed(2)}"\n`;
+            csvContent += `"Total Depreciation","${currentLeaseResults.totalDepreciation.toFixed(2)}"\n`;
+            csvContent += `"Total Finance Charges","${currentLeaseResults.totalFinanceCharges.toFixed(2)}"\n`;
+            csvContent += `"Total Sales Tax","${currentLeaseResults.totalSalesTax.toFixed(2)}"\n`;
+            csvContent += `"Total Fees","${currentLeaseResults.totalFees.toFixed(2)}"\n\n`;
+
+            // Detailed Schedule
+            csvContent += "Lease Schedule\n";
+            csvContent += "Month,Payment Date,Monthly Depreciation,Monthly Finance Charge,Monthly Sales Tax,Monthly Fees,Total Monthly Payment,Remaining Book Value\n";
+            leaseSchedule.forEach(p => {
+                csvContent += `${p.month},"${p.paymentDate.toLocaleDateString('en-US')}",${p.monthlyDepreciation.toFixed(2)},${p.monthlyFinanceCharge.toFixed(2)},${p.monthlySalesTax.toFixed(2)},${p.monthlyFees.toFixed(2)},${p.totalPayment.toFixed(2)},${p.remainingBookValue.toFixed(2)}\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'auto_lease_report.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function exportToTXT() {
+            let txtContent = "";
+
+            txtContent += "Auto Lease Report\n\n";
+            txtContent += "Calculated On: " + new Date().toLocaleDateString() + "\n\n";
+
+            txtContent += "--- Input Details ---\n";
+            txtContent += `Vehicle Price (MSRP): ${formatCurrency(currentLeaseResults.vehiclePrice)}\n`;
+            txtContent += `Down Payment: ${formatCurrency(currentLeaseResults.downPayment)}\n`;
+            txtContent += `Lease Term (Months): ${currentLeaseResults.leaseTerm}\n`;
+            txtContent += `Money Factor: ${currentLeaseResults.moneyFactor.toFixed(5)}\n`;
+            txtContent += `Residual Value (%): ${formatPercentage(currentLeaseResults.residualValuePercent * 100)}\n`;
+            txtContent += `Sales Tax Rate (%): ${formatPercentage(currentLeaseResults.salesTaxRate * 100)}\n`;
+            txtContent += `Upfront Fees: ${formatCurrency(currentLeaseResults.upfrontFees)}\n`;
+            txtContent += `Other Monthly Fees: ${formatCurrency(currentLeaseResults.periodicFees)}\n`;
+            txtContent += `Optional Add-ons: ${formatCurrency(currentLeaseResults.optionalAddOns)}\n\n`;
+
+            txtContent += "--- Results ---\n";
+            txtContent += `Monthly Lease Payment: ${formatCurrency(currentLeaseResults.totalMonthlyPayment)}\n`;
+            txtContent += `Total Lease Cost: ${formatCurrency(currentLeaseResults.totalLeaseCost)}\n`;
+            txtContent += `Total Depreciation: ${formatCurrency(currentLeaseResults.totalDepreciation)}\n`;
+            txtContent += `Total Finance Charges: ${formatCurrency(currentLeaseResults.totalFinanceCharges)}\n`;
+            txtContent += `Total Sales Tax: ${formatCurrency(currentLeaseResults.totalSalesTax)}\n`;
+            txtContent += `Total Fees: ${formatCurrency(currentLeaseResults.totalFees)}\n\n`;
+
+            txtContent += "--- Lease Schedule ---\n";
+            txtContent += "Month | Date       | Depr.    | Finance  | Tax      | Fees     | Total Pmt | Remaining Value\n";
+            txtContent += "--------------------------------------------------------------------------------------------\n";
+            leaseSchedule.forEach(p => {
+                txtContent += `${String(p.month).padEnd(5)} | ${p.paymentDate.toLocaleDateString('en-US').padEnd(10)} | ${formatCurrency(p.monthlyDepreciation).padEnd(9)} | ${formatCurrency(p.monthlyFinanceCharge).padEnd(9)} | ${formatCurrency(p.monthlySalesTax).padEnd(9)} | ${formatCurrency(p.monthlyFees).padEnd(9)} | ${formatCurrency(p.totalPayment).padEnd(10)} | ${formatCurrency(p.remainingBookValue)}\n`;
+            });
+
+            const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'auto_lease_report.txt');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        function setupSocialSharing() {
+            const monthlyPayment = currentLeaseResults.totalMonthlyPayment || 0;
+            const totalCost = currentLeaseResults.totalLeaseCost || 0;
+            const vehiclePrice = currentLeaseResults.vehiclePrice || 0;
+            const leaseTerm = currentLeaseResults.leaseTerm || 0;
+
+            const shareText = `I calculated my auto lease! For a $${vehiclePrice.toLocaleString('en-US')} vehicle over ${leaseTerm} months, my estimated monthly payment is ${formatCurrency(monthlyPayment)}, with a total lease cost of ${formatCurrency(totalCost)}. Calculate yours here:`;
+            
+            const shareUrl = window.location.href; // Current page URL
+            
+            document.getElementById('emailShare').href = `mailto:?subject=Auto Lease Calculation Results&body=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
+            document.getElementById('whatsappShare').href = `https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
+            document.getElementById('linkedinShare').href = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent('Advanced Auto Lease Calculation')}&summary=${encodeURIComponent(shareText)}`;
+            document.getElementById('twitterShare').href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+        }
+    </script>
+</body>
+</html>

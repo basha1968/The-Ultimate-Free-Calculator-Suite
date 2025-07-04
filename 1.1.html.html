@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced 401(k) Growth Calculator</title>
+    <!-- Privacy Headers -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    
+    <!-- Dependencies for PDF Export & Charting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --bg-color: #f1f5f9;
+            --text-color: #0f172a;
+            --primary-color: #0d9488; /* Teal */
+            --secondary-color: #64748b;
+            --accent-color: #fbbf24; /* Amber */
+            --border-color: #cbd5e1;
+            --card-bg: #ffffff;
+            --input-bg: #f8fafc;
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+            --font-family: 'Inter', sans-serif;
+        }
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --text-color: #e2e8f0;
+            --primary-color: #5eead4; /* Lighter Teal */
+            --secondary-color: #94a3b8;
+            --accent-color: #fcd34d; /* Lighter Amber */
+            --border-color: #334155;
+            --card-bg: #1e293b;
+            --input-bg: #334155;
+            --shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+        }
+
+        /* General & Layout */
+        *, *::before, *::after { box-sizing: border-box; }
+        body { margin: 0; font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-color); transition: all 0.2s; }
+        .container { max-width: 1600px; margin: 2rem auto; padding: 1rem; display: grid; grid-template-columns: 400px 1fr; gap: 2rem; }
+        h1, h2, h3 { color: var(--primary-color); }
+        .card { background-color: var(--card-bg); border-radius: 12px; padding: 1.5rem; box-shadow: var(--shadow); }
+
+        /* Sidebar: Inputs */
+        .sidebar { display: flex; flex-direction: column; gap: 2rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+        .input-group { position: relative; display:flex; align-items:center; margin-bottom: 1.25rem;}
+        .input-group span.prefix { position: absolute; left: 1rem; }
+        .input-group span.suffix { position: absolute; right: 1rem; }
+        input[type="number"] { width: 100%; padding: 0.8rem; padding-left:2.5rem; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--input-bg); color: var(--text-color); font-size: 1rem; }
+        input[type="number"]~span.suffix { padding-left: 0;}
+        .tooltip { cursor: help; font-weight: bold; color: var(--secondary-color); }
+        
+        /* Main Content: Results */
+        .main-content { display:flex; flex-direction:column; gap:2rem;}
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; text-align:center;}
+        .summary-card { padding: 1rem; background-color:var(--bg-color); border-radius:8px;}
+        .summary-card .label { font-size: 0.9rem; opacity: 0.8;}
+        .summary-card .value { font-size: 2rem; font-weight: 700; color: var(--primary-color);}
+        #growth-chart-container { position:relative; min-height:400px; }
+        .action-buttons { display:flex; gap: 1rem; flex-wrap: wrap;}
+        .btn { padding: 0.8rem 1.5rem; font-weight: 600; border-radius: 6px; border: 2px solid; cursor: pointer; text-decoration: none;}
+        .btn-primary { background-color:var(--primary-color); color:white; border-color:var(--primary-color);}
+        
+        @media (max-width: 1024px) { .container { grid-template-columns: 1fr; } }
+        
+        /* Print Styles */
+        @media print {
+            body { background: #fff !important; color: #000 !important; font-size: 12pt; }
+            .sidebar, .action-buttons, h1, #theme-toggle { display: none; }
+            .container, .main-content { all: unset; display: block; }
+            #printable-results { display: block !important; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <aside class="sidebar">
+        <div class="card">
+            <h1>401(k) Calculator</h1>
+            <p style="margin-top:-0.5rem; opacity:0.8;">Project your retirement savings with detailed year-by-year growth.</p>
+        </div>
+        <div class="card">
+            <h2>Your Details</h2>
+            <form id="401k-form">
+                <div class="input-group"><label for="currentAge">Current Age</label><input type="number" id="currentAge" value="30"></div>
+                <div class="input-group"><label for="retirementAge">Retirement Age</label><input type="number" id="retirementAge" value="65"></div>
+                <div class="input-group"><label for="annualSalary">Annual Salary</label><span class="prefix">$</span><input type="number" id="annualSalary" value="75000"></div>
+                <div class="input-group"><label for="currentBalance">Current 401(k) Balance</label><span class="prefix">$</span><input type="number" id="currentBalance" value="50000"></div>
+            </form>
+        </div>
+        <div class="card">
+             <h2>Contribution</h2>
+            <div class="input-group">
+                <label for="contributionPercent">Your Contribution</label><span class="prefix">%</span><input type="number" id="contributionPercent" value="6" step="0.5"><span class="suffix"> of Salary</span>
+            </div>
+             <div class="input-group">
+                <label for="employerMatchPercent">Employer Match</label><span class="prefix">%</span><input type="number" id="employerMatchPercent" value="3" step="0.5"><span class="suffix"> up to 6%</span>
+            </div>
+             <div class="input-group"><label for="matchLimitPercent">Employer Match Limit</label><span class="prefix">%</span><input type="number" id="matchLimitPercent" value="6"><span class="suffix">of Salary</span></div>
+        </div>
+         <div class="card">
+             <h2>Assumptions</h2>
+            <div class="input-group"><label for="annualReturn">Annual Rate of Return <span class="tooltip" title="Historical average of the S&P 500 is ~10%, but 7-8% is a common projection.">?</span></label><span class="prefix">%</span><input type="number" id="annualReturn" value="8" step="0.1"></div>
+            <div class="input-group"><label for="inflationRate">Annual Inflation Rate <span class="tooltip" title="Historical average inflation is ~3%. This is used to show your balance in today's dollars.">?</span></label><span class="prefix">%</span><input type="number" id="inflationRate" value="3" step="0.1"></div>
+            <div class="input-group"><label for="taxRate">Retirement Tax Rate <span class="tooltip" title="Your estimated marginal tax rate during retirement withdrawals.">?</span></label><span class="prefix">%</span><input type="number" id="taxRate" value="15" step="1"></div>
+             <button id="theme-toggle" style="width:100%; margin-top:1rem;">Toggle Theme</button>
+        </div>
+    </aside>
+
+    <main class="main-content" id="printable-results">
+        <div class="card">
+            <h2>Projected Results at Age <span id="retireAgeDisplay">65</span></h2>
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <div class="label">Total 401(k) Value</div>
+                    <div class="value" id="totalValue">$0</div>
+                </div>
+                 <div class="summary-card">
+                    <div class="label">After-Tax Value</div>
+                    <div class="value" id="afterTaxValue">$0</div>
+                </div>
+                 <div class="summary-card">
+                    <div class="label">Value in Today's Dollars</div>
+                    <div class="value" id="inflationAdjustedValue">$0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+             <h2>Growth Over Time</h2>
+             <div id="growth-chart-container"><canvas id="growthChart"></canvas></div>
+        </div>
+
+        <div class="card">
+             <h2>Actions</h2>
+             <div class="action-buttons">
+                <a href="#" id="printBtn" class="btn btn-primary">Print Report</a>
+                <a href="#" id="savePdfBtn" class="btn btn-primary">Save as PDF</a>
+                <a href="#" id="saveCsvBtn" class="btn btn-primary">Save as CSV (Excel)</a>
+                <a href="#" id="shareLinkBtn" class="btn btn-primary">Share My Projection</a>
+             </div>
+        </div>
+    </main>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- Elements & State ---
+    const D = document;
+    const ctx = D.getElementById('growthChart').getContext('2d');
+    let growthChart;
+    let projectionData = [];
+
+    const els = {
+        form: D.getElementById('401k-form'),
+        allInputs: D.querySelectorAll('input[type="number"]'),
+        retireAgeDisplay: D.getElementById('retireAgeDisplay'),
+        totalValue: D.getElementById('totalValue'), afterTaxValue: D.getElementById('afterTaxValue'),
+        inflationAdjustedValue: D.getElementById('inflationAdjustedValue'),
+        themeToggle: D.getElementById('theme-toggle'),
+    };
+    
+    // --- Calculation Engine ---
+    const calculateProjection = () => {
+        // Collect inputs & convert percentages
+        const inputs = {};
+        els.allInputs.forEach(input => inputs[input.id] = parseFloat(input.value) || 0);
+        
+        const r = inputs.annualReturn / 100;
+        const i = inputs.inflationRate / 100;
+        const tr = inputs.taxRate / 100;
+
+        let balance = inputs.currentBalance;
+        let yearsToRetire = inputs.retirementAge - inputs.currentAge;
+        projectionData = [];
+
+        for(let year = 1; year <= yearsToRetire; year++) {
+            const employeeContrib = inputs.annualSalary * (inputs.contributionPercent / 100);
+            const actualMatchPercent = Math.min(inputs.contributionPercent, inputs.matchLimitPercent);
+            const employerContrib = inputs.annualSalary * (actualMatchPercent * (inputs.employerMatchPercent / inputs.contributionPercent));
+
+            const totalContributions = employeeContrib + employerContrib;
+            balance += totalContributions;
+            balance *= (1 + r);
+            
+            projectionData.push({
+                year: inputs.currentAge + year,
+                balance: balance,
+                contributions: totalContributions * year + inputs.currentBalance,
+            });
+        }
+        
+        const finalBalance = balance;
+        const afterTaxBalance = finalBalance * (1 - tr);
+        const inflationAdjusted = finalBalance / Math.pow(1 + i, yearsToRetire);
+        
+        updateUI(finalBalance, afterTaxBalance, inflationAdjusted);
+        updateChart();
+    };
+
+    // --- UI Update & Charting ---
+    const updateUI = (total, afterTax, inflation) => {
+        const formatCurrency = (val) => `$${Math.round(val).toLocaleString()}`;
+        els.retireAgeDisplay.textContent = D.getElementById('retirementAge').value;
+        els.totalValue.textContent = formatCurrency(total);
+        els.afterTaxValue.textContent = formatCurrency(afterTax);
+        els.inflationAdjustedValue.textContent = formatCurrency(inflation);
+    };
+
+    const updateChart = () => {
+        if(growthChart) growthChart.destroy();
+        
+        growthChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: projectionData.map(d => d.year),
+                datasets: [{
+                    label: 'Total Value',
+                    data: projectionData.map(d => d.balance),
+                    borderColor: 'var(--primary-color)',
+                    backgroundColor: 'rgba(13, 148, 136, 0.1)', fill: true,
+                },{
+                    label: 'Total Contributions',
+                    data: projectionData.map(d => d.contributions),
+                    borderColor: 'var(--secondary-color)',
+                    borderDash: [5, 5],
+                }]
+            },
+            options: { maintainAspectRatio: false, responsive:true, }
+        });
+    };
+    
+    // --- Actions & Export ---
+     const generateShareLink = () => {
+         const params = new URLSearchParams();
+         els.allInputs.forEach(input => params.set(input.id, input.value));
+         return `${location.origin}${location.pathname}?data=${btoa(params.toString())}`;
+     };
+
+     D.getElementById('printBtn').onclick = (e) => { e.preventDefault(); window.print();};
+     D.getElementById('savePdfBtn').onclick = (e) => {
+        e.preventDefault();
+        html2canvas(D.getElementById('printable-results')).then(canvas => {
+            const doc = new jspdf.jsPDF(); doc.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, 190, 0); doc.save('401k-projection.pdf');
+        });
+     };
+    D.getElementById('saveCsvBtn').onclick = (e) => {
+         e.preventDefault();
+         let csvContent = "data:text/csv;charset=utf-8,Year,Total Balance,Total Contributions\n";
+         projectionData.forEach(d => { csvContent += `${d.year},${d.balance.toFixed(2)},${d.contributions.toFixed(2)}\n`});
+         const link = D.createElement('a'); link.href = encodeURI(csvContent); link.download = '401k-projection.csv'; link.click();
+    };
+     D.getElementById('shareLinkBtn').onclick = (e) => {
+         e.preventDefault();
+         navigator.clipboard.writeText(generateShareLink()).then(() => {
+             e.target.textContent = "Link Copied!";
+             setTimeout(()=> e.target.textContent = "Share My Projection", 2000);
+         });
+     };
+
+    // --- Init & Event Handlers ---
+    const init = () => {
+        const theme = localStorage.getItem('401kTheme') || 'light';
+        D.documentElement.setAttribute('data-theme', theme);
+        
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('data')) {
+            try {
+                 const decoded = new URLSearchParams(atob(params.get('data')));
+                 decoded.forEach((value, key) => D.getElementById(key) && (D.getElementById(key).value = value));
+            } catch(e) { console.error("Failed to parse share data.");}
+        }
+        
+        calculateProjection();
+    };
+
+    D.querySelectorAll('input').forEach(input => input.addEventListener('change', calculateProjection));
+    els.themeToggle.onclick = () => {
+        const theme = D.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        D.documentElement.setAttribute('data-theme', theme); localStorage.setItem('401kTheme', theme);
+        calculateProjection(); // Recalculate to redraw chart with new theme colors
+    };
+
+    init();
+});
+</script>
+</body>
+</html>

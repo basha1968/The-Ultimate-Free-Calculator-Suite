@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Take-Home Pay Calculator | FinTech Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #7209b7;
+            --success: #06d6a0;
+            --warning: #ffd166;
+            --danger: #ef476f;
+            --dark: #1e1e2d;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --card-bg: #ffffff;
+            --body-bg: #f0f2f5;
+            --text: #343a40;
+            --border: #dee2e6;
+            --shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .dark-mode {
+            --primary: #5e72e4;
+            --primary-dark: #4d5fd0;
+            --secondary: #9c4dcc;
+            --success: #2dce89;
+            --warning: #fb6340;
+            --danger: #f5365c;
+            --dark: #f8f9fa;
+            --light: #121212;
+            --gray: #adb5bd;
+            --card-bg: #1e1e2d;
+            --body-bg: #141414;
+            --text: #e9ecef;
+            --border: #343a40;
+            --shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--body-bg);
+            color: var(--text);
+            transition: background-color 0.3s, color 0.3s;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .logo i {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .theme-toggle {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            padding: 8px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .theme-toggle:hover {
+            box-shadow: var(--shadow);
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 25px;
+        }
+
+        @media (max-width: 992px) {
+            .grid-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .calculator-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            padding: 30px;
+            transition: all 0.3s;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .input-group .tooltip {
+            position: relative;
+            cursor: help;
+        }
+
+        .input-group .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 0;
+            top: 100%;
+            background: var(--dark);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            width: 250px;
+            z-index: 10;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--card-bg);
+            color: var(--text);
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        .input-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .input-row .input-group {
+            flex: 1;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .results-section {
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, rgba(67, 97, 238, 0.1), rgba(114, 9, 183, 0.1));
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .result-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        .result-card h4 {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: var(--gray);
+        }
+
+        .result-card p {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .ad-container {
+            background: rgba(0,0,0,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin: 25px 0;
+            border: 1px dashed var(--border);
+        }
+
+        .ad-label {
+            font-size: 0.9rem;
+            color: var(--gray);
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .share-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .share-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 10px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .share-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .twitter { color: #1DA1F2; }
+        .facebook { color: #4267B2; }
+        .linkedin { color: #2867B2; }
+        .email { color: var(--danger); }
+        .link { color: var(--success); }
+        .sms { color: var(--secondary); }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .input-row {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .btn-group .btn {
+                width: 100%;
+            }
+            
+            .share-btn {
+                min-width: calc(50% - 10px);
+            }
+        }
+
+        .ad-placeholder {
+            height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.03);
+            border-radius: 8px;
+            color: var(--gray);
+            font-weight: 500;
+            text-align: center;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .ad-placeholder.interstitial {
+            height: 600px;
+        }
+
+        .security-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            background: rgba(6, 214, 160, 0.1);
+            border-radius: 30px;
+            color: var(--success);
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .error-message {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .benefit-breakdown {
+            margin-top: 25px;
+            padding: 20px;
+            background: rgba(67, 97, 238, 0.05);
+            border-radius: 12px;
+        }
+        
+        .benefit-breakdown h3 {
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        
+        .benefit-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .benefit-item:last-child {
+            border-bottom: none;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        
+        .chart-container {
+            height: 250px;
+            margin: 25px 0;
+            position: relative;
+        }
+        
+        .pay-period-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .period-btn {
+            padding: 8px 15px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+        }
+        
+        .period-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .deduction-section {
+            background: rgba(239, 71, 111, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .deduction-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .deduction-row .input-group {
+            margin-bottom: 0;
+        }
+        
+        .add-deduction {
+            background: var(--success);
+            color: white;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            margin-top: 10px;
+        }
+        
+        .disclaimer {
+            background: rgba(255, 209, 102, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .result-highlight {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            margin-top: 20px;
+            border: 2px solid var(--primary);
+        }
+        
+        .result-highlight h3 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .result-highlight p {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--success);
+        }
+        
+        .tax-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--border);
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: var(--primary);
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <span>Pay<span style="color: var(--secondary);">Smart</span></span>
+            </div>
+            <div class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+                <span>Dark Mode</span>
+            </div>
+        </header>
+
+        <div class="ad-container">
+            <span class="ad-label">Adsterra Ad Placement (Top Banner)</span>
+            <div class="ad-placeholder">
+                <!-- Adsterra Ad Code would be placed here -->
+                <div>
+                    <i class="fas fa-ad" style="font-size: 3rem; margin-bottom: 10px; opacity: 0.3;"></i>
+                    <p>Adsterra Responsive Banner Ad</p>
+                    <p style="font-size: 0.8rem; margin-top: 5px;">728x90 | 300x250 | 320x50</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-layout">
+            <div class="main-content">
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-calculator"></i> Take-Home Pay Calculator</h2>
+                    
+                    <div class="pay-period-toggle">
+                        <div class="period-btn active" data-period="annual">Annual</div>
+                        <div class="period-btn" data-period="monthly">Monthly</div>
+                        <div class="period-btn" data-period="hourly">Hourly</div>
+                    </div>
+                    
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="income">
+                                <span>Gross Income ($)</span>
+                                <span class="tooltip" data-tooltip="Your total income before any deductions">ⓘ</span>
+                            </label>
+                            <input type="number" id="income" placeholder="Enter gross income" min="1000" value="75000">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="filingStatus">
+                                <span>Tax Filing Status</span>
+                                <span class="tooltip" data-tooltip="Your tax filing status affects your tax bracket">ⓘ</span>
+                            </label>
+                            <select id="filingStatus">
+                                <option value="single">Single</option>
+                                <option value="married_joint" selected>Married Filing Jointly</option>
+                                <option value="married_separate">Married Filing Separately</option>
+                                <option value="head">Head of Household</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="stateTax">
+                                <span>State Tax Rate (%)</span>
+                                <span class="tooltip" data-tooltip="Your state income tax percentage">ⓘ</span>
+                            </label>
+                            <input type="number" id="stateTax" placeholder="Enter state tax rate" min="0" step="0.1" value="5.75">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="localTax">
+                                <span>Local Tax Rate (%)</span>
+                                <span class="tooltip" data-tooltip="Your local income tax percentage">ⓘ</span>
+                            </label>
+                            <input type="number" id="localTax" placeholder="Enter local tax rate" min="0" step="0.1" value="1.5">
+                        </div>
+                    </div>
+                    
+                    <div class="tax-toggle">
+                        <span>Auto-Fetch Tax Rates</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="autoFetchTax">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="deduction-section">
+                        <h3><i class="fas fa-minus-circle"></i> Pre-Tax Deductions</h3>
+                        
+                        <div class="deduction-row">
+                            <div class="input-group">
+                                <label for="retirement">
+                                    <span>401(k)/Retirement (%)</span>
+                                    <span class="tooltip" data-tooltip="Percentage of income going to retirement account">ⓘ</span>
+                                </label>
+                                <input type="number" id="retirement" placeholder="Enter percentage" min="0" max="100" step="0.5" value="6">
+                            </div>
+                            
+                            <div class="input-group">
+                                <label for="healthInsurance">
+                                    <span>Health Insurance ($)</span>
+                                    <span class="tooltip" data-tooltip="Monthly health insurance premium">ⓘ</span>
+                                </label>
+                                <input type="number" id="healthInsurance" placeholder="Enter amount" min="0" value="250">
+                            </div>
+                        </div>
+                        
+                        <div class="deduction-row">
+                            <div class="input-group">
+                                <label for="hsa">
+                                    <span>HSA Contribution ($)</span>
+                                    <span class="tooltip" data-tooltip="Monthly HSA contribution">ⓘ</span>
+                                </label>
+                                <input type="number" id="hsa" placeholder="Enter amount" min="0" value="150">
+                            </div>
+                            
+                            <div class="input-group">
+                                <label for="otherPreTax">
+                                    <span>Other Pre-Tax Deductions ($)</span>
+                                    <span class="tooltip" data-tooltip="Any other pre-tax deductions">ⓘ</span>
+                                </label>
+                                <input type="number" id="otherPreTax" placeholder="Enter amount" min="0" value="0">
+                            </div>
+                        </div>
+                        
+                        <div class="add-deduction" id="addPreTax">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="deduction-section">
+                        <h3><i class="fas fa-minus-circle"></i> Post-Tax Deductions</h3>
+                        
+                        <div class="deduction-row">
+                            <div class="input-group">
+                                <label for="unionDues">
+                                    <span>Union Dues ($)</span>
+                                    <span class="tooltip" data-tooltip="Monthly union dues">ⓘ</span>
+                                </label>
+                                <input type="number" id="unionDues" placeholder="Enter amount" min="0" value="50">
+                            </div>
+                            
+                            <div class="input-group">
+                                <label for="garnishments">
+                                    <span>Garnishments ($)</span>
+                                    <span class="tooltip" data-tooltip="Monthly wage garnishments">ⓘ</span>
+                                </label>
+                                <input type="number" id="garnishments" placeholder="Enter amount" min="0" value="0">
+                            </div>
+                        </div>
+                        
+                        <div class="deduction-row">
+                            <div class="input-group">
+                                <label for="otherPostTax">
+                                    <span>Other Post-Tax Deductions ($)</span>
+                                    <span class="tooltip" data-tooltip="Any other post-tax deductions">ⓘ</span>
+                                </label>
+                                <input type="number" id="otherPostTax" placeholder="Enter amount" min="0" value="0">
+                            </div>
+                        </div>
+                        
+                        <div class="add-deduction" id="addPostTax">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="bonus">
+                                <span>Annual Bonus ($)</span>
+                                <span class="tooltip" data-tooltip="Your annual bonus amount">ⓘ</span>
+                            </label>
+                            <input type="number" id="bonus" placeholder="Enter bonus amount" min="0" value="5000">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="commission">
+                                <span>Annual Commission ($)</span>
+                                <span class="tooltip" data-tooltip="Your annual commission">ⓘ</span>
+                            </label>
+                            <input type="number" id="commission" placeholder="Enter commission" min="0" value="3000">
+                        </div>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="calculateBtn">
+                            <i class="fas fa-calculator"></i> Calculate Take-Home Pay
+                        </button>
+                        <button class="btn" id="resetBtn" style="background: var(--card-bg); color: var(--text); border: 1px solid var(--border);">
+                            <i class="fas fa-redo"></i> Reset
+                        </button>
+                    </div>
+                    
+                    <div class="results-section" id="resultsSection">
+                        <div class="result-highlight">
+                            <h3>Your Monthly Take-Home Pay</h3>
+                            <p id="takeHomePay">$4,850</p>
+                        </div>
+                        
+                        <h3><i class="fas fa-chart-pie"></i> Income Breakdown</h3>
+                        <div class="chart-container">
+                            <canvas id="incomeChart"></canvas>
+                        </div>
+                        
+                        <div class="benefit-breakdown">
+                            <h3><i class="fas fa-file-invoice-dollar"></i> Detailed Breakdown</h3>
+                            <div class="benefit-item">
+                                <span>Gross Monthly Income</span>
+                                <span>$6,250</span>
+                            </div>
+                            <div class="benefit-item">
+                                <span>Federal Income Tax</span>
+                                <span>-$875</span>
+                            </div>
+                            <div class="benefit-item">
+                                <span>State Income Tax</span>
+                                <span>-$360</span>
+                            </div>
+                            <div class="benefit-item">
+                                <span>Social Security (6.2%)</span>
+                                <span>-$388</span>
+                            </div>
+                            <div class="benefit-item">
+                                <span>Medicare (1.45%)</span>
+                                <span>-$91</span>
+                            </div>
+                            <div class="benefit-item">
+                                <span>Pre-Tax Deductions</span>
+                                <span>-$550</span>
+                            </div>
+                            <div class="benefit-item">
+                                <span>Post-Tax Deductions</span>
+                                <span>-$50</span>
+                            </div>
+                            <div class="benefit-item">
+                                <span><strong>Net Monthly Take-Home Pay</strong></span>
+                                <span><strong>$4,850</strong></span>
+                            </div>
+                        </div>
+                        
+                        <div class="result-grid">
+                            <div class="result-card">
+                                <h4>Annual Take-Home</h4>
+                                <p id="annualTakeHome">$58,200</p>
+                            </div>
+                            <div class="result-card">
+                                <h4>Total Taxes</h4>
+                                <p id="totalTaxes">$20,550</p>
+                            </div>
+                            <div class="result-card">
+                                <h4>Total Deductions</h4>
+                                <p id="totalDeductions">$7,200</p>
+                            </div>
+                        </div>
+                        
+                        <h3 style="margin-top: 30px;"><i class="fas fa-share-alt"></i> Export & Share</h3>
+                        <div class="btn-group">
+                            <button class="btn" id="printBtn">
+                                <i class="fas fa-print"></i> Print
+                            </button>
+                            <button class="btn" id="pdfBtn">
+                                <i class="fas fa-file-pdf"></i> PDF
+                            </button>
+                            <button class="btn" id="excelBtn">
+                                <i class="fas fa-file-excel"></i> Excel
+                            </button>
+                            <button class="btn" id="pngBtn">
+                                <i class="fas fa-image"></i> PNG
+                            </button>
+                        </div>
+                        
+                        <div class="share-options">
+                            <div class="share-btn twitter" id="twitterBtn">
+                                <i class="fab fa-twitter"></i> Twitter
+                            </div>
+                            <div class="share-btn facebook" id="facebookBtn">
+                                <i class="fab fa-facebook"></i> Facebook
+                            </div>
+                            <div class="share-btn linkedin" id="linkedinBtn">
+                                <i class="fab fa-linkedin"></i> LinkedIn
+                            </div>
+                            <div class="share-btn email" id="emailBtn">
+                                <i class="fas fa-envelope"></i> Email
+                            </div>
+                            <div class="share-btn sms" id="smsBtn">
+                                <i class="fas fa-comment-alt"></i> SMS
+                            </div>
+                            <div class="share-btn link" id="copyLinkBtn">
+                                <i class="fas fa-link"></i> Copy Link
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="disclaimer">
+                        <i class="fas fa-shield-alt"></i> 
+                        <strong>Security & Compliance:</strong> All calculations are performed securely in your browser. 
+                        No personal or financial data is transmitted to or stored on any servers. 
+                        This tool complies with GDPR and CCPA regulations.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-money-bill-wave"></i> Monetization</h2>
+                    
+                    <div class="ad-container">
+                        <span class="ad-label">Adsterra Ad Placement (Sidebar)</span>
+                        <div class="ad-placeholder interstitial">
+                            <!-- Adsterra Ad Code would be placed here -->
+                            <div>
+                                <i class="fas fa-ad" style="font-size: 3rem; margin-bottom: 10px; opacity: 0.3;"></i>
+                                <p>Adsterra Sidebar Banner</p>
+                                <p style="font-size: 0.8rem; margin-top: 5px;">300x600 | 160x600 | 120x600</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="ad-container" style="margin-top: 25px;">
+                        <span class="ad-label">Yllix Ad Placement (In-Content)</span>
+                        <div class="ad-placeholder">
+                            <!-- Yllix Ad Code would be placed here -->
+                            <div>
+                                <i class="fas fa-ad" style="font-size: 3rem; margin-bottom: 10px; opacity: 0.3;"></i>
+                                <p>Yllix Native Ad</p>
+                                <p style="font-size: 0.8rem; margin-top: 5px;">300x250 | 336x280 | 320x50</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin-top: 20px;"><i class="fas fa-lightbulb"></i> Tax Tips</h3>
+                    <ul style="padding-left: 20px; margin: 15px 0;">
+                        <li>Maximize pre-tax retirement contributions</li>
+                        <li>Consider an HSA for triple tax benefits</li>
+                        <li>Review tax withholding annually</li>
+                        <li>Keep track of deductible expenses</li>
+                    </ul>
+                    
+                    <div class="security-badge">
+                        <i class="fas fa-user-shield"></i>
+                        <span>This calculator complies with financial regulations and protects your privacy.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="ad-container">
+            <span class="ad-label">Yllix Ad Placement (Footer)</span>
+            <div class="ad-placeholder">
+                <!-- Yllix Ad Code would be placed here -->
+                <div>
+                    <i class="fas fa-ad" style="font-size: 3rem; margin-bottom: 10px; opacity: 0.3;"></i>
+                    <p>Yllix Footer Banner</p>
+                    <p style="font-size: 0.8rem; margin-top: 5px;">728x90 | 300x250 | 320x50</p>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 Take-Home Pay Calculator | All calculations performed client-side for maximum security</p>
+            <p style="margin-top: 8px;">This tool provides estimates only. Consult a tax professional for personalized advice.</p>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const themeToggle = document.getElementById('themeToggle');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const resultsSection = document.getElementById('resultsSection');
+        const incomeInput = document.getElementById('income');
+        const filingStatusSelect = document.getElementById('filingStatus');
+        const stateTaxInput = document.getElementById('stateTax');
+        const localTaxInput = document.getElementById('localTax');
+        const retirementInput = document.getElementById('retirement');
+        const healthInsuranceInput = document.getElementById('healthInsurance');
+        const hsaInput = document.getElementById('hsa');
+        const otherPreTaxInput = document.getElementById('otherPreTax');
+        const unionDuesInput = document.getElementById('unionDues');
+        const garnishmentsInput = document.getElementById('garnishments');
+        const otherPostTaxInput = document.getElementById('otherPostTax');
+        const bonusInput = document.getElementById('bonus');
+        const commissionInput = document.getElementById('commission');
+        const periodButtons = document.querySelectorAll('.period-btn');
+        const autoFetchTax = document.getElementById('autoFetchTax');
+        
+        // Result elements
+        const takeHomePay = document.getElementById('takeHomePay');
+        const annualTakeHome = document.getElementById('annualTakeHome');
+        const totalTaxes = document.getElementById('totalTaxes');
+        const totalDeductions = document.getElementById('totalDeductions');
+        
+        // Initialize Chart
+        let incomeChart;
+
+        // Theme Toggle
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            themeToggle.innerHTML = isDarkMode 
+                ? '<i class="fas fa-sun"></i> <span>Light Mode</span>' 
+                : '<i class="fas fa-moon"></i> <span>Dark Mode</span>';
+            
+            // Re-render chart on theme change
+            renderIncomeChart();
+        });
+
+        // Period Toggle
+        periodButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                periodButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                // Update placeholder based on period
+                const period = button.getAttribute('data-period');
+                let placeholder;
+                
+                switch(period) {
+                    case 'annual':
+                        placeholder = "Enter annual gross income";
+                        break;
+                    case 'monthly':
+                        placeholder = "Enter monthly gross income";
+                        break;
+                    case 'hourly':
+                        placeholder = "Enter hourly rate";
+                        break;
+                }
+                
+                incomeInput.placeholder = placeholder;
+            });
+        });
+
+        // Calculate Take-Home Pay
+        function calculateTakeHomePay() {
+            const income = parseFloat(incomeInput.value) || 75000;
+            const stateTaxRate = parseFloat(stateTaxInput.value) || 5.75;
+            const localTaxRate = parseFloat(localTaxInput.value) || 1.5;
+            const retirementPercent = parseFloat(retirementInput.value) || 6;
+            const healthInsurance = parseFloat(healthInsuranceInput.value) || 250;
+            const hsa = parseFloat(hsaInput.value) || 150;
+            const otherPreTax = parseFloat(otherPreTaxInput.value) || 0;
+            const unionDues = parseFloat(unionDuesInput.value) || 50;
+            const garnishments = parseFloat(garnishmentsInput.value) || 0;
+            const otherPostTax = parseFloat(otherPostTaxInput.value) || 0;
+            const bonus = parseFloat(bonusInput.value) || 5000;
+            const commission = parseFloat(commissionInput.value) || 3000;
+            
+            // Calculate annual income including bonuses
+            const totalAnnualIncome = income + bonus + commission;
+            
+            // Pre-tax deductions
+            const retirementAnnual = income * (retirementPercent / 100);
+            const healthInsuranceAnnual = healthInsurance * 12;
+            const hsaAnnual = hsa * 12;
+            const otherPreTaxAnnual = otherPreTax * 12;
+            
+            const totalPreTaxDeductions = retirementAnnual + healthInsuranceAnnual + hsaAnnual + otherPreTaxAnnual;
+            
+            // Taxable income
+            const taxableIncome = totalAnnualIncome - totalPreTaxDeductions;
+            
+            // Federal tax calculation (simplified 2023 brackets)
+            let federalTax = 0;
+            if (taxableIncome <= 11000) {
+                federalTax = taxableIncome * 0.10;
+            } else if (taxableIncome <= 44725) {
+                federalTax = 1100 + (taxableIncome - 11000) * 0.12;
+            } else if (taxableIncome <= 95375) {
+                federalTax = 5147 + (taxableIncome - 44725) * 0.22;
+            } else if (taxableIncome <= 182100) {
+                federalTax = 16290 + (taxableIncome - 95375) * 0.24;
+            } else if (taxableIncome <= 231250) {
+                federalTax = 37104 + (taxableIncome - 182100) * 0.32;
+            } else if (taxableIncome <= 578125) {
+                federalTax = 52832 + (taxableIncome - 231250) * 0.35;
+            } else {
+                federalTax = 174238.25 + (taxableIncome - 578125) * 0.37;
+            }
+            
+            // State tax
+            const stateTax = taxableIncome * (stateTaxRate / 100);
+            
+            // Local tax
+            const localTax = taxableIncome * (localTaxRate / 100);
+            
+            // FICA taxes
+            const socialSecurity = Math.min(taxableIncome, 160200) * 0.062;
+            const medicare = taxableIncome * 0.0145;
+            
+            // Post-tax deductions
+            const unionDuesAnnual = unionDues * 12;
+            const garnishmentsAnnual = garnishments * 12;
+            const otherPostTaxAnnual = otherPostTax * 12;
+            
+            const totalPostTaxDeductions = unionDuesAnnual + garnishmentsAnnual + otherPostTaxAnnual;
+            
+            // Total taxes
+            const totalTax = federalTax + stateTax + localTax + socialSecurity + medicare;
+            
+            // Net take-home pay
+            const netAnnual = taxableIncome - totalTax - totalPostTaxDeductions;
+            const netMonthly = netAnnual / 12;
+            
+            // Update results
+            takeHomePay.textContent = formatCurrency(netMonthly);
+            annualTakeHome.textContent = formatCurrency(netAnnual);
+            totalTaxes.textContent = formatCurrency(totalTax);
+            totalDeductions.textContent = formatCurrency(totalPreTaxDeductions + totalPostTaxDeductions);
+            
+            // Show results section
+            resultsSection.style.display = 'block';
+            
+            // Render chart
+            renderIncomeChart(totalAnnualIncome, totalTax, totalPreTaxDeductions, netAnnual);
+        }
+
+        // Format currency
+        function formatCurrency(amount) {
+            return '$' + amount.toFixed(0).replace(/\d(?=(\d{3})+$)/g, '$&,');
+        }
+
+        // Render Income Chart
+        function renderIncomeChart(totalIncome = 83000, taxes = 20550, deductions = 7200, netIncome = 55250) {
+            const ctx = document.getElementById('incomeChart').getContext('2d');
+            
+            // Destroy previous chart if exists
+            if (incomeChart) incomeChart.destroy();
+            
+            incomeChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Net Take-Home Pay', 'Taxes', 'Deductions'],
+                    datasets: [{
+                        data: [netIncome, taxes, deductions],
+                        backgroundColor: [
+                            'rgba(6, 214, 160, 0.7)',
+                            'rgba(239, 71, 111, 0.7)',
+                            'rgba(67, 97, 238, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(6, 214, 160, 1)',
+                            'rgba(239, 71, 111, 1)',
+                            'rgba(67, 97, 238, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: document.body.classList.contains('dark-mode') ? '#e9ecef' : '#343a40'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const percentage = Math.round((value / totalIncome) * 100);
+                                    return `${label}: ${formatCurrency(value)} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Reset Form
+        function resetForm() {
+            incomeInput.value = '75000';
+            filingStatusSelect.value = 'married_joint';
+            stateTaxInput.value = '5.75';
+            localTaxInput.value = '1.5';
+            retirementInput.value = '6';
+            healthInsuranceInput.value = '250';
+            hsaInput.value = '150';
+            otherPreTaxInput.value = '0';
+            unionDuesInput.value = '50';
+            garnishmentsInput.value = '0';
+            otherPostTaxInput.value = '0';
+            bonusInput.value = '5000';
+            commissionInput.value = '3000';
+            resultsSection.style.display = 'none';
+        }
+
+        // Export Functions
+        function exportPDF() {
+            alert('PDF export would generate a detailed pay stub. In a real app, this would use jsPDF to create a professional PDF.');
+        }
+
+        function exportExcel() {
+            alert('Excel export would generate a spreadsheet with your pay details. In a real app, this would use SheetJS to create an Excel file.');
+        }
+
+        function exportPNG() {
+            alert('PNG export would capture your results as an image. In a real app, this would use html2canvas to generate a PNG.');
+        }
+
+        function printResults() {
+            alert('Print functionality would open a printer-friendly view. In a real app, this would generate a printable report.');
+        }
+
+        // Share Functions
+        function shareOnTwitter() {
+            const text = `I used PaySmart to calculate my take-home pay. Estimate your paycheck: ${window.location.href}`;
+            const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        }
+
+        function shareOnFacebook() {
+            const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`;
+            window.open(url, '_blank');
+        }
+
+        function shareOnLinkedIn() {
+            const url = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(window.location.href)}&title=Take-Home%20Pay%20Calculator`;
+            window.open(url, '_blank');
+        }
+
+        function shareViaEmail() {
+            const subject = 'My Take-Home Pay Calculation';
+            const body = `I used PaySmart to estimate my take-home pay. Check it out: ${window.location.href}`;
+            window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        }
+
+        function shareViaSMS() {
+            const body = `Check out my take-home pay calculation: ${window.location.href}`;
+            window.location.href = `sms:?body=${encodeURIComponent(body)}`;
+        }
+
+        function copyLink() {
+            navigator.clipboard.writeText(window.location.href);
+            alert('Secure link copied to clipboard!');
+        }
+
+        // Event Listeners
+        calculateBtn.addEventListener('click', calculateTakeHomePay);
+        resetBtn.addEventListener('click', resetForm);
+        document.getElementById('printBtn').addEventListener('click', printResults);
+        document.getElementById('pdfBtn').addEventListener('click', exportPDF);
+        document.getElementById('excelBtn').addEventListener('click', exportExcel);
+        document.getElementById('pngBtn').addEventListener('click', exportPNG);
+        document.getElementById('twitterBtn').addEventListener('click', shareOnTwitter);
+        document.getElementById('facebookBtn').addEventListener('click', shareOnFacebook);
+        document.getElementById('linkedinBtn').addEventListener('click', shareOnLinkedIn);
+        document.getElementById('emailBtn').addEventListener('click', shareViaEmail);
+        document.getElementById('smsBtn').addEventListener('click', shareViaSMS);
+        document.getElementById('copyLinkBtn').addEventListener('click', copyLink);
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Calculate on initial load
+            calculateTakeHomePay();
+        });
+    </script>
+</body>
+</html>

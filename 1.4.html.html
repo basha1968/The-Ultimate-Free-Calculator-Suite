@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Annuity Payout Calculator</title>
+    <!-- 
+        Content-Security-Policy: For production deployment, consider adding a CSP header via your web server (e.g., Nginx, Apache) 
+        rather than a meta tag, as it's more flexible. If you must use meta, ensure all script and style sources are whitelisted.
+        For this single-file, self-contained solution, inline scripts/styles require 'unsafe-inline'.
+        Example for meta (adjust as needed for your specific ad networks if they inject more):
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com cdn.jsdelivr.net cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src * data:; media-src *; connect-src *;">
+    -->
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        /* CSS Variables for theming */
+        :root {
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --danger: #e74c3c;
+            --dark-bg-card: #2c3e50; /* Used for table headers in light mode */
+            --light-bg: #ecf0f1; /* Used for ad containers, tab non-active */
+            --text-color: #333;
+            --bg-color: #f9f9f9;
+            --card-bg: #fff;
+            --border-color: #ddd;
+            --chart-color-principal: #3498db; /* Blue */
+            --chart-color-interest: #2ecc71; /* Green */
+            --chart-color-tax: #e74c3c; /* Red */
+        }
+        
+        /* Dark Theme Variables */
+        [data-theme="dark"] {
+            --primary: #2980b9;
+            --secondary: #27ae60;
+            --danger: #c0392b;
+            --dark-bg-card: #34495e; /* Adjusted for dark mode table headers */
+            --light-bg: #4a667e; /* Adjusted for dark mode ad containers/tabs */
+            --text-color: #ecf0f1;
+            --bg-color: #2c3e50;
+            --card-bg: #34495e;
+            --border-color: #555;
+            --chart-color-principal: #4a90e2; 
+            --chart-color-interest: #4CAF50;
+            --chart-color-tax: #ff6b6b;
+        }
+        
+        /* Global Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            transition: all 0.3s ease; /* Smooth transition for theme change */
+        }
+        
+        .calculator-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .calculator-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .input-section, .results-section {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1, h2, h3 {
+            color: var(--primary);
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            transition: border-color 0.3s, background-color 0.3s, color 0.3s;
+        }
+        
+        .range-slider {
+            width: 100%;
+            margin: 15px 0;
+        }
+        
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--secondary);
+        }
+        
+        /* Ad Containers */
+        .ad-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--light-bg);
+            border-radius: 4px;
+            text-align: center;
+            min-height: 90px;
+            color: var(--text-color);
+            display: flex; /* For centering text */
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            border: 1px dashed var(--border-color);
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .summary-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .summary-card h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: var(--text-color); /* Use theme variable */
+        }
+        
+        .summary-card p {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: var(--primary); /* Use primary color */
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            color: var(--text-color);
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background-color: var(--dark-bg-card); /* Use dark card bg for table headers */
+            color: white;
+        }
+        
+        tr:hover {
+            background-color: rgba(0,0,0,0.05); /* Light mode hover */
+        }
+        [data-theme="dark"] tr:hover {
+            background-color: rgba(255,255,255,0.05); /* Dark mode hover */
+        }
+        
+        /* Tooltips */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            color: var(--primary);
+            font-size: 0.9em;
+            margin-left: 5px;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 250px; /* Wider for more text */
+            background-color: var(--dark-bg-card);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+            font-weight: normal;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Export & Share Options */
+        .export-options, .social-sharing {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .social-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 12px;
+            border-radius: 4px;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            transition: opacity 0.3s;
+        }
+        .social-btn:hover {
+            opacity: 0.8;
+        }
+        
+        .email { background-color: #777; }
+        .whatsapp { background-color: #25D366; }
+        .linkedin { background-color: #0077B5; }
+        .twitter { background-color: #1DA1F2; }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: var(--light-bg);
+            border: none;
+            border-radius: 4px 4px 0 0;
+            margin-right: 5px;
+            color: var(--text-color);
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background-color: var(--primary);
+            color: white;
+            border-bottom: 2px solid var(--primary);
+        }
+        .tab:not(.active):hover {
+            background-color: rgba(var(--primary), 0.1); /* Subtle hover for non-active */
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: absolute; 
+            top: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 1.2em;
+            width: 40px; /* Fixed width/height for round button */
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        /* Error Messages */
+        .error-message {
+            color: var(--danger);
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        /* Print Specific Styles */
+        @media print {
+            .no-print, .ad-container, .theme-toggle {
+                display: none !important;
+            }
+            body {
+                background: none;
+                padding: 0;
+                color: black; /* Force black text for print */
+            }
+            .calculator-container {
+                display: block;
+            }
+            .input-section {
+                display: none; /* Hide input section in print */
+            }
+            .results-section {
+                box-shadow: none; /* Remove shadow for print */
+                padding: 0;
+            }
+            table {
+                font-size: 10px; /* Smaller font for print tables */
+                color: black;
+            }
+            th, td {
+                padding: 8px;
+                border-color: #ccc; /* Lighter border for print */
+            }
+            th {
+                background-color: #eee !important; /* Lighter header for print */
+                color: black !important;
+            }
+            tr:hover {
+                background-color: transparent !important;
+            }
+            .chart-container canvas {
+                max-width: 500px; /* Constrain chart size for print */
+                max-height: 300px;
+                display: block; /* Ensure chart is block level for print */
+                margin: 0 auto;
+            }
+            .summary-card h3, .summary-card p {
+                color: black !important; /* Ensure readable colors in print */
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle no-print" id="themeToggle">🌓</button>
+    
+    <h1>Advanced Annuity Payout Calculator</h1>
+    
+    <div class="calculator-container">
+        <div class="input-section">
+            <h2>Annuity Parameters</h2>
+            
+            <div class="input-group">
+                <label for="annuityType">
+                    Annuity Type
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">
+                            **Fixed Annuity:** Payouts are guaranteed and predictable. This calculator models fixed payouts.
+                            **Variable/Indexed Annuity:** Payouts depend on market performance. This calculator simplifies these to fixed payout calculations for demonstration. Consult a financial advisor for detailed projections.
+                        </span>
+                    </span>
+                </label>
+                <select id="annuityType">
+                    <option value="fixed">Fixed Annuity</option>
+                    <option value="variable">Variable Annuity (Fixed Payout Model)</option>
+                    <option value="indexed">Indexed Annuity (Fixed Payout Model)</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label for="principal">
+                    Initial Principal / Present Value ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">The lump sum amount you invest today to receive future payouts.</span>
+                    </span>
+                </label>
+                <input type="number" id="principal" min="100" step="100" value="500000">
+                <div class="error-message" id="principal-error"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="interestRate">
+                    Annual Interest Rate (%)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">The expected annual rate of return on the annuity principal.</span>
+                    </span>
+                </label>
+                <input type="number" id="interestRate" min="0" max="20" step="0.01" value="4">
+                <div class="error-message" id="interestRate-error"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="term">
+                    Payout Term (Years)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">The number of years over which payouts will be received.</span>
+                    </span>
+                </label>
+                <input type="number" id="term" min="1" max="100" step="1" value="25">
+                <div class="error-message" id="term-error"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="payoutFrequency">
+                    Payout Frequency
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">How often payouts are received (e.g., monthly, annually).</span>
+                    </span>
+                </label>
+                <select id="payoutFrequency">
+                    <option value="12" selected>Monthly</option>
+                    <option value="4">Quarterly</option>
+                    <option value="2">Semi-Annually</option>
+                    <option value="1">Annually</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label for="inflationRate">
+                    Annual Inflation Rate (%) (Optional)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">If specified, payouts will increase by this rate each period to adjust for inflation.</span>
+                    </span>
+                </label>
+                <input type="number" id="inflationRate" min="0" max="10" step="0.01" placeholder="e.g., 2">
+                <div class="error-message" id="inflationRate-error"></div>
+            </div>
+
+            <div class="input-group">
+                <label for="taxRate">
+                    Annual Tax Rate (%) (Optional)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">
+                            A simplified tax rate applied to the interest portion of each payout. 
+                            **Disclaimer:** This is a simplified calculation for demonstration. Consult a tax professional for accurate tax implications.
+                        </span>
+                    </span>
+                </label>
+                <input type="number" id="taxRate" min="0" max="50" step="0.1" placeholder="e.g., 15">
+                <div class="error-message" id="taxRate-error"></div>
+            </div>
+            
+            <button id="calculateBtn">Calculate Payouts</button>
+        </div>
+        
+        <div class="results-section">
+            <h2>Results</h2>
+            
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <h3>Periodic Payout (Gross)</h3>
+                    <p id="periodicPayoutGross">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Payouts (Gross)</h3>
+                    <p id="totalPayoutsGross">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Tax Paid</h3>
+                    <p id="totalTaxPaid">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Payouts (Net)</h3>
+                    <p id="totalPayoutsNet">$0.00</p>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="payoutChart"></canvas>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab active" data-tab="schedule">Payout Schedule</button>
+                <button class="tab" data-tab="summary">Yearly Summary</button>
+            </div>
+            
+            <div class="tab-content active" id="schedule-tab">
+                <div style="overflow-x: auto;">
+                    <table id="scheduleTable">
+                        <thead>
+                            <tr>
+                                <th>Period</th>
+                                <th>Payment Date</th>
+                                <th>Gross Payout</th>
+                                <th>Interest Portion</th>
+                                <th>Principal Return</th>
+                                <th>Tax Paid</th>
+                                <th>Net Payout</th>
+                                <th>Remaining Balance</th>
+                                <th>Cum. Net Payout</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scheduleBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="summary-tab">
+                <div style="overflow-x: auto;">
+                    <table id="summaryTable">
+                        <thead>
+                            <tr>
+                                <th>Year</th>
+                                <th>Gross Payouts</th>
+                                <th>Interest Paid</th>
+                                <th>Principal Returned</th>
+                                <th>Tax Paid (Year)</th>
+                                <th>Net Payouts (Year)</th>
+                                <th>Ending Balance</th>
+                                <th>Total Net Payout</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summaryBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="ad-container">
+                Advertisement Space (e.g., Adsterra 728x90)
+                <small>This space is reserved for ad network code.</small>
+            </div>
+
+            <div class="export-options no-print">
+                <button id="printBtn">Print Schedule</button>
+                <button id="pdfBtn">Save as PDF</button>
+                <button id="excelBtn">Save as Excel</button>
+                <button id="csvBtn">Save as CSV</button>
+            </div>
+            
+            <div class="social-sharing no-print">
+                <a href="#" class="social-btn email" id="emailShare">Email</a>
+                <a href="#" class="social-btn whatsapp" id="whatsappShare">WhatsApp</a>
+                <a href="#" class="social-btn linkedin" id="linkedinShare">LinkedIn</a>
+                <a href="#" class="social-btn twitter" id="twitterShare">Twitter</a>
+            </div>
+
+            <div class="ad-container" style="height: 250px;">
+                Advertisement Space (e.g., Yllix 300x250)
+                <small>This space is reserved for ad network code.</small>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables to store calculated schedules for export and chart
+        let globalPayoutSchedule = [];
+        let globalYearlySummary = [];
+        let payoutChartInstance = null; // To manage Chart.js instance
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up theme toggle
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+            
+            // Set up tab functionality
+            setupTabs();
+            
+            // Set up event listeners for calculation and exports
+            document.getElementById('calculateBtn').addEventListener('click', calculateAnnuityPayout);
+            document.getElementById('printBtn').addEventListener('click', printSchedule);
+            document.getElementById('pdfBtn').addEventListener('click', exportToPDF);
+            document.getElementById('excelBtn').addEventListener('click', exportToExcel);
+            document.getElementById('csvBtn').addEventListener('click', exportToCSV);
+            
+            // Initial calculation on page load
+            calculateAnnuityPayout();
+            setupSocialSharing(); // Needs initial data
+        });
+        
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            }
+            // Update chart colors on theme change
+            if (payoutChartInstance) {
+                const rootStyle = getComputedStyle(document.documentElement);
+                payoutChartInstance.data.datasets[0].backgroundColor = [
+                    rootStyle.getPropertyValue('--chart-color-principal'),
+                    rootStyle.getPropertyValue('--chart-color-interest'),
+                    rootStyle.getPropertyValue('--chart-color-tax')
+                ];
+                payoutChartInstance.options.plugins.legend.labels.color = rootStyle.getPropertyValue('--text-color');
+                payoutChartInstance.options.plugins.title.color = rootStyle.getPropertyValue('--text-color');
+                payoutChartInstance.update();
+            }
+        }
+        
+        function setupTabs() {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                });
+            });
+        }
+
+        // --- Error Handling Utilities ---
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+        }
+
+        function showError(elementId, message) {
+            document.getElementById(elementId + '-error').textContent = message;
+        }
+        
+        // --- Main Calculation Function ---
+        function calculateAnnuityPayout() {
+            clearErrors(); // Clear previous errors
+
+            // Get input values
+            const principal = parseFloat(document.getElementById('principal').value);
+            let annualRate = parseFloat(document.getElementById('interestRate').value);
+            const term = parseInt(document.getElementById('term').value);
+            const payoutFrequency = parseInt(document.getElementById('payoutFrequency').value);
+            let inflationRate = document.getElementById('inflationRate').value ? parseFloat(document.getElementById('inflationRate').value) : 0;
+            let taxRate = document.getElementById('taxRate').value ? parseFloat(document.getElementById('taxRate').value) : 0;
+            
+            // Convert percentages to decimals
+            annualRate /= 100;
+            inflationRate /= 100;
+            taxRate /= 100;
+            
+            // Validate inputs
+            let isValid = true;
+            if (isNaN(principal) || principal <= 0) {
+                showError('principal', 'Must be a positive number.'); isValid = false;
+            }
+            if (isNaN(annualRate) || annualRate < 0 || annualRate > 1) { // 0-100%
+                showError('interestRate', 'Must be between 0 and 100%.'); isValid = false;
+            }
+            if (isNaN(term) || term <= 0 || !Number.isInteger(term)) {
+                showError('term', 'Must be a positive whole number.'); isValid = false;
+            }
+            if (isNaN(inflationRate) || inflationRate < 0 || inflationRate > 1) {
+                showError('inflationRate', 'Must be between 0 and 100%.'); isValid = false;
+            }
+            if (isNaN(taxRate) || taxRate < 0 || taxRate > 1) {
+                showError('taxRate', 'Must be between 0 and 100%.'); isValid = false;
+            }
+            
+            if (!isValid) {
+                document.getElementById('results-section').style.display = 'none';
+                return;
+            }
+
+            const periodicRate = annualRate / payoutFrequency;
+            const periodicInflationRate = inflationRate / payoutFrequency;
+            const totalPeriods = term * payoutFrequency;
+            
+            let calculatedGrossPayout;
+
+            // Calculate the first periodic payout
+            if (periodicRate === 0 && inflationRate === 0) {
+                calculatedGrossPayout = principal / totalPeriods;
+            } else if (periodicRate === periodicInflationRate) {
+                // Special case for when interest rate equals inflation rate
+                calculatedGrossPayout = principal / totalPeriods; // Payouts are simply Principal/Periods to keep value constant
+            } else {
+                // Formula for payment of a growing annuity (first payment)
+                // PMT = PV * ( (r - i) / (1 - ((1+i)/(1+r))^n) )
+                const factorNumerator = periodicRate - periodicInflationRate;
+                const factorDenominator = 1 - Math.pow((1 + periodicInflationRate) / (1 + periodicRate), totalPeriods);
+                calculatedGrossPayout = principal * (factorNumerator / factorDenominator);
+            }
+
+            // Generate detailed schedule
+            globalPayoutSchedule = generatePayoutSchedule(
+                principal, calculatedGrossPayout, periodicRate, totalPeriods, periodicInflationRate, taxRate
+            );
+            
+            // Generate yearly summary from the detailed schedule
+            globalYearlySummary = generateYearlySummaryFromSchedule(globalPayoutSchedule);
+
+            // Calculate overall totals from the schedule
+            const totalGrossPayouts = globalPayoutSchedule.reduce((sum, p) => sum + p.grossPayout, 0);
+            const totalTaxPaid = globalPayoutSchedule.reduce((sum, p) => sum + p.taxPaid, 0);
+            const totalNetPayouts = globalPayoutSchedule.reduce((sum, p) => sum + p.netPayout, 0);
+
+            // Update UI with calculated values
+            updateSummaryCards(calculatedGrossPayout, totalGrossPayouts, totalTaxPaid, totalNetPayouts);
+            displayScheduleTable(globalPayoutSchedule);
+            displayYearlySummaryTable(globalYearlySummary);
+            updateChart(principal, totalGrossPayouts, totalTaxPaid, totalNetPayouts);
+            setupSocialSharing(); // Update sharing links with new data
+
+            document.getElementById('results-section').style.display = 'block';
+        }
+        
+        // --- Schedule Generation Function ---
+        function generatePayoutSchedule(initialPrincipal, firstGrossPayout, periodicRate, totalPeriods, periodicInflationRate, taxRate) {
+            const schedule = [];
+            let remainingBalance = initialPrincipal;
+            let currentGrossPayout = firstGrossPayout; // This payout will grow with inflation
+            let cumulativeNetPayout = 0;
+
+            for (let i = 1; i <= totalPeriods; i++) {
+                if (remainingBalance <= 0) { // Annuity is depleted
+                    break; 
+                }
+
+                const interestEarned = remainingBalance * periodicRate;
+                let principalPortion = currentGrossPayout - interestEarned;
+                
+                // Adjust final principal portion if it would cause balance to go negative
+                if (remainingBalance + interestEarned < currentGrossPayout) {
+                    principalPortion = remainingBalance; // Only return remaining principal
+                    currentGrossPayout = remainingBalance + interestEarned; // Adjust gross payout to deplete exactly
+                }
+
+                const taxPaidThisPeriod = interestEarned * taxRate;
+                const netPayoutThisPeriod = currentGrossPayout - taxPaidThisPeriod;
+
+                remainingBalance -= principalPortion; // Principal reduces the balance
+
+                cumulativeNetPayout += netPayoutThisPeriod;
+
+                const paymentDate = new Date(); // Use current date for schedule generation baseline
+                const freq = parseInt(document.getElementById('payoutFrequency').value);
+                if (freq === 12) paymentDate.setMonth(paymentDate.getMonth() + i);
+                else if (freq === 4) paymentDate.setMonth(paymentDate.getMonth() + i * 3);
+                else if (freq === 2) paymentDate.setMonth(paymentDate.getMonth() + i * 6);
+                else if (freq === 1) paymentDate.setFullYear(paymentDate.getFullYear() + i);
+
+
+                schedule.push({
+                    period: i,
+                    paymentDate: paymentDate,
+                    grossPayout: currentGrossPayout,
+                    interestPortion: interestEarned,
+                    principalPortion: principalPortion,
+                    taxPaid: taxPaidThisPeriod,
+                    netPayout: netPayoutThisPeriod,
+                    remainingBalance: Math.max(0, remainingBalance), // Ensure non-negative
+                    cumulativeNetPayout: cumulativeNetPayout
+                });
+
+                // Adjust payout for inflation for the NEXT period
+                currentGrossPayout *= (1 + periodicInflationRate);
+            }
+            return schedule;
+        }
+        
+        // --- Display Functions ---
+        function updateSummaryCards(periodicPayoutGross, totalPayoutsGross, totalTaxPaid, totalPayoutsNet) {
+            document.getElementById('periodicPayoutGross').textContent = formatCurrency(periodicPayoutGross);
+            document.getElementById('totalPayoutsGross').textContent = formatCurrency(totalPayoutsGross);
+            document.getElementById('totalTaxPaid').textContent = formatCurrency(totalTaxPaid);
+            document.getElementById('totalPayoutsNet').textContent = formatCurrency(totalPayoutsNet);
+        }
+        
+        function displayScheduleTable(schedule) {
+            const tableBody = document.getElementById('scheduleBody');
+            tableBody.innerHTML = '';
+            
+            const showAllThreshold = 12 * 5; // Show all if 5 years or less of monthly payments
+            const showAll = schedule.length <= showAllThreshold;
+            const payoutFrequency = parseInt(document.getElementById('payoutFrequency').value);
+
+            schedule.forEach((period, i) => {
+                const isEndOfYear = (i + 1) % payoutFrequency === 0;
+                const isFirstOrLast = i === 0 || i === schedule.length - 1;
+
+                if (showAll || isEndOfYear || isFirstOrLast) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${period.period}</td>
+                        <td>${period.paymentDate.toLocaleDateString()}</td>
+                        <td>${formatCurrency(period.grossPayout)}</td>
+                        <td>${formatCurrency(period.interestPortion)}</td>
+                        <td>${formatCurrency(period.principalPortion)}</td>
+                        <td>${formatCurrency(period.taxPaid)}</td>
+                        <td>${formatCurrency(period.netPayout)}</td>
+                        <td>${formatCurrency(period.remainingBalance)}</td>
+                        <td>${formatCurrency(period.cumulativeNetPayout)}</td>
+                    `;
+                    tableBody.appendChild(row);
+                }
+            });
+        }
+        
+        function generateYearlySummaryFromSchedule(schedule) {
+            const yearlySummary = [];
+            if (schedule.length === 0) return yearlySummary;
+
+            let currentYear = schedule[0].paymentDate.getFullYear();
+            let yearGrossPayouts = 0;
+            let yearInterest = 0;
+            let yearPrincipalReturned = 0;
+            let yearTaxPaid = 0;
+            let yearNetPayouts = 0;
+            let lastBalanceInYear = 0;
+            let totalNetPayoutToDate = 0;
+
+            schedule.forEach(period => {
+                const periodYear = period.paymentDate.getFullYear();
+
+                if (periodYear !== currentYear) {
+                    // Push data for the completed year
+                    yearlySummary.push({
+                        year: currentYear,
+                        grossPayouts: parseFloat(yearGrossPayouts.toFixed(2)),
+                        interestPaid: parseFloat(yearInterest.toFixed(2)),
+                        principalReturned: parseFloat(yearPrincipalReturned.toFixed(2)),
+                        taxPaid: parseFloat(yearTaxPaid.toFixed(2)),
+                        netPayouts: parseFloat(yearNetPayouts.toFixed(2)),
+                        endingBalance: parseFloat(lastBalanceInYear.toFixed(2)),
+                        totalNetPayoutToDate: parseFloat(period.cumulativeNetPayout.toFixed(2)) - parseFloat(period.netPayout.toFixed(2)) // Cumulative net payout up to end of previous year
+                    });
+                    // Reset for the new year
+                    currentYear = periodYear;
+                    yearGrossPayouts = 0;
+                    yearInterest = 0;
+                    yearPrincipalReturned = 0;
+                    yearTaxPaid = 0;
+                    yearNetPayouts = 0;
+                }
+                
+                yearGrossPayouts += period.grossPayout;
+                yearInterest += period.interestPortion;
+                yearPrincipalReturned += period.principalPortion;
+                yearTaxPaid += period.taxPaid;
+                yearNetPayouts += period.netPayout;
+                lastBalanceInYear = period.remainingBalance; // Always keep the latest balance for the current year
+                totalNetPayoutToDate = period.cumulativeNetPayout; // Take from cumulative
+            });
+
+            // Add the data for the last (current) year
+            yearlySummary.push({
+                year: currentYear,
+                grossPayouts: parseFloat(yearGrossPayouts.toFixed(2)),
+                interestPaid: parseFloat(yearInterest.toFixed(2)),
+                principalReturned: parseFloat(yearPrincipalReturned.toFixed(2)),
+                taxPaid: parseFloat(yearTaxPaid.toFixed(2)),
+                netPayouts: parseFloat(yearNetPayouts.toFixed(2)),
+                endingBalance: parseFloat(lastBalanceInYear.toFixed(2)),
+                totalNetPayoutToDate: parseFloat(totalNetPayoutToDate.toFixed(2))
+            });
+
+            return yearlySummary;
+        }
+
+        function displayYearlySummaryTable(summary) {
+            const tableBody = document.getElementById('summaryBody');
+            tableBody.innerHTML = '';
+            
+            summary.forEach(year => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${year.year}</td>
+                    <td>${formatCurrency(year.grossPayouts)}</td>
+                    <td>${formatCurrency(year.interestPaid)}</td>
+                    <td>${formatCurrency(year.principalReturned)}</td>
+                    <td>${formatCurrency(year.taxPaid)}</td>
+                    <td>${formatCurrency(year.netPayouts)}</td>
+                    <td>${formatCurrency(year.endingBalance)}</td>
+                    <td>${formatCurrency(year.totalNetPayoutToDate)}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        function updateChart(initialPrincipal, totalGrossPayouts, totalTaxPaid, totalNetPayouts) {
+            const ctx = document.getElementById('payoutChart').getContext('2d');
+            
+            // Destroy previous chart if exists
+            if (payoutChartInstance) {
+                payoutChartInstance.destroy();
+            }
+
+            if (initialPrincipal <= 0 || totalNetPayouts <= 0) { // No meaningful data to chart
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                return;
+            }
+
+            // Total payout is totalGrossPayouts. Breakdown how it was funded.
+            // Payouts come from Initial Principal + Interest Earned.
+            // Amount of Principal Returned is basically the initial principal.
+            const totalPrincipalReturned = initialPrincipal; // This should be the total principal returned by the end
+            const totalInterestEarned = totalGrossPayouts - totalPrincipalReturned; // Total interest paid out from the annuity
+
+            const labels = ['Initial Principal', 'Interest Earnings', 'Tax Paid'];
+            const data = [
+                totalPrincipalReturned, 
+                totalInterestEarned > 0 ? totalInterestEarned : 0, // Ensure non-negative interest for chart
+                totalTaxPaid
+            ];
+
+            // Filter out zero values for chart if they are not relevant for visual representation
+            const filteredLabels = [];
+            const filteredData = [];
+            const backgroundColors = [];
+            const rootStyle = getComputedStyle(document.documentElement);
+            const chartColors = [
+                rootStyle.getPropertyValue('--chart-color-principal'),
+                rootStyle.getPropertyValue('--chart-color-interest'),
+                rootStyle.getPropertyValue('--chart-color-tax')
+            ];
+
+            for(let i = 0; i < data.length; i++) {
+                if (Math.abs(data[i]) > 0.01) { // Filter out very small values (near zero)
+                    filteredData.push(data[i]);
+                    filteredLabels.push(labels[i]);
+                    backgroundColors.push(chartColors[i]);
+                }
+            }
+
+            payoutChartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: filteredLabels,
+                    datasets: [{
+                        data: filteredData,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: rootStyle.getPropertyValue('--text-color')
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                    return `${context.label}: ${formatCurrency(value)} (${percentage}%)`;
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Annuity Payout Breakdown (Gross)',
+                            color: rootStyle.getPropertyValue('--text-color')
+                        }
+                    }
+                }
+            });
+        }
+        
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        }
+        
+        // --- Export Functions ---
+        function printSchedule() {
+            window.print();
+        }
+        
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'pt', 'letter');
+            let currentY = 40;
+            const margin = 40;
+            const pageWidth = doc.internal.pageSize.width;
+
+            doc.setFontSize(18);
+            doc.text('Annuity Payout Report', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 30;
+
+            doc.setFontSize(12);
+            doc.text(`Calculated On: ${new Date().toLocaleDateString()}`, margin, currentY);
+            currentY += 20;
+
+            // Input Details
+            const inputDetails = [
+                ["Annuity Type", document.getElementById('annuityType').options[document.getElementById('annuityType').selectedIndex].text],
+                ["Initial Principal", formatCurrency(parseFloat(document.getElementById('principal').value))],
+                ["Annual Interest Rate", `${document.getElementById('interestRate').value}%`],
+                ["Payout Term (Years)", document.getElementById('term').value],
+                ["Payout Frequency", document.getElementById('payoutFrequency').options[document.getElementById('payoutFrequency').selectedIndex].text],
+                ["Annual Inflation Rate", document.getElementById('inflationRate').value === '' ? 'N/A' : `${document.getElementById('inflationRate').value}%`],
+                ["Annual Tax Rate", document.getElementById('taxRate').value === '' ? 'N/A' : `${document.getElementById('taxRate').value}%`]
+            ];
+            doc.autoTable({
+                startY: currentY,
+                head: [['Parameter', 'Value']],
+                body: inputDetails,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                margin: { left: margin, right: margin }
+            });
+            currentY = doc.autoTable.previous.finalY + 20;
+
+            // Summary Results
+            const summaryResults = [
+                ["Periodic Payout (Gross)", document.getElementById('periodicPayoutGross').textContent],
+                ["Total Payouts (Gross)", document.getElementById('totalPayoutsGross').textContent],
+                ["Total Tax Paid", document.getElementById('totalTaxPaid').textContent],
+                ["Total Payouts (Net)", document.getElementById('totalPayoutsNet').textContent]
+            ];
+            doc.autoTable({
+                startY: currentY,
+                head: [['Result', 'Value']],
+                body: summaryResults,
+                theme: 'grid',
+                headStyles: { fillColor: [46, 204, 113], textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                margin: { left: margin, right: margin }
+            });
+            currentY = doc.autoTable.previous.finalY + 30;
+
+            // Detailed Schedule
+            doc.addPage();
+            currentY = margin;
+            doc.setFontSize(16);
+            doc.text('Detailed Annuity Payout Schedule', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 20;
+
+            const scheduleTableData = globalPayoutSchedule.map(p => [
+                p.period,
+                p.paymentDate.toLocaleDateString('en-US'),
+                p.grossPayout.toFixed(2),
+                p.interestPortion.toFixed(2),
+                p.principalPortion.toFixed(2),
+                p.taxPaid.toFixed(2),
+                p.netPayout.toFixed(2),
+                p.remainingBalance.toFixed(2),
+                p.cumulativeNetPayout.toFixed(2)
+            ]);
+
+            doc.autoTable({
+                startY: currentY,
+                head: [['Period', 'Date', 'Gross Payout', 'Interest', 'Principal', 'Tax', 'Net Payout', 'Balance', 'Cum. Net']],
+                body: scheduleTableData,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                styles: { fontSize: 7, cellPadding: 3 }, // Smaller font/padding for many columns
+                margin: { left: margin, right: margin },
+                didDrawPage: function(data) {
+                    let pageCount = doc.internal.getNumberOfPages();
+                    doc.setFontSize(8);
+                    doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber + ' of ' + pageCount, data.settings.margin.left, doc.internal.pageSize.height - 20);
+                }
+            });
+
+            // Yearly Summary
+            doc.addPage();
+            currentY = margin;
+            doc.setFontSize(16);
+            doc.text('Yearly Annuity Payout Summary', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 20;
+
+            const yearlySummaryTableData = globalYearlySummary.map(y => [
+                y.year,
+                y.grossPayouts.toFixed(2),
+                y.interestPaid.toFixed(2),
+                y.principalReturned.toFixed(2),
+                y.taxPaid.toFixed(2),
+                y.netPayouts.toFixed(2),
+                y.endingBalance.toFixed(2),
+                y.totalNetPayoutToDate.toFixed(2)
+            ]);
+
+            doc.autoTable({
+                startY: currentY,
+                head: [['Year', 'Gross Payouts', 'Interest', 'Principal Ret.', 'Tax Paid', 'Net Payouts', 'End Balance', 'Total Net Payout']],
+                body: yearlySummaryTableData,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                styles: { fontSize: 8, cellPadding: 4 },
+                margin: { left: margin, right: margin },
+                didDrawPage: function(data) {
+                    let pageCount = doc.internal.getNumberOfPages();
+                    doc.setFontSize(8);
+                    doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber + ' of ' + pageCount, data.settings.margin.left, doc.internal.pageSize.height - 20);
+                }
+            });
+            
+            doc.save('annuity_payout_report.pdf');
+        }
+        
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+            
+            // Sheet 1: Summary
+            const summaryData = [
+                ["Annuity Payout Report", ""],
+                ["Calculated On", new Date().toLocaleDateString()],
+                [],
+                ["Input Details", ""],
+                ["Annuity Type", document.getElementById('annuityType').options[document.getElementById('annuityType').selectedIndex].text],
+                ["Initial Principal", parseFloat(document.getElementById('principal').value)],
+                ["Annual Interest Rate", `${document.getElementById('interestRate').value}%`],
+                ["Payout Term (Years)", document.getElementById('term').value],
+                ["Payout Frequency", document.getElementById('payoutFrequency').options[document.getElementById('payoutFrequency').selectedIndex].text],
+                ["Annual Inflation Rate", document.getElementById('inflationRate').value === '' ? 'N/A' : `${document.getElementById('inflationRate').value}%`],
+                ["Annual Tax Rate", document.getElementById('taxRate').value === '' ? 'N/A' : `${document.getElementById('taxRate').value}%`],
+                [],
+                ["Results", ""],
+                ["Periodic Payout (Gross)", document.getElementById('periodicPayoutGross').textContent],
+                ["Total Payouts (Gross)", document.getElementById('totalPayoutsGross').textContent],
+                ["Total Tax Paid", document.getElementById('totalTaxPaid').textContent],
+                ["Total Payouts (Net)", document.getElementById('totalPayoutsNet').textContent]
+            ];
+            const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, summaryWs, "Summary");
+
+            // Sheet 2: Detailed Schedule
+            const detailedScheduleHeaders = [
+                "Period", "Payment Date", "Gross Payout", "Interest Portion", 
+                "Principal Return", "Tax Paid", "Net Payout", "Remaining Balance", "Cumulative Net Payout"
+            ];
+            const detailedScheduleData = [detailedScheduleHeaders];
+            globalPayoutSchedule.forEach(p => {
+                detailedScheduleData.push([
+                    p.period,
+                    p.paymentDate.toLocaleDateString('en-US'),
+                    p.grossPayout,
+                    p.interestPortion,
+                    p.principalPortion,
+                    p.taxPaid,
+                    p.netPayout,
+                    p.remainingBalance,
+                    p.cumulativeNetPayout
+                ]);
+            });
+            const detailedScheduleWs = XLSX.utils.aoa_to_sheet(detailedScheduleData);
+            XLSX.utils.book_append_sheet(wb, detailedScheduleWs, "Detailed Schedule");
+
+            // Sheet 3: Yearly Summary
+            const yearlySummaryHeaders = [
+                "Year", "Yearly Gross Payouts", "Yearly Interest", "Yearly Principal Returned", 
+                "Yearly Tax Paid", "Yearly Net Payouts", "Ending Balance", "Total Net Payout to Date"
+            ];
+            const yearlySummaryData = [yearlySummaryHeaders];
+            globalYearlySummary.forEach(y => {
+                yearlySummaryData.push([
+                    y.year,
+                    y.grossPayouts,
+                    y.interestPaid,
+                    y.principalReturned,
+                    y.taxPaid,
+                    y.netPayouts,
+                    y.endingBalance,
+                    y.totalNetPayoutToDate
+                ]);
+            });
+            const yearlySummaryWs = XLSX.utils.aoa_to_sheet(yearlySummaryData);
+            XLSX.utils.book_append_sheet(wb, yearlySummaryWs, "Yearly Summary");
+            
+            XLSX.writeFile(wb, 'annuity_payout_report.xlsx');
+        }
+        
+        function exportToCSV() {
+            let csvContent = "";
+
+            // Summary data
+            csvContent += "Annuity Payout Report\n";
+            csvContent += `"Calculated On","${new Date().toLocaleDateString()}"\n\n`;
+            csvContent += `"Input Details",\n`;
+            csvContent += `"Annuity Type","${document.getElementById('annuityType').options[document.getElementById('annuityType').selectedIndex].text}"\n`;
+            csvContent += `"Initial Principal",${document.getElementById('principal').value}\n`;
+            csvContent += `"Annual Interest Rate",${document.getElementById('interestRate').value}%\n`;
+            csvContent += `"Payout Term (Years)",${document.getElementById('term').value}\n`;
+            csvContent += `"Payout Frequency","${document.getElementById('payoutFrequency').options[document.getElementById('payoutFrequency').selectedIndex].text}"\n`;
+            csvContent += `"Annual Inflation Rate","${document.getElementById('inflationRate').value === '' ? 'N/A' : document.getElementById('inflationRate').value + '%'}"\n`;
+            csvContent += `"Annual Tax Rate","${document.getElementById('taxRate').value === '' ? 'N/A' : document.getElementById('taxRate').value + '%'}"\n\n`;
+            csvContent += `"Results",\n`;
+            csvContent += `"Periodic Payout (Gross)","${document.getElementById('periodicPayoutGross').textContent}"\n`;
+            csvContent += `"Total Payouts (Gross)","${document.getElementById('totalPayoutsGross').textContent}"\n`;
+            csvContent += `"Total Tax Paid","${document.getElementById('totalTaxPaid').textContent}"\n`;
+            csvContent += `"Total Payouts (Net)","${document.getElementById('totalPayoutsNet').textContent}"\n\n`;
+
+            // Detailed Schedule
+            csvContent += "Detailed Annuity Payout Schedule\n";
+            csvContent += "Period,Payment Date,Gross Payout,Interest Portion,Principal Return,Tax Paid,Net Payout,Remaining Balance,Cumulative Net Payout\n";
+            globalPayoutSchedule.forEach(p => {
+                csvContent += `${p.period},"${p.paymentDate.toLocaleDateString('en-US')}",${p.grossPayout.toFixed(2)},${p.interestPortion.toFixed(2)},${p.principalPortion.toFixed(2)},${p.taxPaid.toFixed(2)},${p.netPayout.toFixed(2)},${p.remainingBalance.toFixed(2)},${p.cumulativeNetPayout.toFixed(2)}\n`;
+            });
+            csvContent += "\n";
+
+            // Yearly Summary
+            csvContent += "Yearly Annuity Payout Summary\n";
+            csvContent += "Year,Yearly Gross Payouts,Yearly Interest,Yearly Principal Returned,Yearly Tax Paid,Yearly Net Payouts,Ending Balance,Total Net Payout to Date\n";
+            globalYearlySummary.forEach(y => {
+                csvContent += `${y.year},${y.grossPayouts.toFixed(2)},${y.interestPaid.toFixed(2)},${y.principalReturned.toFixed(2)},${y.taxPaid.toFixed(2)},${y.netPayouts.toFixed(2)},${y.endingBalance.toFixed(2)},${y.totalNetPayoutToDate.toFixed(2)}\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'annuity_payout_report.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        function setupSocialSharing() {
+            // Get data after calculation for sharing
+            const principal = parseFloat(document.getElementById('principal').value);
+            const interestRate = parseFloat(document.getElementById('interestRate').value);
+            const term = parseFloat(document.getElementById('term').value);
+            const payoutFrequencyText = document.getElementById('payoutFrequency').options[document.getElementById('payoutFrequency').selectedIndex].text;
+            const periodicPayoutGross = document.getElementById('periodicPayoutGross').textContent;
+            const totalNetPayouts = document.getElementById('totalPayoutsNet').textContent;
+            const annuityTypeText = document.getElementById('annuityType').options[document.getElementById('annuityType').selectedIndex].text;
+
+            let shareText = `I calculated my annuity payout! Investing ${formatCurrency(principal)} at ${interestRate}% for ${term} years (${payoutFrequencyText}), I could receive ${periodicPayoutGross} per period, totaling ${totalNetPayouts} net. Check it out:`;
+            
+            const shareUrl = window.location.href; // Current page URL
+            
+            document.getElementById('emailShare').href = `mailto:?subject=Annuity Payout Calculation Results&body=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
+            document.getElementById('whatsappShare').href = `https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
+            document.getElementById('linkedinShare').href = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent('Annuity Payout Calculation')}&summary=${encodeURIComponent(shareText)}`;
+            document.getElementById('twitterShare').href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+        }
+    </script>
+</body>
+</html>

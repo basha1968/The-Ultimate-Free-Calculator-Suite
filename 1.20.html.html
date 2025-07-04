@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Credit Card Payoff Calculator</title>
+    <!-- Deferred Chart.js loading -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <!-- Deferred PDF export libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js" defer></script>
+    <!-- Deferred Excel export library -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js" defer></script>
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+            --text: #333;
+            --bg: #f9f9f9;
+            --card-bg: #fff;
+            --error: #e74c3c;
+            --warning: #f39c12;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--bg);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .calculator-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .calculator-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .input-section, .results-section {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1, h2, h3 {
+            color: var(--dark);
+            margin-top: 0;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+            position: relative;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        input:invalid {
+            border-color: var(--error);
+        }
+        
+        .error-message {
+            color: var(--error);
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--secondary);
+        }
+        
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        .ad-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--light);
+            border-radius: 4px;
+            text-align: center;
+            min-height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        .progress-container {
+            margin: 20px 0;
+        }
+        
+        .progress-bar {
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+        
+        .progress {
+            height: 100%;
+            background-color: var(--primary);
+            transition: width 0.5s ease;
+        }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .summary-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .summary-card h3 {
+            margin-top: 0;
+            font-size: 16px;
+        }
+        
+        .summary-card p {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: var(--primary);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: var(--dark);
+            color: white;
+        }
+        
+        tr:hover {
+            background-color: rgba(0,0,0,0.05);
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--dark);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+            font-weight: normal;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .export-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .social-sharing {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .social-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 12px;
+            border-radius: 4px;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .email { background-color: #777; }
+        .whatsapp { background-color: #25D366; }
+        .linkedin { background-color: #0077B5; }
+        .twitter { background-color: #1DA1F2; }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #eee;
+            border: none;
+            border-radius: 4px 4px 0 0;
+            margin-right: 5px;
+            white-space: nowrap;
+        }
+        
+        .tab.active {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .card-list {
+            margin-bottom: 20px;
+        }
+        
+        .card-item {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .remove-card {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--error);
+            color: white;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .disclaimer {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 20px;
+            padding: 10px;
+            border-top: 1px solid #eee;
+        }
+        
+        @media print {
+            .no-print, .ad-container {
+                display: none !important;
+            }
+            
+            body {
+                background: none;
+                padding: 0;
+            }
+            
+            .calculator-container {
+                display: block;
+            }
+            
+            .input-section {
+                display: none;
+            }
+            
+            .tab-content {
+                display: block !important;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .summary-cards {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .export-options, .social-sharing {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Credit Card Payoff Calculator</h1>
+    
+    <!-- Top Ad Banner -->
+    <div class="ad-container no-print">
+        <!-- Adsterra Ad Code Placeholder -->
+        <div id="adsterra-top-banner">
+            <script>
+                // Replace with actual Adsterra ad code
+                console.log("Adsterra top banner ad placeholder");
+            </script>
+        </div>
+    </div>
+    
+    <div class="calculator-container">
+        <div class="input-section">
+            <h2>Credit Card Details</h2>
+            
+            <div class="card-list" id="cardList">
+                <!-- Cards will be added here dynamically -->
+            </div>
+            
+            <button id="addCardBtn">Add Credit Card</button>
+            
+            <div class="input-group">
+                <label for="paymentStrategy">
+                    Payment Strategy
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">Snowball: Pay smallest balances first. Avalanche: Pay highest APR first.</span>
+                    </span>
+                </label>
+                <select id="paymentStrategy">
+                    <option value="snowball">Debt Snowball (Smallest Balance First)</option>
+                    <option value="avalanche">Debt Avalanche (Highest APR First)</option>
+                    <option value="custom">Custom Payment Order</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label for="extraPayment">
+                    Extra Monthly Payment ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">Additional amount you can pay toward debt each month</span>
+                    </span>
+                </label>
+                <input type="number" id="extraPayment" min="0" step="10" value="0">
+            </div>
+            
+            <div class="input-group">
+                <label for="lumpSum">
+                    Lump Sum Payment ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">One-time payment to apply toward your debt</span>
+                    </span>
+                </label>
+                <input type="number" id="lumpSum" min="0" step="100" value="0">
+            </div>
+            
+            <button id="calculateBtn">Calculate Payoff Plan</button>
+            
+            <!-- Sidebar Ad -->
+            <div class="ad-container no-print">
+                <!-- Yllix Ad Code Placeholder -->
+                <div id="yllix-sidebar-ad">
+                    <script>
+                        // Replace with actual Yllix ad code
+                        console.log("Yllix sidebar ad placeholder");
+                    </script>
+                </div>
+            </div>
+        </div>
+        
+        <div class="results-section">
+            <h2>Payoff Results</h2>
+            
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <h3>Total Debt</h3>
+                    <p id="totalDebt">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Interest</h3>
+                    <p id="totalInterest">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Payoff Time</h3>
+                    <p id="payoffTime">0 months</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Payoff Date</h3>
+                    <p id="payoffDate">-</p>
+                </div>
+            </div>
+            
+            <div class="progress-container">
+                <h3>Debt Paydown Progress</h3>
+                <div class="progress-bar">
+                    <div class="progress" id="debtProgress" style="width: 0%"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>0%</span>
+                    <span id="progressPercent">0%</span>
+                    <span>100%</span>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="payoffChart"></canvas>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab active" data-tab="schedule">Payment Schedule</button>
+                <button class="tab" data-tab="summary">Card Summary</button>
+            </div>
+            
+            <div class="tab-content active" id="schedule-tab">
+                <div style="overflow-x: auto;">
+                    <table id="scheduleTable">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Payment</th>
+                                <th>Principal</th>
+                                <th>Interest</th>
+                                <th>Remaining Debt</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scheduleBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="summary-tab">
+                <div style="overflow-x: auto;">
+                    <table id="summaryTable">
+                        <thead>
+                            <tr>
+                                <th>Card</th>
+                                <th>Balance</th>
+                                <th>APR</th>
+                                <th>Payoff Time</th>
+                                <th>Total Interest</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summaryBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="export-options no-print">
+                <button id="printBtn">Print Plan</button>
+                <button id="pdfBtn">Save as PDF</button>
+                <button id="excelBtn">Save as Excel</button>
+                <button id="csvBtn">Save as CSV</button>
+            </div>
+            
+            <div class="social-sharing no-print">
+                <a href="#" class="social-btn email" id="emailShare">Email</a>
+                <a href="#" class="social-btn whatsapp" id="whatsappShare">WhatsApp</a>
+                <a href="#" class="social-btn linkedin" id="linkedinShare">LinkedIn</a>
+                <a href="#" class="social-btn twitter" id="twitterShare">Twitter</a>
+            </div>
+            
+            <div class="disclaimer">
+                <p><strong>Disclaimer:</strong> This calculator provides estimates only. Actual payoff times may vary based on payment timing, interest calculations, and other factors. Consult with a financial advisor before making any decisions.</p>
+                <p>This tool does not store any personal or financial data. All calculations are performed in your browser.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bottom Ad Banner -->
+    <div class="ad-container no-print">
+        <!-- Adsterra Ad Code Placeholder -->
+        <div id="adsterra-bottom-banner">
+            <script>
+                // Replace with actual Adsterra ad code
+                console.log("Adsterra bottom banner ad placeholder");
+            </script>
+        </div>
+    </div>
+
+    <!-- Template for credit card inputs -->
+    <template id="cardTemplate">
+        <div class="card-item">
+            <button class="remove-card">×</button>
+            <div class="input-group">
+                <label>Card Name</label>
+                <input type="text" class="card-name" placeholder="e.g., Chase Visa" required>
+            </div>
+            <div class="input-group">
+                <label>Balance ($)</label>
+                <input type="number" class="card-balance" min="1" step="1" required>
+                <div class="error-message">Please enter a valid balance</div>
+            </div>
+            <div class="input-group">
+                <label>APR (%)</label>
+                <input type="number" class="card-apr" min="0" max="50" step="0.01" required>
+                <div class="error-message">Please enter a valid APR (0-50%)</div>
+            </div>
+            <div class="input-group">
+                <label>Minimum Payment ($ or %)</label>
+                <input type="text" class="card-min-payment" value="2%" required>
+                <div class="error-message">Please enter a valid payment (e.g., 25 or 2%)</div>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        // Main application state
+        const state = {
+            cards: [],
+            payoffPlan: null,
+            chart: null
+        };
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up event listeners
+            document.getElementById('addCardBtn').addEventListener('click', addCard);
+            document.getElementById('calculateBtn').addEventListener('click', calculatePayoff);
+            document.getElementById('printBtn').addEventListener('click', printPlan);
+            document.getElementById('pdfBtn').addEventListener('click', exportToPDF);
+            document.getElementById('excelBtn').addEventListener('click', exportToExcel);
+            document.getElementById('csvBtn').addEventListener('click', exportToCSV);
+            
+            // Set up social sharing
+            setupSocialSharing();
+            
+            // Add initial card
+            addCard();
+        });
+
+        function addCard() {
+            const template = document.getElementById('cardTemplate');
+            const clone = template.content.cloneNode(true);
+            const cardElement = clone.querySelector('.card-item');
+            
+            // Set up remove button
+            cardElement.querySelector('.remove-card').addEventListener('click', function() {
+                if (document.querySelectorAll('.card-item').length > 1) {
+                    cardElement.remove();
+                    validateInputs();
+                } else {
+                    alert('You need at least one credit card to calculate payoff.');
+                }
+            });
+            
+            // Set up input validation
+            const inputs = cardElement.querySelectorAll('input');
+            inputs.forEach(input => {
+                input.addEventListener('input', validateInputs);
+            });
+            
+            document.getElementById('cardList').appendChild(cardElement);
+            validateInputs();
+        }
+
+        function validateInputs() {
+            let isValid = true;
+            const cards = document.querySelectorAll('.card-item');
+            
+            cards.forEach(card => {
+                const balanceInput = card.querySelector('.card-balance');
+                const aprInput = card.querySelector('.card-apr');
+                const minPaymentInput = card.querySelector('.card-min-payment');
+                
+                // Validate balance
+                if (!balanceInput.value || parseFloat(balanceInput.value) <= 0) {
+                    balanceInput.nextElementSibling.style.display = 'block';
+                    isValid = false;
+                } else {
+                    balanceInput.nextElementSibling.style.display = 'none';
+                }
+                
+                // Validate APR
+                if (!aprInput.value || parseFloat(aprInput.value) < 0 || parseFloat(aprInput.value) > 50) {
+                    aprInput.nextElementSibling.style.display = 'block';
+                    isValid = false;
+                } else {
+                    aprInput.nextElementSibling.style.display = 'none';
+                }
+                
+                // Validate minimum payment
+                const minPayment = minPaymentInput.value;
+                if (!minPayment || 
+                    (isNaN(minPayment.replace('%', '')) && isNaN(minPayment)) || 
+                    (minPayment.includes('%') && parseFloat(minPayment.replace('%', '')) <= 0)) {
+                    minPaymentInput.nextElementSibling.style.display = 'block';
+                    isValid = false;
+                } else {
+                    minPaymentInput.nextElementSibling.style.display = 'none';
+                }
+            });
+            
+            document.getElementById('calculateBtn').disabled = !isValid;
+            return isValid;
+        }
+
+        function calculatePayoff() {
+            if (!validateInputs()) return;
+            
+            // Get all card data
+            state.cards = Array.from(document.querySelectorAll('.card-item')).map(card => {
+                const minPayment = card.querySelector('.card-min-payment').value;
+                return {
+                    name: card.querySelector('.card-name').value || 'Unnamed Card',
+                    balance: parseFloat(card.querySelector('.card-balance').value),
+                    apr: parseFloat(card.querySelector('.card-apr').value),
+                    minPayment: minPayment.includes('%') ? 
+                        parseFloat(minPayment.replace('%', '')) / 100 : 
+                        parseFloat(minPayment),
+                    isPercentage: minPayment.includes('%')
+                };
+            });
+            
+            // Get other inputs
+            const strategy = document.getElementById('paymentStrategy').value;
+            const extraPayment = parseFloat(document.getElementById('extraPayment').value) || 0;
+            const lumpSum = parseFloat(document.getElementById('lumpSum').value) || 0;
+            
+            // Calculate payoff plan
+            state.payoffPlan = calculatePayoffPlan(state.cards, strategy, extraPayment, lumpSum);
+            
+            // Update UI
+            updateResults(state.payoffPlan);
+            updateChart(state.payoffPlan);
+        }
+
+        function calculatePayoffPlan(cards, strategy, extraPayment, lumpSum) {
+            // Clone cards to avoid modifying original
+            let remainingCards = JSON.parse(JSON.stringify(cards));
+            let payoffPlan = [];
+            let totalDebt = remainingCards.reduce((sum, card) => sum + card.balance, 0);
+            let totalInterest = 0;
+            let month = 0;
+            let currentDate = new Date();
+            
+            // Apply lump sum payment
+            if (lumpSum > 0) {
+                const lumpSumResult = applyLumpSum(remainingCards, lumpSum, strategy);
+                remainingCards = lumpSumResult.remainingCards;
+                totalInterest += lumpSumResult.interestPaid;
+                payoffPlan.push({
+                    month: 0,
+                    date: formatDate(currentDate),
+                    payment: lumpSum,
+                    principal: lumpSumResult.principalPaid,
+                    interest: lumpSumResult.interestPaid,
+                    remainingDebt: lumpSumResult.remainingDebt,
+                    cards: JSON.parse(JSON.stringify(remainingCards))
+                });
+            }
+            
+            // Calculate monthly payments until all cards are paid off
+            while (remainingCards.length > 0 && month < 600) { // 50 year max to prevent infinite loops
+                month++;
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                
+                // Determine payment order based on strategy
+                let paymentOrder;
+                if (strategy === 'snowball') {
+                    paymentOrder = [...remainingCards].sort((a, b) => a.balance - b.balance);
+                } else if (strategy === 'avalanche') {
+                    paymentOrder = [...remainingCards].sort((a, b) => b.apr - a.apr);
+                } else {
+                    paymentOrder = remainingCards; // Custom order (as entered)
+                }
+                
+                // Calculate total available payment
+                let totalPayment = extraPayment;
+                remainingCards.forEach(card => {
+                    const minPayment = card.isPercentage ? 
+                        Math.max(card.minPayment * card.balance, 15) : // Minimum $15 for percentage-based
+                        card.minPayment;
+                    totalPayment += minPayment;
+                });
+                
+                // Apply payments to cards in order
+                let principalPaid = 0;
+                let interestPaid = 0;
+                
+                for (let card of paymentOrder) {
+                    if (totalPayment <= 0) break;
+                    
+                    // Calculate interest for this month
+                    const monthlyRate = card.apr / 100 / 12;
+                    const interest = card.balance * monthlyRate;
+                    interestPaid += interest;
+                    
+                    // Calculate minimum payment for this card
+                    const minPayment = card.isPercentage ? 
+                        Math.max(card.minPayment * card.balance, 15) : 
+                        card.minPayment;
+                    
+                    // Calculate payment toward this card (minimum + any extra)
+                    let payment = minPayment;
+                    if (card === paymentOrder[0]) {
+                        payment += totalPayment - remainingCards.reduce((sum, c) => {
+                            const min = c.isPercentage ? Math.max(c.minPayment * c.balance, 15) : c.minPayment;
+                            return sum + min;
+                        }, 0);
+                    }
+                    
+                    payment = Math.min(payment, card.balance + interest);
+                    
+                    // Apply payment
+                    const principal = Math.min(payment - interest, card.balance);
+                    principalPaid += principal;
+                    card.balance -= principal;
+                    totalPayment -= payment;
+                    
+                    // Remove paid off cards
+                    if (card.balance <= 0.01) {
+                        remainingCards = remainingCards.filter(c => c !== card);
+                    }
+                }
+                
+                totalInterest += interestPaid;
+                const remainingDebt = remainingCards.reduce((sum, card) => sum + card.balance, 0);
+                
+                payoffPlan.push({
+                    month,
+                    date: formatDate(currentDate),
+                    payment: principalPaid + interestPaid,
+                    principal: principalPaid,
+                    interest: interestPaid,
+                    remainingDebt,
+                    cards: JSON.parse(JSON.stringify(remainingCards))
+                });
+            }
+            
+            return {
+                totalDebt,
+                totalInterest,
+                payoffMonths: month,
+                payoffDate: formatDate(currentDate),
+                monthlyPlan: payoffPlan,
+                finalCards: remainingCards
+            };
+        }
+
+        function applyLumpSum(cards, lumpSum, strategy) {
+            let remainingCards = JSON.parse(JSON.stringify(cards));
+            let remainingLumpSum = lumpSum;
+            let principalPaid = 0;
+            let interestPaid = 0;
+            
+            // First apply to interest on all cards
+            remainingCards.forEach(card => {
+                const monthlyRate = card.apr / 100 / 12;
+                const interest = card.balance * monthlyRate;
+                
+                if (remainingLumpSum > 0) {
+                    const interestPayment = Math.min(interest, remainingLumpSum);
+                    interestPaid += interestPayment;
+                    remainingLumpSum -= interestPayment;
+                }
+            });
+            
+            // Then apply to principal based on strategy
+            let paymentOrder;
+            if (strategy === 'snowball') {
+                paymentOrder = [...remainingCards].sort((a, b) => a.balance - b.balance);
+            } else if (strategy === 'avalanche') {
+                paymentOrder = [...remainingCards].sort((a, b) => b.apr - a.apr);
+            } else {
+                paymentOrder = remainingCards; // Custom order (as entered)
+            }
+            
+            for (let card of paymentOrder) {
+                if (remainingLumpSum <= 0) break;
+                
+                const principalPayment = Math.min(card.balance, remainingLumpSum);
+                principalPaid += principalPayment;
+                card.balance -= principalPayment;
+                remainingLumpSum -= principalPayment;
+                
+                if (card.balance <= 0.01) {
+                    remainingCards = remainingCards.filter(c => c !== card);
+                }
+            }
+            
+            return {
+                remainingCards,
+                principalPaid,
+                interestPaid,
+                remainingDebt: remainingCards.reduce((sum, card) => sum + card.balance, 0)
+            };
+        }
+
+        function updateResults(plan) {
+            // Update summary cards
+            document.getElementById('totalDebt').textContent = formatCurrency(plan.totalDebt);
+            document.getElementById('totalInterest').textContent = formatCurrency(plan.totalInterest);
+            document.getElementById('payoffTime').textContent = `${plan.payoffMonths} months (${Math.floor(plan.payoffMonths/12)} years ${plan.payoffMonths%12} months)`;
+            document.getElementById('payoffDate').textContent = plan.payoffDate;
+            
+            // Update progress bar
+            const progressPercent = Math.min(100, 100 * (plan.totalDebt - plan.remainingDebt) / plan.totalDebt);
+            document.getElementById('debtProgress').style.width = `${progressPercent}%`;
+            document.getElementById('progressPercent').textContent = `${Math.round(progressPercent)}%`;
+            
+            // Update payment schedule
+            const scheduleBody = document.getElementById('scheduleBody');
+            scheduleBody.innerHTML = '';
+            
+            const showAll = plan.monthlyPlan.length <= 60; // Show all if <= 5 years
+            const increment = Math.max(1, Math.floor(plan.monthlyPlan.length / 60)); // Show ~60 rows max
+            
+            plan.monthlyPlan.forEach((month, index) => {
+                if (showAll || index % increment === 0 || index === plan.monthlyPlan.length - 1) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${month.month}</td>
+                        <td>${month.date}</td>
+                        <td>${formatCurrency(month.payment)}</td>
+                        <td>${formatCurrency(month.principal)}</td>
+                        <td>${formatCurrency(month.interest)}</td>
+                        <td>${formatCurrency(month.remainingDebt)}</td>
+                    `;
+                    scheduleBody.appendChild(row);
+                }
+            });
+            
+            // Update card summary
+            const summaryBody = document.getElementById('summaryBody');
+            summaryBody.innerHTML = '';
+            
+            state.cards.forEach(card => {
+                const cardPlan = plan.monthlyPlan.filter(m => 
+                    m.cards.some(c => c.name === card.name)
+                );
+                const lastMonthWithCard = cardPlan.length > 0 ? cardPlan[cardPlan.length - 1] : null;
+                const payoffMonth = lastMonthWithCard ? lastMonthWithCard.month + 1 : 0;
+                
+                const interest = plan.monthlyPlan.reduce((sum, month) => {
+                    const cardPayment = month.cards.find(c => c.name === card.name);
+                    if (!cardPayment) return sum;
+                    const monthlyRate = card.apr / 100 / 12;
+                    return sum + (cardPayment.balance * monthlyRate);
+                }, 0);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${card.name}</td>
+                    <td>${formatCurrency(card.balance)}</td>
+                    <td>${card.apr.toFixed(2)}%</td>
+                    <td>${payoffMonth} months</td>
+                    <td>${formatCurrency(interest)}</td>
+                `;
+                summaryBody.appendChild(row);
+            });
+        }
+
+        function updateChart(plan) {
+            const ctx = document.getElementById('payoffChart').getContext('2d');
+            
+            // Destroy previous chart if exists
+            if (state.chart) {
+                state.chart.destroy();
+            }
+            
+            // Prepare data for chart
+            const labels = plan.monthlyPlan.map(month => month.month);
+            const principalData = plan.monthlyPlan.map(month => month.principal);
+            const interestData = plan.monthlyPlan.map(month => month.interest);
+            const remainingData = plan.monthlyPlan.map(month => month.remainingDebt);
+            
+            state.chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Principal Paid',
+                            data: principalData,
+                            backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                            borderColor: 'rgba(52, 152, 219, 1)',
+                            borderWidth: 2,
+                            fill: true
+                        },
+                        {
+                            label: 'Interest Paid',
+                            data: interestData,
+                            backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                            borderColor: 'rgba(231, 76, 60, 1)',
+                            borderWidth: 2,
+                            fill: true
+                        },
+                        {
+                            label: 'Remaining Debt',
+                            data: remainingData,
+                            backgroundColor: 'rgba(46, 204, 113, 0.2)',
+                            borderColor: 'rgba(46, 204, 113, 1)',
+                            borderWidth: 2,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Months'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Amount ($)'
+                            },
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${formatCurrency(context.raw)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        }
+
+        function formatDate(date) {
+            const options = { year: 'numeric', month: 'short' };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        function printPlan() {
+            window.print();
+        }
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(18);
+            doc.text('Credit Card Payoff Plan', 14, 15);
+            
+            // Add summary
+            doc.setFontSize(12);
+            doc.text(`Total Debt: ${document.getElementById('totalDebt').textContent}`, 14, 25);
+            doc.text(`Total Interest: ${document.getElementById('totalInterest').textContent}`, 14, 30);
+            doc.text(`Payoff Time: ${document.getElementById('payoffTime').textContent}`, 14, 35);
+            doc.text(`Payoff Date: ${document.getElementById('payoffDate').textContent}`, 14, 40);
+            
+            // Add payment strategy
+            const strategy = document.getElementById('paymentStrategy');
+            doc.text(`Payment Strategy: ${strategy.options[strategy.selectedIndex].text}`, 14, 50);
+            
+            // Add card summary table
+            doc.autoTable({
+                startY: 60,
+                head: [['Card', 'Balance', 'APR', 'Payoff Time', 'Total Interest']],
+                body: getCardSummaryData(),
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [44, 62, 80] }
+            });
+            
+            // Add payment schedule table
+            doc.autoTable({
+                startY: doc.lastAutoTable.finalY + 10,
+                head: [['Month', 'Date', 'Payment', 'Principal', 'Interest', 'Remaining Debt']],
+                body: getScheduleData(),
+                styles: { fontSize: 6 },
+                headStyles: { fillColor: [44, 62, 80] },
+                pageBreak: 'auto'
+            });
+            
+            doc.save('credit_card_payoff_plan.pdf');
+        }
+
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+            
+            // Add card summary sheet
+            const ws1 = XLSX.utils.json_to_sheet(getCardSummaryData());
+            XLSX.utils.book_append_sheet(wb, ws1, "Card Summary");
+            
+            // Add payment schedule sheet
+            const ws2 = XLSX.utils.json_to_sheet(getScheduleData());
+            XLSX.utils.book_append_sheet(wb, ws2, "Payment Schedule");
+            
+            XLSX.writeFile(wb, 'credit_card_payoff_plan.xlsx');
+        }
+
+        function exportToCSV() {
+            const data = getScheduleData();
+            const headers = Object.keys(data[0]).join(',');
+            const rows = data.map(obj => Object.values(obj).join(','));
+            const csvContent = [headers, ...rows].join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'credit_card_payoff_schedule.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function getCardSummaryData() {
+            const table = document.getElementById('summaryTable');
+            const rows = table.querySelectorAll('tbody tr');
+            const data = [];
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                data.push({
+                    'Card': cells[0].textContent,
+                    'Balance': cells[1].textContent,
+                    'APR': cells[2].textContent,
+                    'Payoff Time': cells[3].textContent,
+                    'Total Interest': cells[4].textContent
+                });
+            });
+            
+            return data;
+        }
+
+        function getScheduleData() {
+            const table = document.getElementById('scheduleTable');
+            const rows = table.querySelectorAll('tbody tr');
+            const data = [];
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                data.push({
+                    'Month': cells[0].textContent,
+                    'Date': cells[1].textContent,
+                    'Payment': cells[2].textContent,
+                    'Principal': cells[3].textContent,
+                    'Interest': cells[4].textContent,
+                    'Remaining Debt': cells[5].textContent
+                });
+            });
+            
+            return data;
+        }
+
+        function setupSocialSharing() {
+            const totalDebt = document.getElementById('totalDebt').textContent;
+            const payoffTime = document.getElementById('payoffTime').textContent;
+            const totalInterest = document.getElementById('totalInterest').textContent;
+            const strategy = document.getElementById('paymentStrategy').options[document.getElementById('paymentStrategy').selectedIndex].text;
+            
+            const shareText = `My credit card payoff plan: ${totalDebt} total debt, ${payoffTime} payoff time, ${totalInterest} total interest using ${strategy} method.`;
+            const shareUrl = window.location.href;
+            
+            document.getElementById('emailShare').href = `mailto:?subject=Credit Card Payoff Plan&body=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
+            document.getElementById('whatsappShare').href = `https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
+            document.getElementById('linkedinShare').href = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(shareUrl)}&title=Credit Card Payoff Plan&summary=${encodeURIComponent(shareText)}`;
+            document.getElementById('twitterShare').href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+        }
+    </script>
+</body>
+</html>

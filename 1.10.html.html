@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Bond Calculator</title>
+    <!-- 
+        Content-Security-Policy: For production deployment, configure this via your web server (e.g., Nginx, Apache) 
+        for best practice. If using a meta tag, ensure all CDN domains (Chart.js, jsPDF, SheetJS) are whitelisted.
+        For this single-file, self-contained solution, inline scripts/styles require 'unsafe-inline'.
+        Example for meta (adjust for your specific ad networks if they inject more):
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com cdn.jsdelivr.net cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src * data:; media-src *; connect-src *;">
+    -->
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        /* CSS Variables for theming */
+        :root {
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --danger: #e74c3c;
+            --dark-heading-bg: #2c3e50; /* Used for table headers in light mode */
+            --light-bg-secondary: #ecf0f1; /* Used for ad containers, tab non-active */
+            --text-color: #333;
+            --bg-color: #f9f9f9;
+            --card-bg: #fff;
+            --border-color: #ddd;
+            --chart-color-coupon: #3498db; /* Blue */
+            --chart-color-principal: #2ecc71; /* Green */
+            --chart-color-price: #9b59b6; /* Purple (not used for this chart type directly) */
+        }
+        
+        /* Dark Theme Variables */
+        [data-theme="dark"] {
+            --primary: #2980b9;
+            --secondary: #27ae60;
+            --danger: #c0392b;
+            --dark-heading-bg: #34495e; /* Adjusted for dark mode table headers */
+            --light-bg-secondary: #4a667e; /* Adjusted for dark mode ad containers/tabs */
+            --text-color: #ecf0f1;
+            --bg-color: #2c3e50;
+            --card-bg: #34495e;
+            --border-color: #555;
+            --chart-color-coupon: #4a90e2; 
+            --chart-color-principal: #4CAF50;
+            --chart-color-price: #c792ea;
+        }
+        
+        /* Global Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            transition: all 0.3s ease; /* Smooth transition for theme change */
+        }
+        
+        .calculator-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .calculator-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .input-section, .results-section {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1, h2, h3 {
+            color: var(--primary);
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            transition: border-color 0.3s, background-color 0.3s, color 0.3s;
+        }
+        
+        /* Buttons */
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--secondary);
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        /* Ad Containers */
+        .ad-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--light-bg-secondary);
+            border-radius: 4px;
+            text-align: center;
+            min-height: 90px;
+            color: var(--text-color);
+            display: flex; /* For centering text */
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            border: 1px dashed var(--border-color);
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .summary-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .summary-card h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: var(--text-color); /* Use theme variable */
+        }
+        
+        .summary-card p {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: var(--primary); /* Use primary color */
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            color: var(--text-color);
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background-color: var(--dark-heading-bg); /* Use dark card bg for table headers */
+            color: white;
+        }
+        
+        tr:hover {
+            background-color: rgba(0,0,0,0.05); /* Light mode hover */
+        }
+        [data-theme="dark"] tr:hover {
+            background-color: rgba(255,255,255,0.05); /* Dark mode hover */
+        }
+        
+        /* Tooltips */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            color: var(--primary);
+            font-size: 0.9em;
+            margin-left: 5px;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 250px; /* Wider for more text */
+            background-color: var(--dark-heading-bg);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+            font-weight: normal;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Export & Share Options */
+        .export-options, .social-sharing {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .social-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 12px;
+            border-radius: 4px;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            transition: opacity 0.3s;
+        }
+        .social-btn:hover {
+            opacity: 0.8;
+        }
+        
+        .email { background-color: #777; }
+        .whatsapp { background-color: #25D366; }
+        .linkedin { background-color: #0077B5; }
+        .twitter { background-color: #1DA1F2; }
+        
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: absolute; 
+            top: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 1.2em;
+            width: 40px; /* Fixed width/height for round button */
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        /* Error Messages */
+        .error-message {
+            color: var(--danger);
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        /* How to Use / Disclaimer Section */
+        .info-section {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        .info-section h2 {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-color); /* Ensure heading matches text color */
+        }
+        .info-content {
+            display: none;
+            color: var(--text-color); /* Ensure content matches text color */
+        }
+        .info-content.active {
+            display: block;
+        }
+        .info-section p {
+            margin-bottom: 10px;
+        }
+        .info-section ul {
+            list-style-type: disc;
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+        .info-section li {
+            margin-bottom: 5px;
+        }
+
+        /* Print Specific Styles */
+        @media print {
+            .no-print, .ad-container, .theme-toggle, .info-section, .export-options, .social-sharing {
+                display: none !important;
+            }
+            body {
+                background: none;
+                padding: 0;
+                color: black; /* Force black text for print */
+            }
+            .calculator-container {
+                display: block;
+            }
+            .input-section {
+                display: none; /* Hide input section in print */
+            }
+            .results-section {
+                box-shadow: none; /* Remove shadow for print */
+                padding: 0;
+            }
+            table {
+                font-size: 10px; /* Smaller font for print tables */
+                color: black;
+            }
+            th, td {
+                padding: 8px;
+                border-color: #ccc; /* Lighter border for print */
+            }
+            th {
+                background-color: #eee !important; /* Lighter header for print */
+                color: black !important;
+            }
+            tr:hover {
+                background-color: transparent !important;
+            }
+            .chart-container canvas {
+                max-width: 500px; /* Constrain chart size for print */
+                max-height: 300px;
+                display: block; /* Ensure chart is block level for print */
+                margin: 0 auto;
+            }
+            .summary-card h3, .summary-card p {
+                color: black !important; /* Ensure readable colors in print */
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle no-print" id="themeToggle" aria-label="Toggle dark/light mode">🌓</button>
+    
+    <h1>Professional Bond Calculator</h1>
+    
+    <div class="calculator-container">
+        <div class="input-section">
+            <h2>Bond Parameters</h2>
+            
+            <div class="input-group">
+                <label for="faceValue">
+                    Face Value ($)
+                    <span class="tooltip" aria-label="Face Value">ℹ️
+                        <span class="tooltiptext">
+                            The principal amount of the bond, paid back to the bondholder at maturity. 
+                            Also known as Par Value or Maturity Value. Typically $1,000.
+                        </span>
+                    </span>
+                </label>
+                <input type="number" id="faceValue" min="1" step="100" value="1000" aria-describedby="faceValue-error">
+                <div class="error-message" id="faceValue-error" role="alert" aria-live="polite"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="couponRate">
+                    Coupon Rate (%)
+                    <span class="tooltip" aria-label="Coupon Rate">ℹ️
+                        <span class="tooltiptext">
+                            The annual interest rate paid by the bond's issuer on the face value. 
+                            It determines the dollar amount of the coupon payments.
+                        </span>
+                    </span>
+                </label>
+                <input type="number" id="couponRate" min="0" max="100" step="0.01" value="5" aria-describedby="couponRate-error">
+                <div class="error-message" id="couponRate-error" role="alert" aria-live="polite"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="yearsToMaturity">
+                    Years to Maturity
+                    <span class="tooltip" aria-label="Years to Maturity">ℹ️
+                        <span class="tooltiptext">
+                            The number of years remaining until the bond's principal is repaid.
+                        </span>
+                    </span>
+                </label>
+                <input type="number" id="yearsToMaturity" min="1" max="50" step="1" value="10" aria-describedby="yearsToMaturity-error">
+                <div class="error-message" id="yearsToMaturity-error" role="alert" aria-live="polite"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="marketRate">
+                    Market Rate (Yield) (%)
+                    <span class="tooltip" aria-label="Market Rate (Yield)">ℹ️
+                        <span class="tooltiptext">
+                            The current prevailing interest rate for similar bonds in the market. 
+                            This is the discount rate used to calculate the bond's present value. 
+                            For newly issued bonds, this is effectively the Yield to Maturity (YTM).
+                        </span>
+                    </span>
+                </label>
+                <input type="number" id="marketRate" min="0" max="100" step="0.01" value="6" aria-describedby="marketRate-error">
+                <div class="error-message" id="marketRate-error" role="alert" aria-live="polite"></div>
+            </div>
+
+            <div class="input-group">
+                <label for="couponFrequency">
+                    Coupon Payment Frequency
+                    <span class="tooltip" aria-label="Coupon Payment Frequency">ℹ️
+                        <span class="tooltiptext">
+                            How often the bond pays interest (coupons). Most bonds pay semi-annually.
+                        </span>
+                    </span>
+                </label>
+                <select id="couponFrequency">
+                    <option value="1">Annually</option>
+                    <option value="2" selected>Semi-Annually</option>
+                </select>
+            </div>
+            
+            <button id="calculateBtn">Calculate Bond Values</button>
+        </div>
+        
+        <div class="results-section">
+            <h2>Bond Valuation Results</h2>
+            
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <h3>Bond Price</h3>
+                    <p id="bondPrice">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Yield to Maturity (YTM)</h3>
+                    <p id="yieldToMaturity">0.00%</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Current Yield</h3>
+                    <p id="currentYield">0.00%</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Macaulay Duration</h3>
+                    <p id="macaulayDuration">0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Modified Duration</h3>
+                    <p id="modifiedDuration">0.00</p>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="bondChart" aria-label="Bond Cash Flow Visualization"></canvas>
+            </div>
+            
+            <h3>Cash Flow Schedule (Discounted)</h3>
+            <div style="overflow-x: auto;">
+                <table id="cashFlowTable">
+                    <thead>
+                        <tr>
+                            <th>Period</th>
+                            <th>Cash Flow Date</th>
+                            <th>Cash Flow</th>
+                            <th>Discount Factor</th>
+                            <th>Present Value</th>
+                            <th>PV * Period</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cashFlowTableBody">
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="ad-container">
+                Advertisement Space (Adsterra Header/Footer)
+                <small>This space is reserved for ad network code (e.g., 728x90).</small>
+            </div>
+
+            <div class="export-options no-print">
+                <button id="printBtn">Print Summary</button>
+                <button id="pdfBtn">Save as PDF</button>
+                <button id="excelBtn">Save as Excel</button>
+                <button id="csvBtn">Save as CSV</button>
+            </div>
+            
+            <div class="social-sharing no-print">
+                <button class="social-btn email" id="emailShare" aria-label="Share via Email">Email</button>
+                <button class="social-btn whatsapp" id="whatsappShare" aria-label="Share via WhatsApp">WhatsApp</button>
+                <button class="social-btn linkedin" id="linkedinShare" aria-label="Share via LinkedIn">LinkedIn</button>
+                <button class="social-btn twitter" id="twitterShare" aria-label="Share via Twitter">Twitter</button>
+            </div>
+
+            <div class="ad-container" style="height: 250px;">
+                Advertisement Space (Yllix Sidebar/Floating)
+                <small>This space is reserved for ad network code (e.g., 300x250).</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <h2 id="howToUseToggle" aria-expanded="false" aria-controls="howToUseContent">
+            How to Use This Calculator <span aria-hidden="true">▼</span>
+        </h2>
+        <div class="info-content" id="howToUseContent">
+            <p>This calculator helps you determine the fair market price of a bond and analyze its yield characteristics.</p>
+            <ul>
+                <li><strong>Face Value:</strong> The principal amount of the bond, typically $1,000, that is repaid at maturity.</li>
+                <li><strong>Coupon Rate:</strong> The annual interest rate the bond pays based on its face value.</li>
+                <li><strong>Years to Maturity:</strong> How many years are left until the bond matures.</li>
+                <li><strong>Market Rate (Yield):</strong> The current prevailing interest rate for similar bonds in the market. This is the discount rate used to calculate the bond's present value. For newly issued bonds, this rate is equivalent to the Yield to Maturity (YTM).</li>
+                <li><strong>Coupon Payment Frequency:</strong> How often interest payments are made (annually or semi-annually). Semi-annual is typical for corporate bonds.</li>
+            </ul>
+            <p><strong>What the Results Mean:</strong></p>
+            <ul>
+                <li><strong>Bond Price:</strong> The theoretical fair value of the bond today, based on discounting its future cash flows (coupons and face value) at the given market rate.</li>
+                <li><strong>Yield to Maturity (YTM):</strong> This calculator displays the **Input Market Rate** as the YTM. YTM is the total return anticipated on a bond if it is held until it matures. For a bond purchased at its calculated price using the market rate, the market rate *is* the YTM.</li>
+                <li><strong>Current Yield:</strong> The annual income generated by the bond (coupon payments) relative to its current market price. It does not consider the bond's maturity or face value.</li>
+                <li><strong>Macaulay Duration:</strong> The weighted average time until a bond's cash flows are received. It's a measure of how sensitive a bond's price is to changes in interest rates. Higher duration means higher interest rate sensitivity.</li>
+                <li><strong>Modified Duration:</strong> An adjusted version of Macaulay Duration, providing a direct measure of a bond's price sensitivity to yield changes. It's often used by bond traders to estimate how much a bond's price will change for a 1% change in yield.</li>
+            </ul>
+            <p style="font-style: italic; color: var(--danger);"><strong>Disclaimer:</strong> This calculator provides theoretical values based on standard financial models. Actual market prices and yields may vary due to liquidity, credit risk, and other factors not accounted for here. This is for informational purposes only and not financial advice. Consult a qualified financial advisor before making investment decisions.</p>
+        </div>
+    </div>
+
+    <script>
+        // Global variables to store calculation results and chart instance
+        let currentBondResults = {};
+        let bondCashFlowSchedule = [];
+        let bondChartInstance = null; // To manage Chart.js instance
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up theme toggle
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+            
+            // Set up event listeners for calculation and exports
+            document.getElementById('calculateBtn').addEventListener('click', calculateBondValues);
+            document.getElementById('printBtn').addEventListener('click', printSummary);
+            document.getElementById('pdfBtn').addEventListener('click', exportToPDF);
+            document.getElementById('excelBtn').addEventListener('click', exportToExcel);
+            document.getElementById('csvBtn').addEventListener('click', exportToCSV);
+
+            // Set up how-to-use toggle
+            const howToUseToggle = document.getElementById('howToUseToggle');
+            const howToUseContent = document.getElementById('howToUseContent');
+            howToUseToggle.addEventListener('click', function() {
+                const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                this.setAttribute('aria-expanded', !isExpanded);
+                howToUseContent.classList.toggle('active');
+                howToUseToggle.querySelector('span').textContent = isExpanded ? '▼' : '▲';
+            });
+            // Initial state for how-to-use
+            howToUseContent.classList.remove('active');
+            howToUseToggle.setAttribute('aria-expanded', 'false');
+            howToUseToggle.querySelector('span').textContent = '▼';
+
+            // Initial calculation on page load
+            calculateBondValues();
+            setupSocialSharing(); // Needs initial data
+        });
+        
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            }
+            // Update chart colors on theme change
+            if (bondChartInstance) {
+                const rootStyle = getComputedStyle(document.documentElement);
+                const newColors = [
+                    rootStyle.getPropertyValue('--chart-color-coupon'),
+                    rootStyle.getPropertyValue('--chart-color-principal')
+                ];
+                bondChartInstance.data.datasets[0].backgroundColor = newColors;
+                bondChartInstance.data.datasets[0].borderColor = newColors;
+                bondChartInstance.options.plugins.legend.labels.color = rootStyle.getPropertyValue('--text-color');
+                bondChartInstance.options.plugins.title.color = rootStyle.getPropertyValue('--text-color');
+                bondChartInstance.options.scales.x.ticks.color = rootStyle.getPropertyValue('--text-color'); // For line/bar charts
+                bondChartInstance.options.scales.y.ticks.color = rootStyle.getPropertyValue('--text-color'); // For line/bar charts
+                bondChartInstance.update();
+            }
+        }
+        
+        // --- Error Handling Utilities ---
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+        }
+
+        function showError(elementId, message) {
+            document.getElementById(elementId).textContent = message;
+        }
+        
+        // --- Core Bond Calculation Logic ---
+        function calculateBondValues() {
+            clearErrors(); // Clear previous errors
+
+            // Get input values
+            const faceValue = parseFloat(document.getElementById('faceValue').value);
+            let couponRate = parseFloat(document.getElementById('couponRate').value);
+            const yearsToMaturity = parseFloat(document.getElementById('yearsToMaturity').value); // Can be decimal for partial years
+            let marketRate = parseFloat(document.getElementById('marketRate').value);
+            const couponFrequency = parseInt(document.getElementById('couponFrequency').value); // 1 for annual, 2 for semi-annual
+            
+            // Convert percentages to decimals
+            couponRate /= 100;
+            marketRate /= 100;
+            
+            // --- Input Validation ---
+            let isValid = true;
+            if (isNaN(faceValue) || faceValue <= 0) {
+                showError('faceValue-error', 'Must be a positive number.'); isValid = false;
+            }
+            if (isNaN(couponRate) || couponRate < 0) {
+                showError('couponRate-error', 'Must be a non-negative rate.'); isValid = false;
+            }
+            if (isNaN(yearsToMaturity) || yearsToMaturity <= 0) {
+                showError('yearsToMaturity-error', 'Must be a positive number.'); isValid = false;
+            }
+            if (isNaN(marketRate) || marketRate < 0) {
+                showError('marketRate-error', 'Must be a non-negative rate.'); isValid = false;
+            }
+            
+            if (!isValid) {
+                // Hide results if inputs are invalid
+                document.getElementById('results-section').style.display = 'none';
+                return;
+            }
+
+            // --- Bond Value Calculations ---
+            const periodicCouponPayment = (faceValue * couponRate) / couponFrequency;
+            const periodicMarketRate = marketRate / couponFrequency;
+            const totalPeriods = yearsToMaturity * couponFrequency;
+
+            let bondPrice = 0;
+            let sumPV_t_CFt = 0; // For Macaulay Duration numerator
+
+            const cashFlows = []; // Store for schedule and chart
+
+            for (let t = 1; t <= totalPeriods; t++) {
+                let cashFlow = periodicCouponPayment;
+                // If it's the last period, add the face value repayment
+                if (t === totalPeriods) {
+                    cashFlow += faceValue;
+                }
+
+                let pvOfCashFlow;
+                let discountFactor;
+
+                // Handle 0% market rate (no discounting)
+                if (periodicMarketRate === 0) { 
+                    pvOfCashFlow = cashFlow;
+                    discountFactor = 1;
+                } else {
+                    discountFactor = 1 / Math.pow(1 + periodicMarketRate, t);
+                    pvOfCashFlow = cashFlow * discountFactor;
+                }
+                
+                bondPrice += pvOfCashFlow;
+                sumPV_t_CFt += t * pvOfCashFlow;
+
+                cashFlows.push({
+                    period: t,
+                    cashFlowDate: `Period ${t}`, // For chart/table labels
+                    cashFlowAmount: cashFlow,
+                    discountFactor: discountFactor,
+                    presentValue: pvOfCashFlow
+                });
+            }
+
+            // Ensure bond price doesn't go extremely low or negative, set to 0 as floor
+            if (bondPrice < 0) bondPrice = 0; // Should not happen with non-negative rates
+
+            // Validate final calculated bond price
+            if (isNaN(bondPrice) || !isFinite(bondPrice)) {
+                showError('marketRate-error', 'Calculation resulted in invalid bond price. Check market rate or maturity.');
+                document.getElementById('results-section').style.display = 'none';
+                return;
+            }
+
+
+            const yieldToMaturity = marketRate * 100; // YTM is the input market rate
+            const currentYield = bondPrice > 0 ? ((faceValue * couponRate) / bondPrice) * 100 : 0; // Avoid division by zero
+
+            const macaulayDuration = bondPrice > 0 ? (sumPV_t_CFt / bondPrice) : 0; // Handle division by zero
+            const modifiedDuration = (1 + periodicMarketRate) > 0 ? (macaulayDuration / (1 + periodicMarketRate)) : 0; // Handle division by zero
+
+            // Store results in global object for export
+            currentBondResults = {
+                faceValue: faceValue,
+                couponRate: couponRate * 100, // Store as percentage for display
+                yearsToMaturity: yearsToMaturity,
+                marketRate: marketRate * 100, // Store as percentage for display
+                couponFrequency: couponFrequency,
+                periodicCouponPayment: periodicCouponPayment,
+
+                bondPrice: bondPrice,
+                yieldToMaturity: yieldToMaturity,
+                currentYield: currentYield,
+                macaulayDuration: macaulayDuration,
+                modifiedDuration: modifiedDuration
+            };
+            bondCashFlowSchedule = cashFlows; // Store detailed cash flows
+
+            // Update UI
+            updateSummaryCards(currentBondResults);
+            displayCashFlowTable(bondCashFlowSchedule);
+            updateChart(currentBondResults, bondCashFlowSchedule);
+            setupSocialSharing(); // Update sharing links with new data
+
+            document.getElementById('results-section').style.display = 'block';
+        }
+        
+        // --- UI Update Functions ---
+        function updateSummaryCards(results) {
+            document.getElementById('bondPrice').textContent = formatCurrency(results.bondPrice);
+            document.getElementById('yieldToMaturity').textContent = formatPercentage(results.yieldToMaturity);
+            document.getElementById('currentYield').textContent = formatPercentage(results.currentYield);
+            document.getElementById('macaulayDuration').textContent = results.macaulayDuration.toFixed(2);
+            document.getElementById('modifiedDuration').textContent = results.modifiedDuration.toFixed(2);
+
+            // Handle non-finite results for display
+            if (!isFinite(results.yieldToMaturity)) document.getElementById('yieldToMaturity').textContent = 'N/A';
+            if (!isFinite(results.currentYield)) document.getElementById('currentYield').textContent = 'N/A';
+            if (!isFinite(results.macaulayDuration)) document.getElementById('macaulayDuration').textContent = 'N/A';
+            if (!isFinite(results.modifiedDuration)) document.getElementById('modifiedDuration').textContent = 'N/A';
+        }
+        
+        function displayCashFlowTable(schedule) {
+            const tableBody = document.getElementById('cashFlowTableBody');
+            tableBody.innerHTML = '';
+            
+            // Limit display for very long bonds for better UX
+            const displayLimit = 60; // Max 60 periods (e.g., 30-year semi-annual bond)
+            const showCondensed = schedule.length > displayLimit;
+
+            schedule.forEach((cf, i) => {
+                if (showCondensed && i > displayLimit / 2 && i < schedule.length - (displayLimit / 2) -1 ) {
+                    // Skip middle periods, but ensure start and end are shown
+                    if (i === Math.floor(schedule.length / 2)) { // Add ellipsis once
+                        const row = document.createElement('tr');
+                        row.innerHTML = `<td colspan="6" style="text-align:center;">... (Condensed) ...</td>`;
+                        tableBody.appendChild(row);
+                    }
+                    return;
+                }
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${cf.period}</td>
+                    <td>${cf.cashFlowDate}</td>
+                    <td>${formatCurrency(cf.cashFlowAmount)}</td>
+                    <td>${cf.discountFactor.toFixed(4)}</td>
+                    <td>${formatCurrency(cf.presentValue)}</td>
+                    <td>${(cf.presentValue * cf.period).toFixed(2)}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        function updateChart(results, cashFlows) {
+            const ctx = document.getElementById('bondChart').getContext('2d');
+            
+            // Destroy previous chart if exists
+            if (bondChartInstance) {
+                bondChartInstance.destroy();
+            }
+
+            if (cashFlows.length === 0 || results.bondPrice <= 0) { // No meaningful data to chart
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                return;
+            }
+
+            // Sum up PV of coupons and PV of principal for chart data
+            const totalPVOfCoupons = cashFlows.filter(cf => cf.cashFlowAmount === results.periodicCouponPayment).reduce((sum, val) => sum + val.presentValue, 0);
+            const totalPVOfPrincipal = cashFlows.filter(cf => cf.cashFlowAmount > results.periodicCouponPayment).reduce((sum, val) => sum + val.presentValue, 0);
+
+            const rootStyle = getComputedStyle(document.documentElement);
+            const chartColors = {
+                coupon: rootStyle.getPropertyValue('--chart-color-coupon'),
+                principal: rootStyle.getPropertyValue('--chart-color-principal'),
+                price: rootStyle.getPropertyValue('--chart-color-price')
+            };
+
+            bondChartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['PV of Coupon Payments', 'PV of Face Value Repayment'],
+                    datasets: [{
+                        data: [totalPVOfCoupons, totalPVOfPrincipal],
+                        backgroundColor: [chartColors.coupon, chartColors.principal],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: rootStyle.getPropertyValue('--text-color')
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                    return `${context.label}: ${formatCurrency(value)} (${percentage}%)`;
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: `Bond Price Breakdown (Total: ${formatCurrency(results.bondPrice)})`,
+                            color: rootStyle.getPropertyValue('--text-color')
+                        }
+                    }
+                }
+            });
+        }
+        
+        // --- Formatting Utilities ---
+        function formatCurrency(amount) {
+            // Check for NaN or Infinity before formatting
+            if (isNaN(amount) || !isFinite(amount)) {
+                return "$0.00"; 
+            }
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        }
+
+        function formatPercentage(value) {
+            // Check for NaN or Infinity before formatting
+            if (isNaN(value) || !isFinite(value)) {
+                return "0.00%";
+            }
+            return value.toFixed(2) + '%';
+        }
+        
+        // --- Export Functions ---
+        function printSummary() {
+            window.print();
+        }
+        
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'pt', 'letter');
+            let currentY = 40;
+            const margin = 40;
+            const pageWidth = doc.internal.pageSize.width;
+
+            doc.setFontSize(18);
+            doc.text('Bond Calculation Report', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 30;
+
+            doc.setFontSize(12);
+            doc.text(`Calculated On: ${new Date().toLocaleDateString()}`, margin, currentY);
+            currentY += 20;
+
+            // Input Details
+            const inputDetails = [
+                ["Face Value", formatCurrency(currentBondResults.faceValue)],
+                ["Coupon Rate", formatPercentage(currentBondResults.couponRate)],
+                ["Years to Maturity", currentBondResults.yearsToMaturity],
+                ["Market Rate (Yield)", formatPercentage(currentBondResults.marketRate)],
+                ["Coupon Frequency", currentBondResults.couponFrequency === 1 ? 'Annually' : 'Semi-Annually']
+            ];
+            doc.autoTable({
+                startY: currentY,
+                head: [['Parameter', 'Value']],
+                body: inputDetails,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                margin: { left: margin, right: margin }
+            });
+            currentY = doc.autoTable.previous.finalY + 20;
+
+            // Summary Results
+            const summaryResults = [
+                ["Bond Price", document.getElementById('bondPrice').textContent],
+                ["Yield to Maturity (YTM)", document.getElementById('yieldToMaturity').textContent],
+                ["Current Yield", document.getElementById('currentYield').textContent],
+                ["Macaulay Duration", document.getElementById('macaulayDuration').textContent],
+                ["Modified Duration", document.getElementById('modifiedDuration').textContent]
+            ];
+            doc.autoTable({
+                startY: currentY,
+                head: [['Result', 'Value']],
+                body: summaryResults,
+                theme: 'grid',
+                headStyles: { fillColor: [46, 204, 113], textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                margin: { left: margin, right: margin }
+            });
+            currentY = doc.autoTable.previous.finalY + 30;
+
+            // Detailed Cash Flow Schedule
+            doc.addPage();
+            currentY = margin;
+            doc.setFontSize(16);
+            doc.text('Bond Cash Flow Schedule (Discounted)', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 20;
+
+            // Prepare data for PDF, using original numbers for accuracy
+            const cashFlowTableData = bondCashFlowSchedule.map(cf => [
+                cf.period,
+                cf.cashFlowDate,
+                cf.cashFlowAmount.toFixed(2),
+                cf.discountFactor.toFixed(4),
+                cf.presentValue.toFixed(2),
+                (cf.presentValue * cf.period).toFixed(2)
+            ]);
+
+            doc.autoTable({
+                startY: currentY,
+                head: [['Period', 'Date', 'Cash Flow', 'Disc. Factor', 'Present Value', 'PV * Period']],
+                body: cashFlowTableData,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                styles: { fontSize: 8, cellPadding: 4 }, 
+                margin: { left: margin, right: margin },
+                didDrawPage: function(data) {
+                    let pageCount = doc.internal.getNumberOfPages();
+                    doc.setFontSize(8);
+                    doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber + ' of ' + pageCount, data.settings.margin.left, doc.internal.pageSize.height - 20);
+                }
+            });
+            
+            doc.save('bond_report.pdf');
+        }
+        
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+            
+            // Sheet 1: Summary
+            const summaryData = [
+                ["Bond Calculation Report", ""],
+                ["Calculated On", new Date().toLocaleDateString()],
+                [],
+                ["Input Details", ""],
+                ["Face Value", currentBondResults.faceValue],
+                ["Coupon Rate", currentBondResults.couponRate], // Unformatted for Excel
+                ["Years to Maturity", currentBondResults.yearsToMaturity],
+                ["Market Rate (Yield)", currentBondResults.marketRate], // Unformatted
+                ["Coupon Frequency", currentBondResults.couponFrequency === 1 ? 'Annually' : 'Semi-Annually'],
+                [],
+                ["Results", ""],
+                ["Bond Price", currentBondResults.bondPrice], // Unformatted
+                ["Yield to Maturity (YTM)", currentBondResults.yieldToMaturity], // Unformatted
+                ["Current Yield", currentBondResults.currentYield], // Unformatted
+                ["Macaulay Duration", currentBondResults.macaulayDuration], // Unformatted
+                ["Modified Duration", currentBondResults.modifiedDuration] // Unformatted
+            ];
+            const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, summaryWs, "Bond Summary");
+
+            // Sheet 2: Detailed Cash Flow Schedule
+            const detailedScheduleHeaders = [
+                "Period", "Cash Flow Date", "Cash Flow Amount", "Discount Factor", "Present Value", "PV * Period"
+            ];
+            const detailedScheduleData = [detailedScheduleHeaders];
+            bondCashFlowSchedule.forEach(cf => {
+                detailedScheduleData.push([
+                    cf.period,
+                    cf.cashFlowDate,
+                    cf.cashFlowAmount,
+                    cf.discountFactor,
+                    cf.presentValue,
+                    cf.presentValue * cf.period
+                ]);
+            });
+            const detailedScheduleWs = XLSX.utils.aoa_to_sheet(detailedScheduleData);
+            XLSX.utils.book_append_sheet(wb, detailedScheduleWs, "Cash Flow Schedule");
+            
+            XLSX.writeFile(wb, 'bond_report.xlsx');
+        }
+        
+        function exportToCSV() {
+            let csvContent = "";
+
+            // Summary data
+            csvContent += "Bond Calculation Report\n";
+            csvContent += `"Calculated On","${new Date().toLocaleDateString()}"\n\n`;
+            csvContent += `"Input Details",\n`;
+            csvContent += `"Face Value",${currentBondResults.faceValue}\n`;
+            csvContent += `"Coupon Rate",${currentBondResults.couponRate}%\n`; 
+            csvContent += `"Years to Maturity",${currentBondResults.yearsToMaturity}\n`;
+            csvContent += `"Market Rate (Yield)",${currentBondResults.marketRate}%\n`;
+            csvContent += `"Coupon Frequency",${currentBondResults.couponFrequency === 1 ? 'Annually' : 'Semi-Annually'}\n\n`;
+            csvContent += `"Results",\n`;
+            csvContent += `"Bond Price",${currentBondResults.bondPrice.toFixed(2)}\n`; 
+            csvContent += `"Yield to Maturity (YTM)",${currentBondResults.yieldToMaturity.toFixed(2)}%\n`; 
+            csvContent += `"Current Yield",${currentBondResults.currentYield.toFixed(2)}%\n`; 
+            csvContent += `"Macaulay Duration",${currentBondResults.macaulayDuration.toFixed(2)}\n`; 
+            csvContent += `"Modified Duration",${currentBondResults.modifiedDuration.toFixed(2)}\n\n`; 
+
+            // Detailed Cash Flow Schedule
+            csvContent += "Cash Flow Schedule\n";
+            csvContent += "Period,Cash Flow Date,Cash Flow Amount,Discount Factor,Present Value,PV * Period\n";
+            bondCashFlowSchedule.forEach(cf => {
+                csvContent += `${cf.period},"${cf.cashFlowDate}",${cf.cashFlowAmount.toFixed(2)},${cf.discountFactor.toFixed(4)},${cf.presentValue.toFixed(2)},${(cf.presentValue * cf.period).toFixed(2)}\n`;
+            });
+            csvContent += "\n";
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'bond_report.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        function setupSocialSharing() {
+            const faceValue = currentBondResults.faceValue || 0;
+            const couponRate = currentBondResults.couponRate || 0;
+            const yearsToMaturity = currentBondResults.yearsToMaturity || 0;
+            const marketRate = currentBondResults.marketRate || 0;
+            const bondPrice = currentBondResults.bondPrice || 0;
+            const currentYield = currentBondResults.currentYield || 0;
+
+            const shareText = `I calculated a bond! A $${faceValue.toLocaleString()} bond with a ${couponRate.toFixed(2)}% coupon and ${yearsToMaturity} years to maturity, at a market rate of ${marketRate.toFixed(2)}%, has a price of ${formatCurrency(bondPrice)} and a current yield of ${currentYield.toFixed(2)}%. Calculate yours here:`;
+            
+            const shareUrl = window.location.href; // Current page URL
+            
+            document.getElementById('emailShare').onclick = () => {
+                window.open(`mailto:?subject=Bond Calculation Results&body=${encodeURIComponent(shareText + ' ' + shareUrl)}`);
+            };
+            document.getElementById('whatsappShare').onclick = () => {
+                window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`);
+            };
+            document.getElementById('linkedinShare').onclick = () => {
+                window.open(`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent('Professional Bond Calculation')}&summary=${encodeURIComponent(shareText)}`);
+            };
+            document.getElementById('twitterShare').onclick = () => {
+                window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`);
+            };
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Canadian Mortgage Calculator</title>
+    <!-- 
+        Content-Security-Policy: For production deployment, configure this via your web server (e.g., Nginx, Apache) 
+        for best practice. If using a meta tag, ensure all CDN domains (Chart.js, jsPDF, SheetJS) are whitelisted.
+        For this single-file, self-contained solution, inline scripts/styles require 'unsafe-inline'.
+        Example for meta (adjust for your specific ad networks if they inject more):
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com cdn.jsdelivr.net cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src * data:; media-src *; connect-src *;">
+    -->
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        /* CSS Variables for theming */
+        :root {
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --danger: #e74c3c;
+            --dark-heading-bg: #2c3e50; /* Used for table headers in light mode */
+            --light-bg-secondary: #ecf0f1; /* Used for ad containers, tab non-active */
+            --text-color: #333;
+            --bg-color: #f9f9f9;
+            --card-bg: #fff;
+            --border-color: #ddd;
+            --chart-color-principal: #3498db; /* Blue */
+            --chart-color-interest: #e74c3c; /* Red */
+        }
+        
+        /* Dark Theme Variables */
+        [data-theme="dark"] {
+            --primary: #2980b9;
+            --secondary: #27ae60;
+            --danger: #c0392b;
+            --dark-heading-bg: #34495e; /* Adjusted for dark mode table headers */
+            --light-bg-secondary: #4a667e; /* Adjusted for dark mode ad containers/tabs */
+            --text-color: #ecf0f1;
+            --bg-color: #2c3e50;
+            --card-bg: #34495e;
+            --border-color: #555;
+            --chart-color-principal: #4a90e2; 
+            --chart-color-interest: #ff6b6b;
+        }
+        
+        /* Global Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            transition: all 0.3s ease; /* Smooth transition for theme change */
+        }
+        
+        .calculator-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .calculator-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .input-section, .results-section {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1, h2, h3 {
+            color: var(--primary);
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            transition: border-color 0.3s, background-color 0.3s, color 0.3s;
+        }
+        
+        /* Buttons */
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--secondary);
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        /* Ad Containers */
+        .ad-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--light-bg-secondary);
+            border-radius: 4px;
+            text-align: center;
+            min-height: 90px;
+            color: var(--text-color);
+            display: flex; /* For centering text */
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            border: 1px dashed var(--border-color);
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .summary-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .summary-card h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: var(--text-color); /* Use theme variable */
+        }
+        
+        .summary-card p {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: var(--primary); /* Use primary color */
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            color: var(--text-color);
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background-color: var(--dark-heading-bg); /* Use dark card bg for table headers */
+            color: white;
+        }
+        
+        tr:hover {
+            background-color: rgba(0,0,0,0.05); /* Light mode hover */
+        }
+        [data-theme="dark"] tr:hover {
+            background-color: rgba(255,255,255,0.05); /* Dark mode hover */
+        }
+        
+        /* Tooltips */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            color: var(--primary);
+            font-size: 0.9em;
+            margin-left: 5px;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 250px; /* Wider for more text */
+            background-color: var(--dark-heading-bg);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+            font-weight: normal;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Export & Share Options */
+        .export-options, .social-sharing {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .social-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 12px;
+            border-radius: 4px;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            transition: opacity 0.3s;
+        }
+        .social-btn:hover {
+            opacity: 0.8;
+        }
+        
+        .email { background-color: #777; }
+        .whatsapp { background-color: #25D366; }
+        .linkedin { background-color: #0077B5; }
+        .twitter { background-color: #1DA1F2; }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: var(--light-bg-secondary);
+            border: none;
+            border-radius: 4px 4px 0 0;
+            margin-right: 5px;
+            color: var(--text-color);
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background-color: var(--primary);
+            color: white;
+            border-bottom: 2px solid var(--primary);
+        }
+        .tab:not(.active):hover {
+            background-color: rgba(var(--primary), 0.1); /* Subtle hover for non-active */
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: absolute; 
+            top: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 1.2em;
+            width: 40px; /* Fixed width/height for round button */
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        /* Error Messages */
+        .error-message {
+            color: var(--danger);
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        /* How to Use / Disclaimer Section */
+        .info-section {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        .info-section h2 {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-color); /* Ensure heading matches text color */
+        }
+        .info-content {
+            display: none;
+            color: var(--text-color); /* Ensure content matches text color */
+        }
+        .info-content.active {
+            display: block;
+        }
+        .info-section p {
+            margin-bottom: 10px;
+        }
+        .info-section ul {
+            list-style-type: disc;
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+        .info-section li {
+            margin-bottom: 5px;
+        }
+
+        /* Print Specific Styles */
+        @media print {
+            .no-print, .ad-container, .theme-toggle, .info-section, .export-options, .social-sharing, .tabs {
+                display: none !important;
+            }
+            body {
+                background: none;
+                padding: 0;
+                color: black; /* Force black text for print */
+            }
+            .calculator-container {
+                display: block;
+            }
+            .input-section {
+                display: none; /* Hide input section in print */
+            }
+            .results-section {
+                box-shadow: none; /* Remove shadow for print */
+                padding: 0;
+            }
+            table {
+                font-size: 10px; /* Smaller font for print tables */
+                color: black;
+            }
+            th, td {
+                padding: 8px;
+                border-color: #ccc; /* Lighter border for print */
+            }
+            th {
+                background-color: #eee !important; /* Lighter header for print */
+                color: black !important;
+            }
+            tr:hover {
+                background-color: transparent !important;
+            }
+            .chart-container canvas {
+                max-width: 500px; /* Constrain chart size for print */
+                max-height: 300px;
+                display: block; /* Ensure chart is block level for print */
+                margin: 0 auto;
+            }
+            .summary-card h3, .summary-card p {
+                color: black !important; /* Ensure readable colors in print */
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle no-print" id="themeToggle" aria-label="Toggle dark/light mode">🌓</button>
+    
+    <h1>Professional Canadian Mortgage Calculator</h1>
+    
+    <div class="calculator-container">
+        <div class="input-section">
+            <h2>Mortgage Details</h2>
+            
+            <div class="input-group">
+                <label for="principal">
+                    Mortgage Amount ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">
+                            The total amount you want to borrow for your mortgage.
+                        </span>
+                    </span>
+                </label>
+                <input type="number" id="principal" min="10000" step="1000" value="300000" aria-describedby="principal-error">
+                <div class="error-message" id="principal-error" role="alert" aria-live="polite"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="interestRate">
+                    Annual Interest Rate (%)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">
+                            The annual interest rate for your mortgage, compounded semi-annually (as per Canadian regulations).
+                        </span>
+                    </span>
+                </label>
+                <input type="number" id="interestRate" min="0" max="15" step="0.01" value="5.00" aria-describedby="interestRate-error">
+                <div class="error-message" id="interestRate-error" role="alert" aria-live="polite"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="amortizationPeriodYears">
+                    Amortization Period (Years)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">
+                            The total length of time (in years) it will take to pay off the mortgage. Typically up to 25 or 30 years.
+                        </span>
+                    </span>
+                </label>
+                <input type="number" id="amortizationPeriodYears" min="1" max="30" step="1" value="25" aria-describedby="amortizationPeriodYears-error">
+                <div class="error-message" id="amortizationPeriodYears-error" role="alert" aria-live="polite"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="paymentFrequency">
+                    Payment Frequency
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">
+                            How often you make mortgage payments. Canadian payments are typically Monthly, Bi-Weekly, or Weekly.
+                        </span>
+                    </span>
+                </label>
+                <select id="paymentFrequency">
+                    <option value="12" selected>Monthly</option>
+                    <option value="26">Bi-Weekly</option>
+                    <option value="26_accel">Accelerated Bi-Weekly</option>
+                    <option value="52">Weekly</option>
+                    <option value="52_accel">Accelerated Weekly</option>
+                    <option value="4">Quarterly</option>
+                    <option value="2">Semi-Annually</option>
+                    <option value="1">Annually</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label for="startDate">
+                    Mortgage Start Date
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">
+                            The date your first mortgage payment will be due. Used for the amortization schedule.
+                        </span>
+                    </span>
+                </label>
+                <input type="date" id="startDate">
+                <div class="error-message" id="startDate-error" role="alert" aria-live="polite"></div>
+            </div>
+            
+            <button id="calculateBtn">Calculate Mortgage</button>
+            <button id="addComparisonBtn" class="btn-secondary no-print">Add to Comparison</button>
+        </div>
+        
+        <div class="results-section">
+            <h2>Mortgage Summary</h2>
+            
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <h3>Periodic Payment</h3>
+                    <p id="periodicPayment">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Interest</h3>
+                    <p id="totalInterest">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Cost</h3>
+                    <p id="totalCost">$0.00</p>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="mortgageBreakdownChart" aria-label="Mortgage Cost Breakdown Chart"></canvas>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab active" data-tab="schedule" aria-controls="schedule-tab">Amortization Schedule</button>
+                <button class="tab" data-tab="comparison" aria-controls="comparison-tab">Loan Comparison</button>
+            </div>
+            
+            <div class="tab-content active" id="schedule-tab" role="tabpanel" aria-labelledby="schedule-tab-btn">
+                <h3>Detailed Amortization Schedule</h3>
+                <div style="overflow-x: auto;">
+                    <table id="scheduleTable">
+                        <thead>
+                            <tr>
+                                <th>Period</th>
+                                <th>Payment Date</th>
+                                <th>Starting Balance</th>
+                                <th>Payment (P&I)</th>
+                                <th>Interest Paid</th>
+                                <th>Principal Paid</th>
+                                <th>Ending Balance</th>
+                                <th>Cum. Interest</th>
+                                <th>Cum. Principal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scheduleBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="comparison-tab" role="tabpanel" aria-labelledby="comparison-tab-btn">
+                <h3>Compared Mortgage Scenarios</h3>
+                <div style="overflow-x: auto;">
+                    <table id="comparisonTable">
+                        <thead>
+                            <tr>
+                                <th>Scenario</th>
+                                <th>Mortgage Amount</th>
+                                <th>Interest Rate</th>
+                                <th>Amort. Period (Yrs)</th>
+                                <th>Payment Freq.</th>
+                                <th>Periodic Payment</th>
+                                <th>Total Interest</th>
+                                <th>Total Cost</th>
+                                <th class="no-print">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comparisonBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <button id="clearComparisonBtn" class="btn-secondary no-print">Clear All Comparisons</button>
+            </div>
+            
+            <div class="ad-container">
+                Advertisement Space (Adsterra Responsive Banner)
+                <small>This space is reserved for ad network code (e.g., 728x90).</small>
+            </div>
+
+            <div class="export-options no-print">
+                <button id="printBtn">Print Summary</button>
+                <button id="pdfBtn">Save as PDF</button>
+                <button id="excelBtn">Save as Excel</button>
+                <button id="csvBtn">Save as CSV</button>
+            </div>
+            
+            <div class="social-sharing no-print">
+                <button class="social-btn email" id="emailShare" aria-label="Share via Email">Email</button>
+                <button class="social-btn whatsapp" id="whatsappShare" aria-label="Share via WhatsApp">WhatsApp</button>
+                <button class="social-btn linkedin" id="linkedinShare" aria-label="Share via LinkedIn">LinkedIn</button>
+                <button class="social-btn twitter" id="twitterShare" aria-label="Share via Twitter">Twitter</button>
+            </div>
+
+            <div class="ad-container" style="height: 250px;">
+                Advertisement Space (Yllix Sidebar/Floating)
+                <small>This space is reserved for ad network code (e.g., 300x250).</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <h2 id="howToUseToggle" aria-expanded="false" aria-controls="howToUseContent">
+            How to Use This Calculator <span aria-hidden="true">▼</span>
+        </h2>
+        <div class="info-content" id="howToUseContent">
+            <p>This calculator helps you estimate your mortgage payments and total cost based on Canadian mortgage rules.</p>
+            <ul>
+                <li><strong>Mortgage Amount:</strong> The principal amount you plan to borrow.</li>
+                <li><strong>Annual Interest Rate:</strong> The yearly interest rate. <strong>In Canada, mortgage interest is typically compounded semi-annually,</strong> which this calculator accurately reflects.</li>
+                <li><strong>Amortization Period (Years):</strong> The total length of time to pay off the mortgage, usually up to 25 or 30 years.</li>
+                <li><strong>Payment Frequency:</strong> How often you'll make payments.
+                    <ul>
+                        <li><strong>Standard:</strong> Monthly, Bi-Weekly, Weekly, Semi-Annually, Annually.</li>
+                        <li><strong>Accelerated:</strong> "Accelerated Bi-Weekly" and "Accelerated Weekly" allow you to pay a bit more each period (equivalent to dividing a monthly payment by two or four, respectively) to pay off your mortgage faster and save on interest.</li>
+                    </ul>
+                </li>
+                <li><strong>Mortgage Start Date:</strong> Used to date the payments in the amortization schedule.</li>
+            </ul>
+            <p><strong>What the Results Mean:</strong></p>
+            <ul>
+                <li><strong>Periodic Payment:</strong> The fixed amount (principal + interest) you'll pay each period.</li>
+                <li><strong>Total Interest:</strong> The total interest paid over the entire amortization period.</li>
+                <li><strong>Total Cost:</strong> The sum of the original mortgage amount and the total interest paid.</li>
+                <li><strong>Amortization Schedule:</strong> A detailed breakdown of each payment, showing how much goes to interest and how much reduces the principal balance.</li>
+                <li><strong>Loan Comparison:</strong> Allows you to save and compare different mortgage scenarios side-by-side, useful for evaluating different terms, rates, or payment frequencies.</li>
+            </ul>
+            <p style="font-style: italic; color: var(--danger);"><strong>Disclaimer:</strong> This calculator provides estimates based on standard Canadian mortgage formulas. It does not account for additional fees, property taxes, home insurance, prepayment penalties, or specific lender policies. It is for informational purposes only and should not be considered financial advice. Consult a qualified financial advisor or mortgage professional for personalized guidance.</p>
+        </div>
+    </div>
+
+    <script>
+        // Global variables to store current calculation results for export and chart
+        let currentMortgageResults = {};
+        let amortizationSchedule = [];
+        let mortgageBreakdownChartInstance = null; // To manage Chart.js instance
+        let comparedMortgages = []; // Array to store comparison scenarios
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default start date to today
+            const today = new Date();
+            document.getElementById('startDate').valueAsDate = today;
+
+            // Set up theme toggle
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+            
+            // Set up tab functionality
+            setupTabs();
+            
+            // Set up event listeners for calculation and exports
+            document.getElementById('calculateBtn').addEventListener('click', calculateMortgage);
+            document.getElementById('addComparisonBtn').addEventListener('click', addMortgageToComparison);
+            document.getElementById('clearComparisonBtn').addEventListener('click', clearAllComparisons);
+            document.getElementById('printBtn').addEventListener('click', printSummary);
+            document.getElementById('pdfBtn').addEventListener('click', exportToPDF);
+            document.getElementById('excelBtn').addEventListener('click', exportToExcel);
+            document.getElementById('csvBtn').addEventListener('click', exportToCSV);
+
+            // Set up how-to-use toggle
+            const howToUseToggle = document.getElementById('howToUseToggle');
+            const howToUseContent = document.getElementById('howToUseContent');
+            howToUseToggle.addEventListener('click', function() {
+                const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                this.setAttribute('aria-expanded', !isExpanded);
+                howToUseContent.classList.toggle('active');
+                howToUseToggle.querySelector('span').textContent = isExpanded ? '▼' : '▲';
+            });
+            // Initial state for how-to-use
+            howToUseContent.classList.remove('active');
+            howToUseToggle.setAttribute('aria-expanded', 'false');
+            howToUseToggle.querySelector('span').textContent = '▼';
+            
+            // Initial calculation on page load
+            calculateMortgage();
+            setupSocialSharing(); // Needs initial data
+        });
+        
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            }
+            // Update chart colors on theme change
+            if (mortgageBreakdownChartInstance) {
+                const rootStyle = getComputedStyle(document.documentElement);
+                mortgageBreakdownChartInstance.data.datasets[0].backgroundColor = [
+                    rootStyle.getPropertyValue('--chart-color-principal'),
+                    rootStyle.getPropertyValue('--chart-color-interest')
+                ];
+                mortgageBreakdownChartInstance.options.plugins.legend.labels.color = rootStyle.getPropertyValue('--text-color');
+                mortgageBreakdownChartInstance.options.plugins.title.color = rootStyle.getPropertyValue('--text-color');
+                mortgageBreakdownChartInstance.update();
+            }
+        }
+        
+        function setupTabs() {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                });
+            });
+        }
+
+        // --- Error Handling Utilities ---
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+        }
+
+        function showError(elementId, message) {
+            document.getElementById(elementId).textContent = message;
+        }
+        
+        // --- Canadian Mortgage Calculation Logic ---
+
+        // Helper to get payments per year based on frequency string
+        function getPaymentsPerYear(frequencyString) {
+            switch(frequencyString) {
+                case '12': return 12; // Monthly
+                case '26': return 26; // Bi-Weekly
+                case '26_accel': return 26; // Accelerated Bi-Weekly
+                case '52': return 52; // Weekly
+                case '52_accel': return 52; // Accelerated Weekly
+                case '4': return 4;   // Quarterly
+                case '2': return 2;   // Semi-Annually
+                case '1': return 1;   // Annually
+                default: return 12; // Fallback to monthly
+            }
+        }
+
+        // Helper to get Canadian periodic rate (semi-annual compounding)
+        function getCanadianPeriodicRate(annualRateDecimal, paymentsPerYear) {
+            if (annualRateDecimal === 0) return 0;
+            
+            // Convert annual rate (nominal) to its equivalent semi-annual rate
+            const semiAnnualNominalRate = annualRateDecimal / 2;
+            
+            // Calculate the effective periodic rate based on semi-annual compounding
+            // Formula: i_p = (1 + i_a/2)^(2/p) - 1
+            // Where i_a is the annual nominal rate, p is payments per year
+            return Math.pow(1 + semiAnnualNominalRate, 2 / paymentsPerYear) - 1;
+        }
+
+        function calculateMortgage() {
+            clearErrors(); // Clear previous errors
+
+            // Get input values
+            const principal = parseFloat(document.getElementById('principal').value);
+            let annualInterestRate = parseFloat(document.getElementById('interestRate').value);
+            const amortizationPeriodYears = parseInt(document.getElementById('amortizationPeriodYears').value);
+            const paymentFrequencyString = document.getElementById('paymentFrequency').value; // e.g., '12', '26_accel'
+            const startDateInput = document.getElementById('startDate').value;
+            const startDate = new Date(startDateInput);
+            
+            // Convert percentage to decimal
+            annualInterestRate /= 100;
+            
+            // --- Input Validation ---
+            let isValid = true;
+            if (isNaN(principal) || principal <= 0) {
+                showError('principal-error', 'Mortgage amount must be a positive number.'); isValid = false;
+            }
+            if (isNaN(annualInterestRate) || annualInterestRate < 0 || annualInterestRate > 0.15) { // Max 15% typical for mortgage
+                showError('interestRate-error', 'Interest rate must be between 0% and 15%.'); isValid = false;
+            }
+            if (isNaN(amortizationPeriodYears) || amortizationPeriodYears <= 0 || !Number.isInteger(amortizationPeriodYears) || amortizationPeriodYears > 30) {
+                showError('amortizationPeriodYears-error', 'Amortization period must be a whole number between 1 and 30 years.'); isValid = false;
+            }
+            if (!startDateInput || isNaN(startDate.getTime())) { // Check if input is empty or invalid date
+                showError('startDate-error', 'Please select a valid start date.'); isValid = false;
+            }
+            
+            if (!isValid) {
+                document.getElementById('results-section').style.display = 'none';
+                return;
+            }
+
+            const paymentsPerYear = getPaymentsPerYear(paymentFrequencyString);
+            const totalPeriods = amortizationPeriodYears * paymentsPerYear;
+            const periodicRate = getCanadianPeriodicRate(annualInterestRate, paymentsPerYear);
+
+            let periodicPayment;
+
+            // Handle accelerated payments first
+            if (paymentFrequencyString === '26_accel' || paymentFrequencyString === '52_accel') {
+                const monthlyPaymentsPerYear = 12; // Base for standard monthly calculations
+                const monthlyPeriodicRate = getCanadianPeriodicRate(annualInterestRate, monthlyPaymentsPerYear);
+                const totalMonthlyPeriods = amortizationPeriodYears * monthlyPaymentsPerYear;
+                
+                // Calculate what the monthly payment would be normally
+                let standardMonthlyPayment;
+                if (monthlyPeriodicRate === 0) {
+                    standardMonthlyPayment = principal / totalMonthlyPeriods;
+                } else {
+                    standardMonthlyPayment = principal * (monthlyPeriodicRate * Math.pow(1 + monthlyPeriodicRate, totalMonthlyPeriods)) / 
+                                             (Math.pow(1 + monthlyPeriodicRate, totalMonthlyPeriods) - 1);
+                }
+
+                if (paymentFrequencyString === '26_accel') {
+                    periodicPayment = standardMonthlyPayment / 2; // Accelerated bi-weekly is half of monthly
+                } else { // 52_accel
+                    periodicPayment = standardMonthlyPayment / 4; // Accelerated weekly is a quarter of monthly
+                }
+            } else { // Standard payments (monthly, bi-weekly, etc.)
+                if (periodicRate === 0) {
+                    periodicPayment = principal / totalPeriods;
+                } else {
+                    periodicPayment = principal * (periodicRate * Math.pow(1 + periodicRate, totalPeriods)) / 
+                                     (Math.pow(1 + periodicRate, totalPeriods) - 1);
+                }
+            }
+            
+            const totalInterest = (periodicPayment * totalPeriods) - principal;
+            const totalCost = principal + totalInterest;
+
+            // Validate final calculated values (e.g., if input leads to NaN or Infinity)
+            if (isNaN(periodicPayment) || !isFinite(periodicPayment)) {
+                showError('interestRate-error', 'Calculation resulted in invalid numbers (e.g., extremely low rate or too long term).');
+                document.getElementById('results-section').style.display = 'none';
+                return;
+            }
+
+            // Store results in global object for export and comparison
+            currentMortgageResults = {
+                principal: principal,
+                annualInterestRate: annualInterestRate * 100, // Store as percentage for display
+                amortizationPeriodYears: amortizationPeriodYears,
+                paymentFrequencyString: paymentFrequencyString, // Store string value
+                paymentFrequencyText: document.getElementById('paymentFrequency').options[document.getElementById('paymentFrequency').selectedIndex].text,
+                startDate: startDate, // Store the Date object
+                
+                periodicPayment: periodicPayment,
+                totalPayments: totalPeriods, // Total periods over amortization
+                totalInterest: totalInterest,
+                totalCost: totalCost
+            };
+
+            // Generate detailed amortization schedule
+            amortizationSchedule = generateAmortizationSchedule(currentMortgageResults);
+            
+            // Update UI
+            updateSummaryCards(currentMortgageResults);
+            updateChart(currentMortgageResults);
+            displayScheduleTable(amortizationSchedule);
+            displayComparisonTable(); // Redraw comparison table in case it's open
+            setupSocialSharing(); // Update sharing links with new data
+
+            document.getElementById('results-section').style.display = 'block';
+        }
+
+        // --- Amortization Schedule Generation ---
+        function generateAmortizationSchedule(results) {
+            const schedule = [];
+            let currentBalance = results.principal;
+            let cumulativeInterestPaid = 0;
+            let cumulativePrincipalPaid = 0;
+            
+            const periodicRate = getCanadianPeriodicRate(results.annualInterestRate / 100, getPaymentsPerYear(results.paymentFrequencyString));
+            const originalPeriodicPayment = results.periodicPayment; // Keep the original calculated payment constant
+            const totalPeriods = results.totalPayments;
+            const loanStartDateOriginal = new Date(results.startDate); // Use a copy of the original start date for fixed reference
+
+            for (let i = 1; i <= totalPeriods; i++) {
+                // If balance is already effectively zero (due to previous period's rounding or exact payout)
+                if (currentBalance <= 0.01 && i > 1) { 
+                    currentBalance = 0; // Ensure it's exactly zero
+                    break; 
+                }
+
+                const interestPaidThisPeriod = currentBalance * periodicRate;
+                let principalPaidThisPeriod = originalPeriodicPayment - interestPaidThisPeriod;
+
+                // Adjust for final payment to zero out the balance precisely
+                if (i === totalPeriods || (currentBalance - principalPaidThisPeriod) < 0.01) {
+                    principalPaidThisPeriod = currentBalance; // Pay off remaining balance
+                }
+
+                principalPaidThisPeriod = Math.max(0, principalPaidThisPeriod); // Ensure principal paid is not negative
+
+                // Calculate current balance after this payment
+                currentBalance -= principalPaidThisPeriod;
+                cumulativeInterestPaid += interestPaidThisPeriod;
+                cumulativePrincipalPaid += principalPaidThisPeriod;
+
+                // Calculate payment date for this period (create new date object each time)
+                const paymentDate = new Date(loanStartDateOriginal); 
+                const freq = results.paymentFrequencyString;
+                // Add months/days based on the actual frequency
+                if (freq === '12') paymentDate.setMonth(loanStartDateOriginal.getMonth() + i);
+                else if (freq === '26' || freq === '26_accel') paymentDate.setDate(loanStartDateOriginal.getDate() + (i * 14)); // Bi-weekly: 14 days
+                else if (freq === '52' || freq === '52_accel') paymentDate.setDate(loanStartDateOriginal.getDate() + (i * 7)); // Weekly: 7 days
+                else if (freq === '4') paymentDate.setMonth(loanStartDateOriginal.getMonth() + i * 3); // Quarterly: 3 months
+                else if (freq === '2') paymentDate.setMonth(loanStartDateOriginal.getMonth() + i * 6); // Semi-Annually: 6 months
+                else if (freq === '1') paymentDate.setFullYear(loanStartDateOriginal.getFullYear() + i); // Annually: 1 year
+
+
+                schedule.push({
+                    period: i,
+                    paymentDate: paymentDate,
+                    startingBalance: parseFloat((results.principal - (i === 1 ? 0 : (cumulativePrincipalPaid - principalPaidThisPeriod))).toFixed(2)),
+                    periodicPayment: parseFloat(originalPeriodicPayment.toFixed(2)), // Always display the original periodic payment
+                    interestPaid: parseFloat(interestPaidThisPeriod.toFixed(2)),
+                    principalPaid: parseFloat(principalPaidThisPeriod.toFixed(2)),
+                    endingBalance: parseFloat(Math.max(0, currentBalance).toFixed(2)), 
+                    cumulativeInterest: parseFloat(cumulativeInterestPaid.toFixed(2)),
+                    cumulativePrincipal: parseFloat(cumulativePrincipalPaid.toFixed(2))
+                });
+            }
+            return schedule;
+        }
+
+        // --- Loan Comparison Logic ---
+        function addMortgageToComparison() {
+            if (Object.keys(currentMortgageResults).length === 0 || isNaN(currentMortgageResults.periodicPayment)) {
+                alert("Please calculate a valid mortgage first before adding to comparison.");
+                return;
+            }
+            
+            const scenarioName = prompt("Enter a name for this mortgage scenario (e.g., 'Option A', 'Longer Amortization'):");
+            if (!scenarioName) return; // User cancelled or entered empty name
+
+            const newScenario = {
+                id: Date.now(), // Unique ID
+                name: scenarioName,
+                principal: currentMortgageResults.principal,
+                interestRate: currentMortgageResults.annualInterestRate,
+                amortizationPeriodYears: currentMortgageResults.amortizationPeriodYears,
+                paymentFrequencyText: currentMortgageResults.paymentFrequencyText,
+                periodicPayment: currentMortgageResults.periodicPayment,
+                totalInterest: currentMortgageResults.totalInterest,
+                totalCost: currentMortgageResults.totalCost
+            };
+            comparedMortgages.push(newScenario);
+            displayComparisonTable();
+            // Switch to comparison tab if it's not active
+            document.querySelector('.tabs .tab[data-tab="comparison"]').click();
+        }
+
+        function removeMortgageFromComparison(idToRemove) {
+            comparedMortgages = comparedMortgages.filter(mortgage => mortgage.id !== idToRemove);
+            displayComparisonTable();
+        }
+
+        function clearAllComparisons() {
+            if (confirm("Are you sure you want to clear all compared mortgage scenarios? This action cannot be undone.")) {
+                comparedMortgages = [];
+                displayComparisonTable();
+            }
+        }
+
+        // --- UI Update Functions ---
+        function updateSummaryCards(results) {
+            document.getElementById('periodicPayment').textContent = formatCurrency(results.periodicPayment);
+            document.getElementById('totalInterest').textContent = formatCurrency(results.totalInterest);
+            document.getElementById('totalCost').textContent = formatCurrency(results.totalCost);
+        }
+        
+        function updateChart(results) {
+            const ctx = document.getElementById('mortgageBreakdownChart').getContext('2d');
+            
+            // Destroy previous chart if exists
+            if (mortgageBreakdownChartInstance) {
+                mortgageBreakdownChartInstance.destroy();
+            }
+
+            if (results.totalCost <= 0) { // No meaningful data to chart
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                return;
+            }
+
+            const labels = ['Loan Principal', 'Total Interest'];
+            const data = [results.principal, results.totalInterest];
+
+            // Filter out zero values for chart if they are not relevant for visual representation
+            const filteredLabels = [];
+            const filteredData = [];
+            const backgroundColors = [];
+            const rootStyle = getComputedStyle(document.documentElement);
+            const chartColors = [
+                rootStyle.getPropertyValue('--chart-color-principal'),
+                rootStyle.getPropertyValue('--chart-color-interest')
+            ];
+
+            for(let i = 0; i < data.length; i++) {
+                if (Math.abs(data[i]) > 0.01) { // Filter out very small values (near zero)
+                    filteredData.push(data[i]);
+                    filteredLabels.push(labels[i]);
+                    backgroundColors.push(chartColors[i]);
+                }
+            }
+
+            mortgageBreakdownChartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: filteredLabels,
+                    datasets: [{
+                        data: filteredData,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: rootStyle.getPropertyValue('--text-color')
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                    return `${context.label}: ${formatCurrency(value)} (${percentage}%)`;
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Mortgage Cost Breakdown',
+                            color: rootStyle.getPropertyValue('--text-color')
+                        }
+                    }
+                }
+            });
+        }
+
+        function displayScheduleTable(schedule) {
+            const tableBody = document.getElementById('scheduleBody');
+            tableBody.innerHTML = '';
+            
+            // Only show every Nth payment if there are many, plus first and last
+            const periodsPerYear = getPaymentsPerYear(currentMortgageResults.paymentFrequencyString);
+            const showAllThreshold = periodsPerYear * 5; // Show all if 5 years or less of payments
+            const showCondensed = schedule.length > showAllThreshold;
+            
+            schedule.forEach((period, i) => {
+                const isEndOfYear = (i + 1) % periodsPerYear === 0;
+                const isFirstOrLast = i === 0 || i === schedule.length - 1;
+
+                if (!showCondensed || isEndOfYear || isFirstOrLast) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${period.period}</td>
+                        <td>${period.paymentDate.toLocaleDateString('en-CA')}</td>
+                        <td>${formatCurrency(period.startingBalance)}</td>
+                        <td>${formatCurrency(period.periodicPayment)}</td>
+                        <td>${formatCurrency(period.interestPaid)}</td>
+                        <td>${formatCurrency(period.principalPaid)}</td>
+                        <td>${formatCurrency(period.endingBalance)}</td>
+                        <td>${formatCurrency(period.cumulativeInterest)}</td>
+                        <td>${formatCurrency(period.cumulativePrincipal)}</td>
+                    `;
+                    tableBody.appendChild(row);
+                } else if (i === Math.floor(schedule.length / 2) && showCondensed) {
+                    // Add ellipsis row once in the middle for condensed view
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td colspan="9" style="text-align: center;">... (Table Condensed) ...</td>`;
+                    tableBody.appendChild(row);
+                }
+            });
+        }
+
+        function displayComparisonTable() {
+            const tableBody = document.getElementById('comparisonBody');
+            tableBody.innerHTML = '';
+
+            if (comparedMortgages.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="9" style="text-align: center;">No mortgages added for comparison yet.</td></tr>';
+                return;
+            }
+
+            comparedMortgages.forEach(loan => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${loan.name}</td>
+                    <td>${formatCurrency(loan.principal)}</td>
+                    <td>${formatPercentage(loan.interestRate)}</td>
+                    <td>${loan.amortizationPeriodYears}</td>
+                    <td>${loan.paymentFrequencyText}</td>
+                    <td>${formatCurrency(loan.periodicPayment)}</td>
+                    <td>${formatCurrency(loan.totalInterest)}</td>
+                    <td>${formatCurrency(loan.totalCost)}</td>
+                    <td class="no-print"><button class="btn-secondary" onclick="removeMortgageFromComparison(${loan.id})">Remove</button></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // --- Formatting Utilities ---
+        function formatCurrency(amount) {
+            // Check for NaN or Infinity before formatting
+            if (isNaN(amount) || !isFinite(amount)) {
+                return "$0.00"; 
+            }
+            // Use Canadian Dollar format for currency
+            return new Intl.NumberFormat('en-CA', {
+                style: 'currency',
+                currency: 'CAD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        }
+
+        function formatPercentage(value) {
+            // Check for NaN or Infinity before formatting
+            if (isNaN(value) || !isFinite(value)) {
+                return "0.00%";
+            }
+            return value.toFixed(2) + '%';
+        }
+        
+        // --- Export Functions ---
+        function printSummary() {
+            window.print();
+        }
+        
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'pt', 'letter');
+            let currentY = 40;
+            const margin = 40;
+            const pageWidth = doc.internal.pageSize.width;
+
+            doc.setFontSize(18);
+            doc.text('Canadian Mortgage Report', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 30;
+
+            doc.setFontSize(12);
+            doc.text(`Calculated On: ${new Date().toLocaleDateString()}`, margin, currentY);
+            currentY += 20;
+
+            // Input Details
+            const inputDetails = [
+                ["Mortgage Amount", formatCurrency(currentMortgageResults.principal)],
+                ["Annual Interest Rate", formatPercentage(currentMortgageResults.annualInterestRate)],
+                ["Amortization Period (Years)", currentMortgageResults.amortizationPeriodYears],
+                ["Payment Frequency", currentMortgageResults.paymentFrequencyText],
+                ["Mortgage Start Date", currentMortgageResults.startDate.toLocaleDateString()]
+            ];
+            doc.autoTable({
+                startY: currentY,
+                head: [['Parameter', 'Value']],
+                body: inputDetails,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                margin: { left: margin, right: margin }
+            });
+            currentY = doc.autoTable.previous.finalY + 20;
+
+            // Summary Results
+            const summaryResults = [
+                ["Periodic Payment", document.getElementById('periodicPayment').textContent],
+                ["Total Interest", document.getElementById('totalInterest').textContent],
+                ["Total Cost", document.getElementById('totalCost').textContent]
+            ];
+            doc.autoTable({
+                startY: currentY,
+                head: [['Result', 'Value']],
+                body: summaryResults,
+                theme: 'grid',
+                headStyles: { fillColor: [46, 204, 113], textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                margin: { left: margin, right: margin }
+            });
+            currentY = doc.autoTable.previous.finalY + 30;
+
+            // Detailed Amortization Schedule
+            doc.addPage();
+            currentY = margin;
+            doc.setFontSize(16);
+            doc.text('Detailed Amortization Schedule', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 20;
+
+            // Prepare data for PDF, using original numbers for accuracy
+            const scheduleTableData = amortizationSchedule.map(p => [
+                p.period,
+                p.paymentDate.toLocaleDateString('en-CA'), // Canadian date format
+                p.startingBalance.toFixed(2),
+                p.periodicPayment.toFixed(2),
+                p.interestPaid.toFixed(2),
+                p.principalPaid.toFixed(2),
+                p.endingBalance.toFixed(2),
+                p.cumulativeInterest.toFixed(2),
+                p.cumulativePrincipal.toFixed(2)
+            ]);
+
+            doc.autoTable({
+                startY: currentY,
+                head: [['Period', 'Date', 'Start Bal', 'Payment', 'Interest', 'Principal', 'End Bal', 'Cum. Interest', 'Cum. Principal']],
+                body: scheduleTableData,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                styles: { fontSize: 7, cellPadding: 3 }, // Smaller font/padding for many columns
+                margin: { left: margin, right: margin },
+                didDrawPage: function(data) {
+                    let pageCount = doc.internal.getNumberOfPages();
+                    doc.setFontSize(8);
+                    doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber + ' of ' + pageCount, data.settings.margin.left, doc.internal.pageSize.height - 20);
+                }
+            });
+
+            // Loan Comparison Table (if any)
+            if (comparedMortgages.length > 0) {
+                doc.addPage();
+                currentY = margin;
+                doc.setFontSize(16);
+                doc.text('Mortgage Comparison', pageWidth / 2, currentY, { align: 'center' });
+                currentY += 20;
+
+                const comparisonTableData = comparedMortgages.map(loan => [
+                    loan.name,
+                    loan.principal.toFixed(2),
+                    loan.interestRate.toFixed(2),
+                    loan.amortizationPeriodYears,
+                    loan.paymentFrequencyText,
+                    loan.periodicPayment.toFixed(2),
+                    loan.totalInterest.toFixed(2),
+                    loan.totalCost.toFixed(2)
+                ]);
+
+                doc.autoTable({
+                    startY: currentY,
+                    head: [['Scenario', 'Mortgage Amt', 'Rate (%)', 'Amort. (Yrs)', 'Freq.', 'Periodic Pmt', 'Total Interest', 'Total Cost']],
+                    body: comparisonTableData,
+                    theme: 'grid',
+                    headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                    styles: { fontSize: 8, cellPadding: 4 },
+                    margin: { left: margin, right: margin },
+                    didDrawPage: function(data) {
+                        let pageCount = doc.internal.getNumberOfPages();
+                        doc.setFontSize(8);
+                        doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber + ' of ' + pageCount, data.settings.margin.left, doc.internal.pageSize.height - 20);
+                    }
+                });
+            }
+            
+            doc.save('canadian_mortgage_report.pdf');
+        }
+        
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+            
+            // Sheet 1: Summary
+            const summaryData = [
+                ["Canadian Mortgage Report", ""],
+                ["Calculated On", new Date().toLocaleDateString()],
+                [],
+                ["Input Details", ""],
+                ["Mortgage Amount", currentMortgageResults.principal],
+                ["Annual Interest Rate", currentMortgageResults.annualInterestRate], // Unformatted for Excel
+                ["Amortization Period (Years)", currentMortgageResults.amortizationPeriodYears],
+                ["Payment Frequency", currentMortgageResults.paymentFrequencyText],
+                ["Mortgage Start Date", currentMortgageResults.startDate.toLocaleDateString()],
+                [],
+                ["Results", ""],
+                ["Periodic Payment", currentMortgageResults.periodicPayment], // Unformatted
+                ["Total Interest", currentMortgageResults.totalInterest], // Unformatted
+                ["Total Cost", currentMortgageResults.totalCost] // Unformatted
+            ];
+            const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, summaryWs, "Mortgage Summary");
+
+            // Sheet 2: Amortization Schedule
+            const detailedScheduleHeaders = [
+                "Period", "Payment Date", "Starting Balance", "Payment (P&I)", 
+                "Interest Paid", "Principal Paid", "Ending Balance", "Cumulative Interest", "Cumulative Principal"
+            ];
+            const detailedScheduleData = [detailedScheduleHeaders];
+            amortizationSchedule.forEach(p => {
+                detailedScheduleData.push([
+                    p.period,
+                    p.paymentDate.toLocaleDateString('en-CA'),
+                    p.startingBalance,
+                    p.periodicPayment,
+                    p.interestPaid,
+                    p.principalPaid,
+                    p.endingBalance,
+                    p.cumulativeInterest,
+                    p.cumulativePrincipal
+                ]);
+            });
+            const detailedScheduleWs = XLSX.utils.aoa_to_sheet(detailedScheduleData);
+            XLSX.utils.book_append_sheet(wb, detailedScheduleWs, "Amortization Schedule");
+
+            // Sheet 3: Loan Comparison (if any)
+            if (comparedMortgages.length > 0) {
+                const comparisonHeaders = [
+                    "Scenario", "Mortgage Amount", "Interest Rate (%)", "Amort. Period (Yrs)", 
+                    "Payment Freq.", "Periodic Payment", "Total Interest", "Total Cost"
+                ];
+                const comparisonData = [comparisonHeaders];
+                comparedMortgages.forEach(loan => {
+                    comparisonData.push([
+                        loan.name,
+                        loan.principal,
+                        loan.interestRate,
+                        loan.amortizationPeriodYears,
+                        loan.paymentFrequencyText,
+                        loan.periodicPayment,
+                        loan.totalInterest,
+                        loan.totalCost
+                    ]);
+                });
+                const comparisonWs = XLSX.utils.aoa_to_sheet(comparisonData);
+                XLSX.utils.book_append_sheet(wb, comparisonWs, "Mortgage Comparison");
+            }
+            
+            XLSX.writeFile(wb, 'canadian_mortgage_report.xlsx');
+        }
+        
+        function exportToCSV() {
+            let csvContent = "";
+
+            // Summary data
+            csvContent += "Canadian Mortgage Report\n";
+            csvContent += `"Calculated On","${new Date().toLocaleDateString()}"\n\n`;
+            csvContent += `"Input Details",\n`;
+            csvContent += `"Mortgage Amount",${currentMortgageResults.principal}\n`;
+            csvContent += `"Annual Interest Rate",${currentMortgageResults.annualInterestRate}%\n`; // Formatted for CSV
+            csvContent += `"Amortization Period (Years)",${currentMortgageResults.amortizationPeriodYears}\n`;
+            csvContent += `"Payment Frequency","${currentMortgageResults.paymentFrequencyText}"\n`;
+            csvContent += `"Mortgage Start Date","${currentMortgageResults.startDate.toLocaleDateString()}"\n\n`;
+            csvContent += `"Results",\n`;
+            csvContent += `"Periodic Payment",${currentMortgageResults.periodicPayment.toFixed(2)}\n`; // Formatted for CSV
+            csvContent += `"Total Interest",${currentMortgageResults.totalInterest.toFixed(2)}\n`; // Formatted for CSV
+            csvContent += `"Total Cost",${currentMortgageResults.totalCost.toFixed(2)}\n\n`; // Formatted for CSV
+
+            // Detailed Amortization Schedule
+            csvContent += "Amortization Schedule\n";
+            csvContent += "Period,Payment Date,Starting Balance,Payment (P&I),Interest Paid,Principal Paid,Ending Balance,Cumulative Interest,Cumulative Principal\n";
+            amortizationSchedule.forEach(p => {
+                csvContent += `${p.period},"${p.paymentDate.toLocaleDateString('en-CA')}",${p.startingBalance.toFixed(2)},${p.periodicPayment.toFixed(2)},${p.interestPaid.toFixed(2)},${p.principalPaid.toFixed(2)},${p.endingBalance.toFixed(2)},${p.cumulativeInterest.toFixed(2)},${p.cumulativePrincipal.toFixed(2)}\n`;
+            });
+            csvContent += "\n";
+
+            // Loan Comparison (if any)
+            if (comparedMortgages.length > 0) {
+                csvContent += "Mortgage Comparison\n";
+                csvContent += "Scenario,Mortgage Amount,Interest Rate (%),Amort. Period (Yrs),Payment Freq.,Periodic Payment,Total Interest,Total Cost\n";
+                comparedMortgages.forEach(loan => {
+                    csvContent += `"${loan.name}",${loan.principal.toFixed(2)},${loan.interestRate.toFixed(2)},${loan.amortizationPeriodYears},"${loan.paymentFrequencyText}",${loan.periodicPayment.toFixed(2)},${loan.totalInterest.toFixed(2)},${loan.totalCost.toFixed(2)}\n`;
+                });
+                csvContent += "\n";
+            }
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'canadian_mortgage_report.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        function setupSocialSharing() {
+            const principal = currentMortgageResults.principal || 0;
+            const annualInterestRate = currentMortgageResults.annualInterestRate || 0;
+            const amortizationPeriodYears = currentMortgageResults.amortizationPeriodYears || 0;
+            const periodicPayment = currentMortgageResults.periodicPayment || 0;
+            const totalCost = currentMortgageResults.totalCost || 0;
+            const paymentFrequencyText = currentMortgageResults.paymentFrequencyText || 'Monthly';
+
+            const shareText = `I calculated my Canadian mortgage! For a ${formatCurrency(principal)} mortgage at ${annualInterestRate.toFixed(2)}% over ${amortizationPeriodYears} years (${paymentFrequencyText} payments), my periodic payment is ${formatCurrency(periodicPayment)}, with a total cost of ${formatCurrency(totalCost)}. Calculate yours here:`;
+            
+            const shareUrl = window.location.href; // Current page URL
+            
+            document.getElementById('emailShare').onclick = () => {
+                window.open(`mailto:?subject=Canadian Mortgage Calculation Results&body=${encodeURIComponent(shareText + ' ' + shareUrl)}`);
+            };
+            document.getElementById('whatsappShare').onclick = () => {
+                window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`);
+            };
+            document.getElementById('linkedinShare').onclick = () => {
+                window.open(`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent('Professional Canadian Mortgage Calculation')}&summary=${encodeURIComponent(shareText)}`);
+            };
+            document.getElementById('twitterShare').onclick = () => {
+                window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`);
+            };
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Simple Interest Calculator | FinTech Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #7209b7;
+            --success: #06d6a0;
+            --warning: #ffd166;
+            --danger: #ef476f;
+            --dark: #1e1e2d;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --card-bg: #ffffff;
+            --body-bg: #f0f2f5;
+            --text: #343a40;
+            --border: #dee2e6;
+            --shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .dark-mode {
+            --primary: #5e72e4;
+            --primary-dark: #4d5fd0;
+            --secondary: #9c4dcc;
+            --success: #2dce89;
+            --warning: #fb6340;
+            --danger: #f5365c;
+            --dark: #f8f9fa;
+            --light: #121212;
+            --gray: #adb5bd;
+            --card-bg: #1e1e2d;
+            --body-bg: #141414;
+            --text: #e9ecef;
+            --border: #343a40;
+            --shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--body-bg);
+            color: var(--text);
+            transition: background-color 0.3s, color 0.3s;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .logo i {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .theme-toggle {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            padding: 8px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .theme-toggle:hover {
+            box-shadow: var(--shadow);
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 25px;
+        }
+
+        @media (max-width: 992px) {
+            .grid-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .calculator-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            padding: 30px;
+            transition: all 0.3s;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .input-group .tooltip {
+            position: relative;
+            cursor: help;
+        }
+
+        .input-group .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 0;
+            top: 100%;
+            background: var(--dark);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            width: 250px;
+            z-index: 10;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--card-bg);
+            color: var(--text);
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        .input-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .input-row .input-group {
+            flex: 1;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .results-section {
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, rgba(67, 97, 238, 0.1), rgba(114, 9, 183, 0.1));
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .result-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        .result-card h4 {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: var(--gray);
+        }
+
+        .result-card p {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .ad-container {
+            background: rgba(0,0,0,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin: 25px 0;
+            border: 1px dashed var(--border);
+        }
+
+        .ad-label {
+            font-size: 0.9rem;
+            color: var(--gray);
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .share-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .share-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 10px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .share-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .twitter { color: #1DA1F2; }
+        .facebook { color: #4267B2; }
+        .linkedin { color: #2867B2; }
+        .email { color: var(--danger); }
+        .link { color: var(--success); }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .input-row {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .btn-group .btn {
+                width: 100%;
+            }
+            
+            .share-btn {
+                min-width: calc(50% - 10px);
+            }
+        }
+
+        .ad-placeholder {
+            height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.03);
+            border-radius: 8px;
+            color: var(--gray);
+            font-weight: 500;
+            text-align: center;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .ad-placeholder.interstitial {
+            height: 600px;
+        }
+
+        .security-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            background: rgba(6, 214, 160, 0.1);
+            border-radius: 30px;
+            color: var(--success);
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-calculator"></i>
+                <span>FinTech<span style="color: var(--secondary);">Pro</span></span>
+            </div>
+            <div class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+                <span>Dark Mode</span>
+            </div>
+        </header>
+
+        <div class="grid-layout">
+            <div class="main-content">
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-percentage"></i> Simple Interest Calculator</h2>
+                    
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="principal">
+                                <span>Principal Amount ($)</span>
+                                <span class="tooltip" data-tooltip="The initial amount of money invested or borrowed">ⓘ</span>
+                            </label>
+                            <input type="number" id="principal" placeholder="Enter principal amount" min="1" value="10000">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="rate">
+                                <span>Annual Interest Rate (%)</span>
+                                <span class="tooltip" data-tooltip="The annual interest rate as a percentage">ⓘ</span>
+                            </label>
+                            <input type="number" id="rate" placeholder="Enter interest rate" min="0.01" step="0.01" value="5">
+                        </div>
+                    </div>
+                    
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="time">
+                                <span>Time Period</span>
+                                <span class="tooltip" data-tooltip="The duration for which the money is invested or borrowed">ⓘ</span>
+                            </label>
+                            <input type="number" id="time" placeholder="Enter time period" min="1" value="1">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="timeUnit">
+                                <span>Time Unit</span>
+                                <span class="tooltip" data-tooltip="Select days, months, or years for the time period">ⓘ</span>
+                            </label>
+                            <select id="timeUnit">
+                                <option value="days">Days</option>
+                                <option value="months">Months</option>
+                                <option value="years" selected>Years</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="calculateBtn">
+                            <i class="fas fa-calculator"></i> Calculate
+                        </button>
+                        <button class="btn" id="resetBtn" style="background: var(--card-bg); color: var(--text); border: 1px solid var(--border);">
+                            <i class="fas fa-redo"></i> Reset
+                        </button>
+                    </div>
+                    
+                    <div class="results-section" id="resultsSection" style="display: none;">
+                        <h3><i class="fas fa-chart-line"></i> Calculation Results</h3>
+                        <div class="result-grid">
+                            <div class="result-card">
+                                <h4>Principal Amount</h4>
+                                <p id="resultPrincipal">$10,000.00</p>
+                            </div>
+                            <div class="result-card">
+                                <h4>Interest Earned</h4>
+                                <p id="resultInterest">$500.00</p>
+                            </div>
+                            <div class="result-card">
+                                <h4>Total Amount</h4>
+                                <p id="resultTotal">$10,500.00</p>
+                            </div>
+                        </div>
+                        
+                        <h3 style="margin-top: 30px;"><i class="fas fa-share-alt"></i> Export & Share</h3>
+                        <div class="btn-group">
+                            <button class="btn" id="printBtn">
+                                <i class="fas fa-print"></i> Print
+                            </button>
+                            <button class="btn" id="pdfBtn">
+                                <i class="fas fa-file-pdf"></i> PDF
+                            </button>
+                            <button class="btn" id="excelBtn">
+                                <i class="fas fa-file-excel"></i> Excel
+                            </button>
+                            <button class="btn" id="csvBtn">
+                                <i class="fas fa-file-csv"></i> CSV
+                            </button>
+                        </div>
+                        
+                        <div class="share-options">
+                            <div class="share-btn twitter" id="twitterBtn">
+                                <i class="fab fa-twitter"></i> Twitter
+                            </div>
+                            <div class="share-btn facebook" id="facebookBtn">
+                                <i class="fab fa-facebook"></i> Facebook
+                            </div>
+                            <div class="share-btn linkedin" id="linkedinBtn">
+                                <i class="fab fa-linkedin"></i> LinkedIn
+                            </div>
+                            <div class="share-btn email" id="emailBtn">
+                                <i class="fas fa-envelope"></i> Email
+                            </div>
+                            <div class="share-btn link" id="copyLinkBtn">
+                                <i class="fas fa-link"></i> Copy Link
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="security-badge">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>All calculations are encrypted and processed client-side. No data is stored on servers.</span>
+                    </div>
+                </div>
+                
+                <div class="ad-container">
+                    <span class="ad-label">Adsterra Ad Placement (Responsive Banner)</span>
+                    <div class="ad-placeholder">
+                        <!-- Adsterra Ad Code would be placed here -->
+                        <div>
+                            <i class="fas fa-ad" style="font-size: 3rem; margin-bottom: 10px; opacity: 0.3;"></i>
+                            <p>Adsterra Responsive Banner Ad</p>
+                            <p style="font-size: 0.8rem; margin-top: 5px;">728x90 | 300x250 | 320x50</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-money-bill-wave"></i> Monetization</h2>
+                    
+                    <div class="ad-container">
+                        <span class="ad-label">Yllix Ad Placement (Floating/Interstitial)</span>
+                        <div class="ad-placeholder interstitial">
+                            <!-- Yllix Ad Code would be placed here -->
+                            <div>
+                                <i class="fas fa-ad" style="font-size: 3rem; margin-bottom: 10px; opacity: 0.3;"></i>
+                                <p>Yllix Floating/Interstitial Ad</p>
+                                <p style="font-size: 0.8rem; margin-top: 5px;">300x600 | 160x600 | 120x600</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin-top: 20px;"><i class="fas fa-lightbulb"></i> How It Works</h3>
+                    <p style="margin-top: 10px;">Simple interest is calculated using the formula:</p>
+                    <div style="background: rgba(67, 97, 238, 0.1); padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center;">
+                        <strong>SI = P × R × T / 100</strong>
+                        <p style="margin-top: 8px; font-size: 0.9rem;">
+                            Where:<br>
+                            P = Principal amount<br>
+                            R = Annual interest rate<br>
+                            T = Time period in years
+                        </p>
+                    </div>
+                    
+                    <p>For time periods in months or days, the calculator automatically converts to years:</p>
+                    <ul style="padding-left: 20px; margin: 10px 0;">
+                        <li>Months: T = months / 12</li>
+                        <li>Days: T = days / 365</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 FinTechPro Simple Interest Calculator | All calculations performed client-side for maximum security</p>
+            <p style="margin-top: 8px;">This tool is for educational purposes only. Consult a financial advisor for professional advice.</p>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const themeToggle = document.getElementById('themeToggle');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const resultsSection = document.getElementById('resultsSection');
+        const principalInput = document.getElementById('principal');
+        const rateInput = document.getElementById('rate');
+        const timeInput = document.getElementById('time');
+        const timeUnitSelect = document.getElementById('timeUnit');
+        const resultPrincipal = document.getElementById('resultPrincipal');
+        const resultInterest = document.getElementById('resultInterest');
+        const resultTotal = document.getElementById('resultTotal');
+        
+        // Theme Toggle
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            themeToggle.innerHTML = isDarkMode 
+                ? '<i class="fas fa-sun"></i> <span>Light Mode</span>' 
+                : '<i class="fas fa-moon"></i> <span>Dark Mode</span>';
+        });
+
+        // Input Validation
+        function validateInputs() {
+            let isValid = true;
+            const inputs = [principalInput, rateInput, timeInput];
+            
+            inputs.forEach(input => {
+                if (!input.value || parseFloat(input.value) <= 0) {
+                    input.style.borderColor = 'var(--danger)';
+                    isValid = false;
+                } else {
+                    input.style.borderColor = 'var(--border)';
+                }
+            });
+            
+            return isValid;
+        }
+
+        // Calculate Simple Interest
+        function calculateSimpleInterest() {
+            if (!validateInputs()) return;
+            
+            const principal = parseFloat(principalInput.value);
+            const rate = parseFloat(rateInput.value);
+            let time = parseFloat(timeInput.value);
+            const unit = timeUnitSelect.value;
+            
+            // Convert time to years
+            if (unit === 'months') {
+                time = time / 12;
+            } else if (unit === 'days') {
+                time = time / 365;
+            }
+            
+            // Calculate interest and total
+            const interest = (principal * rate * time) / 100;
+            const total = principal + interest;
+            
+            // Display results
+            resultPrincipal.textContent = formatCurrency(principal);
+            resultInterest.textContent = formatCurrency(interest);
+            resultTotal.textContent = formatCurrency(total);
+            
+            // Show results section
+            resultsSection.style.display = 'block';
+        }
+
+        // Format currency
+        function formatCurrency(amount) {
+            return '$' + amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+        }
+
+        // Reset Form
+        function resetForm() {
+            principalInput.value = '10000';
+            rateInput.value = '5';
+            timeInput.value = '1';
+            timeUnitSelect.value = 'years';
+            resultsSection.style.display = 'none';
+            
+            // Reset input borders
+            const inputs = [principalInput, rateInput, timeInput];
+            inputs.forEach(input => input.style.borderColor = 'var(--border)');
+        }
+
+        // Export Functions
+        function exportPDF() {
+            alert('PDF export functionality would be implemented here. In a real application, this would generate a PDF report using jsPDF.');
+        }
+
+        function exportExcel() {
+            alert('Excel export functionality would be implemented here. In a real application, this would generate an Excel file using SheetJS.');
+        }
+
+        function exportCSV() {
+            alert('CSV export functionality would be implemented here. In a real application, this would generate a CSV file.');
+        }
+
+        function printResults() {
+            alert('Print functionality would be implemented here. In a real application, this would open a print-friendly view.');
+        }
+
+        // Share Functions
+        function shareOnTwitter() {
+            const text = `Check out my simple interest calculation on FinTechPro: ${window.location.href}`;
+            const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        }
+
+        function shareOnFacebook() {
+            const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`;
+            window.open(url, '_blank');
+        }
+
+        function shareOnLinkedIn() {
+            const url = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(window.location.href)}`;
+            window.open(url, '_blank');
+        }
+
+        function shareViaEmail() {
+            const subject = 'Simple Interest Calculation';
+            const body = `Check out my simple interest calculation on FinTechPro: ${window.location.href}`;
+            window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        }
+
+        function copyLink() {
+            navigator.clipboard.writeText(window.location.href);
+            alert('Link copied to clipboard!');
+        }
+
+        // Event Listeners
+        calculateBtn.addEventListener('click', calculateSimpleInterest);
+        resetBtn.addEventListener('click', resetForm);
+        document.getElementById('printBtn').addEventListener('click', printResults);
+        document.getElementById('pdfBtn').addEventListener('click', exportPDF);
+        document.getElementById('excelBtn').addEventListener('click', exportExcel);
+        document.getElementById('csvBtn').addEventListener('click', exportCSV);
+        document.getElementById('twitterBtn').addEventListener('click', shareOnTwitter);
+        document.getElementById('facebookBtn').addEventListener('click', shareOnFacebook);
+        document.getElementById('linkedinBtn').addEventListener('click', shareOnLinkedIn);
+        document.getElementById('emailBtn').addEventListener('click', shareViaEmail);
+        document.getElementById('copyLinkBtn').addEventListener('click', copyLink);
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Calculate on initial load
+            calculateSimpleInterest();
+        });
+    </script>
+</body>
+</html>

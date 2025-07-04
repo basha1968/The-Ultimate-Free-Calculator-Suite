@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional College Cost Calculator</title>
+    <!-- 
+        Content-Security-Policy: For production deployment, configure this via your web server (e.g., Nginx, Apache) 
+        for best practice. If using a meta tag, ensure all CDN domains (Chart.js, jsPDF, SheetJS) are whitelisted.
+        For this single-file, self-contained solution, inline scripts/styles require 'unsafe-inline'.
+        Example for meta (adjust for your specific ad networks if they inject more):
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com cdn.jsdelivr.net cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src * data:; media-src *; connect-src *;">
+    -->
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        /* CSS Variables for theming */
+        :root {
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --danger: #e74c3c;
+            --dark-heading-bg: #2c3e50; /* Used for table headers in light mode */
+            --light-bg-secondary: #ecf0f1; /* Used for ad containers, tab non-active */
+            --text-color: #333;
+            --bg-color: #f9f9f9;
+            --card-bg: #fff;
+            --border-color: #ddd;
+            --chart-color-tuition: #3498db;
+            --chart-color-roomboard: #2ecc71;
+            --chart-color-books: #f1c40f;
+            --chart-color-misc: #9b59b6;
+            --chart-color-aid: #1abc9c;
+            --chart-color-loan-interest: #e74c3c;
+            --chart-color-net-cost: #34495e;
+            --chart-color-gross-cost: #6d8ba6;
+        }
+        
+        /* Dark Theme Variables */
+        [data-theme="dark"] {
+            --primary: #2980b9;
+            --secondary: #27ae60;
+            --danger: #c0392b;
+            --dark-heading-bg: #34495e; 
+            --light-bg-secondary: #4a667e; 
+            --text-color: #ecf0f1;
+            --bg-color: #2c3e50;
+            --card-bg: #34495e;
+            --border-color: #555;
+            --chart-color-tuition: #4a90e2;
+            --chart-color-roomboard: #4CAF50;
+            --chart-color-books: #f5d342;
+            --chart-color-misc: #c792ea;
+            --chart-color-aid: #16a085;
+            --chart-color-loan-interest: #ff6b6b;
+            --chart-color-net-cost: #c792ea; /* Adjusted for contrast */
+            --chart-color-gross-cost: #8a2be2; /* Adjusted for contrast */
+        }
+        
+        /* Global Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            transition: all 0.3s ease; /* Smooth transition for theme change */
+        }
+        
+        .calculator-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .calculator-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .input-section, .results-section {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1, h2, h3 {
+            color: var(--primary);
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            transition: border-color 0.3s, background-color 0.3s, color 0.3s;
+        }
+        
+        /* Buttons */
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--secondary);
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        /* Ad Containers */
+        .ad-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--light-bg-secondary);
+            border-radius: 4px;
+            text-align: center;
+            min-height: 90px;
+            color: var(--text-color);
+            display: flex; /* For centering text */
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            border: 1px dashed var(--border-color);
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+
+        .chart-container-half {
+            flex: 1 1 45%; /* Occupy roughly half width */
+            min-width: 300px; /* Minimum width for readability */
+            height: 350px; /* Fixed height for charts */
+            margin: 0; /* Override default chart-container margin */
+        }
+        .charts-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .summary-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .summary-card h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: var(--text-color); /* Use theme variable */
+        }
+        
+        .summary-card p {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: var(--primary); /* Use primary color */
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            color: var(--text-color);
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background-color: var(--dark-heading-bg); /* Use dark card bg for table headers */
+            color: white;
+        }
+        
+        tr:hover {
+            background-color: rgba(0,0,0,0.05); /* Light mode hover */
+        }
+        [data-theme="dark"] tr:hover {
+            background-color: rgba(255,255,255,0.05); /* Dark mode hover */
+        }
+        
+        /* Tooltips */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            color: var(--primary);
+            font-size: 0.9em;
+            margin-left: 5px;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 250px; /* Wider for more text */
+            background-color: var(--dark-heading-bg);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+            font-weight: normal;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Export & Share Options */
+        .export-options, .social-sharing {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .social-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 12px;
+            border-radius: 4px;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            transition: opacity 0.3s;
+        }
+        .social-btn:hover {
+            opacity: 0.8;
+        }
+        
+        .email { background-color: #777; }
+        .whatsapp { background-color: #25D366; }
+        .linkedin { background-color: #0077B5; }
+        .twitter { background-color: #1DA1F2; }
+        
+        /* Tabs (for comparison) */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: var(--light-bg-secondary);
+            border: none;
+            border-radius: 4px 4px 0 0;
+            margin-right: 5px;
+            color: var(--text-color);
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background-color: var(--primary);
+            color: white;
+            border-bottom: 2px solid var(--primary);
+        }
+        .tab:not(.active):hover {
+            background-color: rgba(var(--primary), 0.1); /* Subtle hover for non-active */
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: absolute; 
+            top: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 1.2em;
+            width: 40px; /* Fixed width/height for round button */
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        /* Error Messages */
+        .error-message {
+            color: var(--danger);
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        /* How to Use / Disclaimer Section */
+        .info-section {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        .info-section h2 {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-color); /* Ensure heading matches text color */
+        }
+        .info-content {
+            display: none;
+            color: var(--text-color); /* Ensure content matches text color */
+        }
+        .info-content.active {
+            display: block;
+        }
+        .info-section p {
+            margin-bottom: 10px;
+        }
+        .info-section ul {
+            list-style-type: disc;
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+        .info-section li {
+            margin-bottom: 5px;
+        }
+
+        /* Print Specific Styles */
+        @media print {
+            .no-print, .ad-container, .theme-toggle, .info-section, .export-options, .social-sharing, .tabs {
+                display: none !important;
+            }
+            body {
+                background: none;
+                padding: 0;
+                color: black; /* Force black text for print */
+            }
+            .calculator-container {
+                display: block;
+            }
+            .input-section {
+                display: none; /* Hide input section in print */
+            }
+            .results-section {
+                box-shadow: none; /* Remove shadow for print */
+                padding: 0;
+            }
+            table {
+                font-size: 10px; /* Smaller font for print tables */
+                color: black;
+            }
+            th, td {
+                padding: 8px;
+                border-color: #ccc; /* Lighter border for print */
+            }
+            th {
+                background-color: #eee !important; /* Lighter header for print */
+                color: black !important;
+            }
+            tr:hover {
+                background-color: transparent !important;
+            }
+            .charts-wrapper {
+                flex-direction: column; /* Stack charts vertically for print */
+            }
+            .chart-container-half {
+                max-width: 100% !important; /* Allow charts to take full width */
+                min-width: unset;
+                height: 250px; /* Adjust height for print */
+                page-break-inside: avoid; /* Prevent charts from breaking across pages */
+            }
+            .summary-card h3, .summary-card p {
+                color: black !important; /* Ensure readable colors in print */
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle no-print" id="themeToggle" aria-label="Toggle dark/light mode">🌓</button>
+    
+    <h1>Professional College Cost Calculator</h1>
+    
+    <div class="calculator-container">
+        <div class="input-section">
+            <h2>Program & Living Costs</h2>
+            
+            <div class="input-group">
+                <label for="programLength">
+                    Program Length (Years)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">
+                            Total number of years for your college program (e.g., 4 for a Bachelor's degree).
+                        </span>
+                    </span>
+                </label>
+                <input type="number" id="programLength" min="1" max="6" step="1" value="4" aria-describedby="programLength-error">
+                <div class="error-message" id="programLength-error" role="alert" aria-live="polite"></div>
+            </div>
+
+            <div class="input-group">
+                <label for="annualTuitionFees">
+                    Annual Tuition & Fees ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">
+                            Estimated annual cost of tuition, mandatory fees, and other direct charges from the institution.
+                        </span>
+                    </span>
+                </label>
+                <input type="number" id="annualTuitionFees" min="0" step="100" value="15000" aria-describedby="annualTuitionFees-error">
+                <div class="error-message" id="annualTuitionFees-error" role="alert" aria-live="polite"></div>
+            </div>
+
+            <div class="input-group">
+                <label for="annualIncreaseRate">
+                    Expected Annual Cost Increase (%)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">
+                            The percentage by which you expect tuition, fees, and other costs to increase each year.
+                        </span>
+                    </span>
+                </label>
+                <input type="number" id="annualIncreaseRate" min="0" max="10" step="0.1" value="3.0" aria-describedby="annualIncreaseRate-error">
+                <div class="error-message" id="annualIncreaseRate-error" role="alert" aria-live="polite"></div>
+            </div>
+
+            <div class="input-group">
+                <label for="annualRoomBoard">
+                    Annual Room & Board ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">
+                            Estimated annual cost for housing and food. Adjust based on on-campus, off-campus, or at-home living.
+                        </span>
+                    </span>
+                </label>
+                <input type="number" id="annualRoomBoard" min="0" step="100" value="12000" aria-describedby="annualRoomBoard-error">
+                <div class="error-message" id="annualRoomBoard-error" role="alert" aria-live="polite"></div>
+            </div>
+
+            <div class="input-group">
+                <label for="annualBooksSupplies">
+                    Annual Books & Supplies ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">
+                            Estimated annual cost for textbooks, course materials, and school supplies.
+                        </span>
+                    </span>
+                </label>
+                <input type="number" id="annualBooksSupplies" min="0" step="10" value="1200" aria-describedby="annualBooksSupplies-error">
+                <div class="error-message" id="annualBooksSupplies-error" role="alert" aria-live="polite"></div>
+            </div>
+
+            <div class="input-group">
+                <label for="annualMiscellaneous">
+                    Annual Miscellaneous Expenses ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">
+                            Estimated annual costs for transportation, personal spending, entertainment, etc.
+                        </span>
+                    </span>
+                </label>
+                <input type="number" id="annualMiscellaneous" min="0" step="10" value="2000" aria-describedby="annualMiscellaneous-error">
+                <div class="error-message" id="annualMiscellaneous-error" role="alert" aria-live="polite"></div>
+            </div>
+
+            <hr>
+            <h3>Financial Aid & Loans</h3>
+
+            <div class="input-group">
+                <label for="annualGrantsScholarships">
+                    Annual Grants & Scholarships ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">
+                            Total amount of gift aid (money you don't have to pay back) received annually.
+                        </span>
+                    </span>
+                </label>
+                <input type="number" id="annualGrantsScholarships" min="0" step="100" value="5000" aria-describedby="annualGrantsScholarships-error">
+                <div class="error-message" id="annualGrantsScholarships-error" role="alert" aria-live="polite"></div>
+            </div>
+
+            <div class="input-group">
+                <label for="annualOtherAid">
+                    Annual Other Aid (e.g., Work-Study) ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">
+                            Any other annual financial assistance that reduces your out-of-pocket costs, excluding loans.
+                        </span>
+                    </span>
+                </label>
+                <input type="number" id="annualOtherAid" min="0" step="100" value="0" aria-describedby="annualOtherAid-error">
+                <div class="error-message" id="annualOtherAid-error" role="alert" aria-live="polite"></div>
+            </div>
+
+            <hr>
+            <h4>Estimated Loan Repayment (If Needed)</h4>
+
+            <div class="input-group">
+                <label for="loanInterestRate">
+                    Student Loan Interest Rate (Annual %)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">
+                            The estimated annual interest rate for any student loans you might need to cover the net cost.
+                        </span>
+                    </span>
+                </label>
+                <input type="number" id="loanInterestRate" min="0" max="15" step="0.01" value="6.0" aria-describedby="loanInterestRate-error">
+                <div class="error-message" id="loanInterestRate-error" role="alert" aria-live="polite"></div>
+            </div>
+
+            <div class="input-group">
+                <label for="loanRepaymentTermYears">
+                    Loan Repayment Term (Years)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">
+                            The length of time you plan to take to repay any student loans after graduation.
+                        </span>
+                    </span>
+                </label>
+                <input type="number" id="loanRepaymentTermYears" min="1" max="30" step="1" value="10" aria-describedby="loanRepaymentTermYears-error">
+                <div class="error-message" id="loanRepaymentTermYears-error" role="alert" aria-live="polite"></div>
+            </div>
+            
+            <button id="calculateBtn">Calculate Costs</button>
+            <button id="addComparisonBtn" class="btn-secondary no-print">Add to Comparison</button>
+        </div>
+        
+        <div class="results-section">
+            <h2>College Cost Summary</h2>
+            
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <h3>Gross Total Program Cost</h3>
+                    <p id="grossTotalProgramCost">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Financial Aid</h3>
+                    <p id="totalFinancialAid">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Net Cost (After Aid)</h3>
+                    <p id="netCostAfterAid">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Estimated Loan Needed</h3>
+                    <p id="estimatedLoanNeeded">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Estimated Monthly Loan Pmt.</h3>
+                    <p id="estimatedMonthlyLoanPayment">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Loan Interest</h3>
+                    <p id="totalLoanInterest">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Overall Out-of-Pocket Cost</h3>
+                    <p id="overallOutOfPocketCost">$0.00</p>
+                </div>
+            </div>
+            
+            <div class="charts-wrapper">
+                <div class="chart-container-half">
+                    <canvas id="costDistributionChart" aria-label="Cost Distribution Chart"></canvas>
+                </div>
+                <div class="chart-container-half">
+                    <canvas id="netCostComparisonChart" aria-label="Net Cost Comparison Chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab active" data-tab="details" aria-controls="details-tab">Detailed Costs</button>
+                <button class="tab" data-tab="comparison" aria-controls="comparison-tab">Comparison</button>
+            </div>
+            
+            <div class="tab-content active" id="details-tab" role="tabpanel" aria-labelledby="details-tab-btn">
+                <h3>Year-by-Year Cost Breakdown</h3>
+                <div style="overflow-x: auto;">
+                    <table id="costBreakdownTable">
+                        <thead>
+                            <tr>
+                                <th>Year</th>
+                                <th>Tuition & Fees</th>
+                                <th>Room & Board</th>
+                                <th>Books & Supplies</th>
+                                <th>Miscellaneous</th>
+                                <th>Gross Annual Cost</th>
+                                <th>Annual Aid</th>
+                                <th>Net Annual Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody id="costBreakdownTableBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="comparison-tab" role="tabpanel" aria-labelledby="comparison-tab-btn">
+                <h3>Compared College Scenarios</h3>
+                <div style="overflow-x: auto;">
+                    <table id="comparisonTable">
+                        <thead>
+                            <tr>
+                                <th>Scenario</th>
+                                <th>Program Length (Yrs)</th>
+                                <th>Est. Loan Needed</th>
+                                <th>Monthly Loan Pmt.</th>
+                                <th>Total Loan Interest</th>
+                                <th>Overall Out-of-Pocket Cost</th>
+                                <th class="no-print">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comparisonBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <button id="clearComparisonBtn" class="btn-secondary no-print">Clear All Comparisons</button>
+            </div>
+            
+            <div class="ad-container">
+                <!-- Adsterra Responsive Banner Ad Code Here -->
+                Advertisement Space (Adsterra Responsive Banner)
+                <small>This space is reserved for ad network code (e.g., 728x90).</small>
+            </div>
+
+            <div class="export-options no-print">
+                <button id="printBtn">Print Summary</button>
+                <button id="pdfBtn">Save as PDF</button>
+                <button id="excelBtn">Save as Excel</button>
+                <button id="csvBtn">Save as CSV</button>
+            </div>
+            
+            <div class="social-sharing no-print">
+                <button class="social-btn email" id="emailShare" aria-label="Share via Email">Email</button>
+                <button class="social-btn whatsapp" id="whatsappShare" aria-label="Share via WhatsApp">WhatsApp</button>
+                <button class="social-btn linkedin" id="linkedinShare" aria-label="Share via LinkedIn">LinkedIn</button>
+                <button class="social-btn twitter" id="twitterShare" aria-label="Share via Twitter">Twitter</button>
+            </div>
+
+            <div class="ad-container" style="height: 250px;">
+                <!-- Yllix Sidebar/Floating Ad Code Here -->
+                Advertisement Space (Yllix Sidebar/Floating)
+                <small>This space is reserved for ad network code (e.g., 300x250).</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <h2 id="howToUseToggle" aria-expanded="false" aria-controls="howToUseContent">
+            How to Use This Calculator <span aria-hidden="true">▼</span>
+        </h2>
+        <div class="info-content" id="howToUseContent">
+            <p>This calculator helps you estimate the total cost of a college program, including potential loans and aid.</p>
+            <ul>
+                <li><strong>Program Length (Years):</strong> Enter the total number of years you expect to be in the program.</li>
+                <li><strong>Annual Costs:</strong> Provide your best estimates for annual Tuition & Fees, Room & Board, Books & Supplies, and Miscellaneous Expenses. Adjust "Room & Board" based on your living situation (on-campus, off-campus, or at home).</li>
+                <li><strong>Expected Annual Cost Increase:</strong> Estimate how much these costs might rise each year (e.g., 3% for a typical inflationary increase).</li>
+                <li><strong>Financial Aid:</strong> Enter the total amount of grants and scholarships you expect to receive annually. Include other aid like work-study if it directly reduces your need for loans.</li>
+                <li><strong>Student Loan Details:</strong> If your estimated "Net Cost (After Aid)" is positive, this is the amount you might need to borrow. Enter the estimated loan interest rate and the number of years you'd take to repay it to see your potential monthly payments and total loan interest.</li>
+            </ul>
+            <p><strong>What the Results Mean:</strong></p>
+            <ul>
+                <li><strong>Gross Total Program Cost:</strong> The estimated total cost of the program over its full length, *before* financial aid.</li>
+                <li><strong>Total Financial Aid:</strong> The cumulative amount of aid you expect to receive over the program.</li>
+                <li><strong>Net Cost (After Aid):</strong> The total cost of the program *after* subtracting all financial aid. This is the amount you'll need to pay out-of-pocket or through loans.</li>
+                <li><strong>Estimated Loan Needed:</strong> If your Net Cost is positive, this is the amount you'll likely need to borrow.</li>
+                <li><strong>Estimated Monthly Loan Payment:</strong> Your projected monthly payment if you finance the estimated loan needed.</li>
+                <li><strong>Total Loan Interest:</strong> The total interest you would pay over the repayment term of your student loans.</li>
+                <li><strong>Overall Out-of-Pocket Cost:</strong> This is your actual estimated cost, including the down payment (if any), net cost not covered by aid, and the total interest paid on your loans.</li>
+            </ul>
+            <p style="font-style: italic; color: var(--danger);"><strong>Disclaimer:</strong> This calculator provides estimates for informational purposes only. Actual costs, financial aid, and loan terms may vary significantly. It does not account for investment income, inflation's impact on living expenses (beyond the initial increase rate), or specific university/lender policies. Consult a qualified financial advisor or college financial aid office for personalized guidance.</p>
+        </div>
+    </div>
+
+    <script>
+        // Global variables to store current calculation results for export and chart
+        let currentCostResults = {};
+        let costBreakdownSchedule = [];
+        let costDistributionChartInstance = null; 
+        let netCostComparisonChartInstance = null;
+        let comparedScenarios = []; // Array to store comparison scenarios
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up theme toggle
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+            
+            // Set up tabs functionality for comparison
+            setupTabs();
+            
+            // Set up event listeners for calculation and exports
+            document.getElementById('calculateBtn').addEventListener('click', calculateCollegeCosts);
+            document.getElementById('addComparisonBtn').addEventListener('click', addScenarioToComparison);
+            document.getElementById('clearComparisonBtn').addEventListener('click', clearAllComparisons);
+            document.getElementById('printBtn').addEventListener('click', printSummary);
+            document.getElementById('pdfBtn').addEventListener('click', exportToPDF);
+            document.getElementById('excelBtn').addEventListener('click', exportToExcel);
+            document.getElementById('csvBtn').addEventListener('click', exportToCSV);
+
+            // Set up how-to-use toggle
+            const howToUseToggle = document.getElementById('howToUseToggle');
+            const howToUseContent = document.getElementById('howToUseContent');
+            howToUseToggle.addEventListener('click', function() {
+                const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                this.setAttribute('aria-expanded', !isExpanded);
+                howToUseContent.classList.toggle('active');
+                howToUseToggle.querySelector('span').textContent = isExpanded ? '▼' : '▲';
+            });
+            // Initial state for how-to-use
+            howToUseContent.classList.remove('active');
+            howToUseToggle.setAttribute('aria-expanded', 'false');
+            howToUseToggle.querySelector('span').textContent = '▼';
+            
+            // Initial calculation on page load
+            calculateCollegeCosts();
+            setupSocialSharing(); // Needs initial data
+        });
+        
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            }
+            // Update chart colors on theme change
+            updateCharts();
+        }
+        
+        function setupTabs() {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                });
+            });
+        }
+
+        // --- Error Handling Utilities ---
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+        }
+
+        function showError(elementId, message) {
+            document.getElementById(elementId).textContent = message;
+        }
+        
+        // --- Core College Cost Calculation Logic ---
+        function calculateCollegeCosts() {
+            clearErrors(); // Clear previous errors
+
+            // Get input values
+            const programLength = parseInt(document.getElementById('programLength').value);
+            let annualTuitionFees = parseFloat(document.getElementById('annualTuitionFees').value);
+            let annualIncreaseRate = parseFloat(document.getElementById('annualIncreaseRate').value);
+            let annualRoomBoard = parseFloat(document.getElementById('annualRoomBoard').value);
+            let annualBooksSupplies = parseFloat(document.getElementById('annualBooksSupplies').value);
+            let annualMiscellaneous = parseFloat(document.getElementById('annualMiscellaneous').value);
+            let annualGrantsScholarships = parseFloat(document.getElementById('annualGrantsScholarships').value);
+            let annualOtherAid = parseFloat(document.getElementById('annualOtherAid').value);
+            let loanInterestRate = parseFloat(document.getElementById('loanInterestRate').value);
+            const loanRepaymentTermYears = parseInt(document.getElementById('loanRepaymentTermYears').value);
+            
+            // Convert percentages to decimals
+            annualIncreaseRate /= 100;
+            loanInterestRate /= 100;
+            
+            // --- Input Validation ---
+            let isValid = true;
+            if (isNaN(programLength) || programLength <= 0 || !Number.isInteger(programLength) || programLength > 6) {
+                showError('programLength-error', 'Must be a whole number between 1 and 6.'); isValid = false;
+            }
+            if (isNaN(annualTuitionFees) || annualTuitionFees < 0) {
+                showError('annualTuitionFees-error', 'Must be a non-negative number.'); isValid = false;
+            }
+            if (isNaN(annualIncreaseRate) || annualIncreaseRate < 0 || annualIncreaseRate > 0.10) {
+                showError('annualIncreaseRate-error', 'Must be between 0% and 10%.'); isValid = false;
+            }
+            if (isNaN(annualRoomBoard) || annualRoomBoard < 0) {
+                showError('annualRoomBoard-error', 'Must be a non-negative number.'); isValid = false;
+            }
+            if (isNaN(annualBooksSupplies) || annualBooksSupplies < 0) {
+                showError('annualBooksSupplies-error', 'Must be a non-negative number.'); isValid = false;
+            }
+            if (isNaN(annualMiscellaneous) || annualMiscellaneous < 0) {
+                showError('annualMiscellaneous-error', 'Must be a non-negative number.'); isValid = false;
+            }
+            if (isNaN(annualGrantsScholarships) || annualGrantsScholarships < 0) {
+                showError('annualGrantsScholarships-error', 'Must be a non-negative number.'); isValid = false;
+            }
+            if (isNaN(annualOtherAid) || annualOtherAid < 0) {
+                showError('annualOtherAid-error', 'Must be a non-negative number.'); isValid = false;
+            }
+            if (isNaN(loanInterestRate) || loanInterestRate < 0 || loanInterestRate > 0.15) {
+                showError('loanInterestRate-error', 'Must be between 0% and 15%.'); isValid = false;
+            }
+            if (isNaN(loanRepaymentTermYears) || loanRepaymentTermYears <= 0 || !Number.isInteger(loanRepaymentTermYears) || loanRepaymentTermYears > 30) {
+                showError('loanRepaymentTermYears-error', 'Must be a whole number between 1 and 30 years.'); isValid = false;
+            }
+            
+            if (!isValid) {
+                document.getElementById('results-section').style.display = 'none';
+                return;
+            }
+
+            // --- Calculate Year-by-Year Costs ---
+            costBreakdownSchedule = [];
+            let currentAnnualTuition = annualTuitionFees;
+            let currentAnnualRoomBoard = annualRoomBoard;
+            let currentAnnualBooks = annualBooksSupplies;
+            let currentAnnualMisc = annualMiscellaneous;
+            let totalGrossProgramCost = 0;
+            let totalFinancialAid = 0;
+
+            for (let year = 1; year <= programLength; year++) {
+                const annualGrossCost = currentAnnualTuition + currentAnnualRoomBoard + currentAnnualBooks + currentAnnualMisc;
+                const annualAid = annualGrantsScholarships + annualOtherAid;
+                const annualNetCost = annualGrossCost - annualAid;
+
+                totalGrossProgramCost += annualGrossCost;
+                totalFinancialAid += annualAid;
+
+                costBreakdownSchedule.push({
+                    year: year,
+                    tuitionFees: currentAnnualTuition,
+                    roomBoard: currentAnnualRoomBoard,
+                    booksSupplies: currentAnnualBooks,
+                    miscellaneous: currentAnnualMisc,
+                    grossAnnualCost: annualGrossCost,
+                    annualAid: annualAid,
+                    netAnnualCost: annualNetCost
+                });
+
+                // Apply annual increase for the next year's costs
+                currentAnnualTuition *= (1 + annualIncreaseRate);
+                currentAnnualRoomBoard *= (1 + annualIncreaseRate);
+                currentAnnualBooks *= (1 + annualIncreaseRate);
+                currentAnnualMisc *= (1 + annualIncreaseRate);
+            }
+
+            const netCostAfterAid = totalGrossProgramCost - totalFinancialAid;
+            const estimatedLoanNeeded = Math.max(0, netCostAfterAid); // You only loan what you need after aid
+
+            // --- Loan Projection (if needed) ---
+            const loanRepaymentTermMonths = loanRepaymentTermYears * 12;
+            const monthlyLoanRate = loanInterestRate / 12;
+
+            let estimatedMonthlyLoanPayment = 0;
+            let totalLoanInterest = 0;
+
+            if (estimatedLoanNeeded > 0) {
+                if (monthlyLoanRate === 0) {
+                    estimatedMonthlyLoanPayment = estimatedLoanNeeded / loanRepaymentTermMonths;
+                } else {
+                    estimatedMonthlyLoanPayment = estimatedLoanNeeded * (monthlyLoanRate * Math.pow(1 + monthlyLoanRate, loanRepaymentTermMonths)) / 
+                                                  (Math.pow(1 + monthlyLoanRate, loanRepaymentTermMonths) - 1);
+                }
+                totalLoanInterest = (estimatedMonthlyLoanPayment * loanRepaymentTermMonths) - estimatedLoanNeeded;
+            }
+
+            // Overall Out-of-Pocket Cost: What you *actually* pay directly or through loan interest
+            // This is (Gross Costs - Total Aid) + Total Loan Interest
+            const overallOutOfPocketCost = netCostAfterAid + totalLoanInterest;
+
+
+            // Validate final calculated values (e.g., if input leads to NaN or Infinity)
+            if (isNaN(overallOutOfPocketCost) || !isFinite(overallOutOfPocketCost)) {
+                showError('programLength-error', 'Calculation resulted in invalid numbers. Check inputs.');
+                document.getElementById('results-section').style.display = 'none';
+                return;
+            }
+
+            // Store results in global object
+            currentCostResults = {
+                programLength: programLength,
+                annualTuitionFees: annualTuitionFees, // Store initial values for context
+                annualIncreaseRate: annualIncreaseRate * 100,
+                annualRoomBoard: annualRoomBoard,
+                annualBooksSupplies: annualBooksSupplies,
+                annualMiscellaneous: annualMiscellaneous,
+                annualGrantsScholarships: annualGrantsScholarships,
+                annualOtherAid: annualOtherAid,
+                loanInterestRate: loanInterestRate * 100,
+                loanRepaymentTermYears: loanRepaymentTermYears,
+
+                grossTotalProgramCost: totalGrossProgramCost,
+                totalFinancialAid: totalFinancialAid,
+                netCostAfterAid: netCostAfterAid,
+                estimatedLoanNeeded: estimatedLoanNeeded,
+                estimatedMonthlyLoanPayment: estimatedMonthlyLoanPayment,
+                totalLoanInterest: totalLoanInterest,
+                overallOutOfPocketCost: overallOutOfPocketCost
+            };
+
+            // Update UI
+            updateSummaryCards(currentCostResults);
+            updateCharts();
+            displayCostBreakdownTable();
+            displayComparisonTable(); // Redraw comparison table in case it's open
+            setupSocialSharing(); // Update sharing links with new data
+
+            document.getElementById('results-section').style.display = 'block';
+        }
+
+        // --- UI Update Functions ---
+        function updateSummaryCards(results) {
+            document.getElementById('grossTotalProgramCost').textContent = formatCurrency(results.grossTotalProgramCost);
+            document.getElementById('totalFinancialAid').textContent = formatCurrency(results.totalFinancialAid);
+            document.getElementById('netCostAfterAid').textContent = formatCurrency(results.netCostAfterAid);
+            document.getElementById('estimatedLoanNeeded').textContent = formatCurrency(results.estimatedLoanNeeded);
+            document.getElementById('estimatedMonthlyLoanPayment').textContent = formatCurrency(results.estimatedMonthlyLoanPayment);
+            document.getElementById('totalLoanInterest').textContent = formatCurrency(results.totalLoanInterest);
+            document.getElementById('overallOutOfPocketCost').textContent = formatCurrency(results.overallOutOfPocketCost);
+        }
+        
+        function updateCharts() {
+            const rootStyle = getComputedStyle(document.documentElement);
+            const textColor = rootStyle.getPropertyValue('--text-color');
+
+            // --- Cost Distribution Chart (Pie Chart) ---
+            const cdCtx = document.getElementById('costDistributionChart').getContext('2d');
+            if (costDistributionChartInstance) costDistributionChartInstance.destroy();
+
+            const labels = ['Tuition & Fees', 'Room & Board', 'Books & Supplies', 'Miscellaneous', 'Financial Aid (Deduction)', 'Total Loan Interest'];
+            const data = [
+                currentCostResults.grossTotalProgramCost - (currentCostResults.totalFinancialAid + currentCostResults.totalLoanInterest), // Adjusted gross cost component
+                currentCostResults.totalFinancialAid * -1, // Represent aid as negative
+                currentCostResults.totalLoanInterest
+            ];
+            // Re-calculate the gross cost components (excluding aid and loan interest) for the pie chart slices
+            let pieChartData = [
+                currentCostResults.costBreakdownSchedule.reduce((sum, yr) => sum + yr.tuitionFees, 0),
+                currentCostResults.costBreakdownSchedule.reduce((sum, yr) => sum + yr.roomBoard, 0),
+                currentCostResults.costBreakdownSchedule.reduce((sum, yr) => sum + yr.booksSupplies, 0),
+                currentCostResults.costBreakdownSchedule.reduce((sum, yr) => sum + yr.miscellaneous, 0)
+            ];
+            let pieChartLabels = ['Tuition & Fees', 'Room & Board', 'Books & Supplies', 'Miscellaneous'];
+            let pieChartColors = [
+                rootStyle.getPropertyValue('--chart-color-tuition'),
+                rootStyle.getPropertyValue('--chart-color-roomboard'),
+                rootStyle.getPropertyValue('--chart-color-books'),
+                rootStyle.getPropertyValue('--chart-color-misc')
+            ];
+
+            // Add Aid and Loan Interest as components (can be positive or negative for pie chart)
+            if (currentCostResults.totalFinancialAid > 0) {
+                pieChartData.push(currentCostResults.totalFinancialAid);
+                pieChartLabels.push('Financial Aid');
+                pieChartColors.push(rootStyle.getPropertyValue('--chart-color-aid'));
+            }
+            if (currentCostResults.totalLoanInterest > 0) {
+                pieChartData.push(currentCostResults.totalLoanInterest);
+                pieChartLabels.push('Total Loan Interest');
+                pieChartColors.push(rootStyle.getPropertyValue('--chart-color-loan-interest'));
+            }
+
+            costDistributionChartInstance = new Chart(cdCtx, {
+                type: 'pie',
+                data: {
+                    labels: pieChartLabels,
+                    datasets: [{
+                        data: pieChartData,
+                        backgroundColor: pieChartColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { color: textColor } },
+                        title: { display: true, text: 'Overall Program Cost Distribution', color: textColor },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? (value / total * 100).toFixed(1) : 0;
+                                    return `${context.label}: ${formatCurrency(value)} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // --- Net Cost Comparison Chart (Bar Chart) ---
+            const nccCtx = document.getElementById('netCostComparisonChart').getContext('2d');
+            if (netCostComparisonChartInstance) netCostComparisonChartInstance.destroy();
+
+            netCostComparisonChartInstance = new Chart(nccCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Gross Cost', 'Net Cost (After Aid)', 'Loan Needed'],
+                    datasets: [{
+                        label: 'Amount',
+                        data: [
+                            currentCostResults.grossTotalProgramCost,
+                            currentCostResults.netCostAfterAid,
+                            currentCostResults.estimatedLoanNeeded
+                        ],
+                        backgroundColor: [
+                            rootStyle.getPropertyValue('--chart-color-gross-cost'),
+                            rootStyle.getPropertyValue('--chart-color-net-cost'),
+                            rootStyle.getPropertyValue('--primary') // Use primary for loan needed
+                        ],
+                        borderColor: [
+                            rootStyle.getPropertyValue('--chart-color-gross-cost'),
+                            rootStyle.getPropertyValue('--chart-color-net-cost'),
+                            rootStyle.getPropertyValue('--primary')
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Cost Reduction Flow',
+                            color: textColor
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${formatCurrency(context.raw)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: textColor },
+                            grid: { color: 'rgba(100,100,100,0.1)' }
+                        },
+                        y: {
+                            ticks: { 
+                                callback: function(value) { return formatCurrency(value); },
+                                color: textColor 
+                            },
+                            grid: { color: 'rgba(100,100,100,0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function displayCostBreakdownTable() {
+            const tableBody = document.getElementById('costBreakdownTableBody');
+            tableBody.innerHTML = '';
+            
+            costBreakdownSchedule.forEach(yearData => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${yearData.year}</td>
+                    <td>${formatCurrency(yearData.tuitionFees)}</td>
+                    <td>${formatCurrency(yearData.roomBoard)}</td>
+                    <td>${formatCurrency(yearData.booksSupplies)}</td>
+                    <td>${formatCurrency(yearData.miscellaneous)}</td>
+                    <td>${formatCurrency(yearData.grossAnnualCost)}</td>
+                    <td>${formatCurrency(yearData.annualAid)}</td>
+                    <td>${formatCurrency(yearData.netAnnualCost)}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // --- Comparison Logic ---
+        function addScenarioToComparison() {
+            if (Object.keys(currentCostResults).length === 0 || isNaN(currentCostResults.overallOutOfPocketCost)) {
+                alert("Please calculate a valid college cost scenario first before adding to comparison.");
+                return;
+            }
+            
+            const scenarioName = prompt("Enter a name for this college cost scenario (e.g., 'In-State University', 'Out-of-State with Scholarship'):");
+            if (!scenarioName) return; // User cancelled or entered empty name
+
+            const newScenario = {
+                id: Date.now(), // Unique ID
+                name: scenarioName,
+                programLength: currentCostResults.programLength,
+                estimatedLoanNeeded: currentCostResults.estimatedLoanNeeded,
+                estimatedMonthlyLoanPayment: currentCostResults.estimatedMonthlyLoanPayment,
+                totalLoanInterest: currentCostResults.totalLoanInterest,
+                overallOutOfPocketCost: currentCostResults.overallOutOfPocketCost
+            };
+            comparedScenarios.push(newScenario);
+            displayComparisonTable();
+            // Switch to comparison tab if it's not active
+            document.querySelector('.tabs .tab[data-tab="comparison"]').click();
+        }
+
+        function removeScenarioFromComparison(idToRemove) {
+            comparedScenarios = comparedScenarios.filter(scenario => scenario.id !== idToRemove);
+            displayComparisonTable();
+        }
+
+        function clearAllComparisons() {
+            if (confirm("Are you sure you want to clear all compared college cost scenarios? This action cannot be undone.")) {
+                comparedScenarios = [];
+                displayComparisonTable();
+            }
+        }
+
+        function displayComparisonTable() {
+            const tableBody = document.getElementById('comparisonBody');
+            tableBody.innerHTML = '';
+
+            if (comparedScenarios.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No scenarios added for comparison yet.</td></tr>';
+                return;
+            }
+
+            comparedScenarios.forEach(scenario => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${scenario.name}</td>
+                    <td>${scenario.programLength}</td>
+                    <td>${formatCurrency(scenario.estimatedLoanNeeded)}</td>
+                    <td>${formatCurrency(scenario.estimatedMonthlyLoanPayment)}</td>
+                    <td>${formatCurrency(scenario.totalLoanInterest)}</td>
+                    <td>${formatCurrency(scenario.overallOutOfPocketCost)}</td>
+                    <td class="no-print"><button class="btn-secondary" onclick="removeScenarioFromComparison(${scenario.id})">Remove</button></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // --- Formatting Utilities ---
+        function formatCurrency(amount) {
+            // Check for NaN or Infinity before formatting
+            if (isNaN(amount) || !isFinite(amount)) {
+                return "$0.00"; 
+            }
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        }
+        
+        // --- Export Functions ---
+        function printSummary() {
+            window.print();
+        }
+        
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'pt', 'letter');
+            let currentY = 40;
+            const margin = 40;
+            const pageWidth = doc.internal.pageSize.width;
+
+            doc.setFontSize(18);
+            doc.text('College Cost Report', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 30;
+
+            doc.setFontSize(12);
+            doc.text(`Calculated On: ${new Date().toLocaleDateString()}`, margin, currentY);
+            currentY += 20;
+
+            // Input Details
+            const inputDetails = [
+                ["Program Length (Yrs)", currentCostResults.programLength],
+                ["Annual Tuition & Fees", formatCurrency(currentCostResults.annualTuitionFees)],
+                ["Expected Annual Increase", currentCostResults.annualIncreaseRate.toFixed(2) + '%'],
+                ["Annual Room & Board", formatCurrency(currentCostResults.annualRoomBoard)],
+                ["Annual Books & Supplies", formatCurrency(currentCostResults.annualBooksSupplies)],
+                ["Annual Miscellaneous", formatCurrency(currentCostResults.annualMiscellaneous)],
+                ["Annual Grants & Scholarships", formatCurrency(currentCostResults.annualGrantsScholarships)],
+                ["Annual Other Aid", formatCurrency(currentCostResults.annualOtherAid)],
+                ["Student Loan Interest Rate", currentCostResults.loanInterestRate.toFixed(2) + '%'],
+                ["Loan Repayment Term (Yrs)", currentCostResults.loanRepaymentTermYears]
+            ];
+            doc.autoTable({
+                startY: currentY,
+                head: [['Parameter', 'Value']],
+                body: inputDetails,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                margin: { left: margin, right: margin }
+            });
+            currentY = doc.autoTable.previous.finalY + 20;
+
+            // Summary Results
+            const summaryResults = [
+                ["Gross Total Program Cost", document.getElementById('grossTotalProgramCost').textContent],
+                ["Total Financial Aid", document.getElementById('totalFinancialAid').textContent],
+                ["Net Cost (After Aid)", document.getElementById('netCostAfterAid').textContent],
+                ["Estimated Loan Needed", document.getElementById('estimatedLoanNeeded').textContent],
+                ["Estimated Monthly Loan Pmt.", document.getElementById('estimatedMonthlyLoanPayment').textContent],
+                ["Total Loan Interest", document.getElementById('totalLoanInterest').textContent],
+                ["Overall Out-of-Pocket Cost", document.getElementById('overallOutOfPocketCost').textContent]
+            ];
+            doc.autoTable({
+                startY: currentY,
+                head: [['Result', 'Value']],
+                body: summaryResults,
+                theme: 'grid',
+                headStyles: { fillColor: [46, 204, 113], textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                margin: { left: margin, right: margin }
+            });
+            currentY = doc.autoTable.previous.finalY + 30;
+
+            // Year-by-Year Cost Breakdown
+            doc.addPage();
+            currentY = margin;
+            doc.setFontSize(16);
+            doc.text('Year-by-Year Cost Breakdown', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 20;
+
+            const breakdownTableData = costBreakdownSchedule.map(y => [
+                y.year,
+                y.tuitionFees.toFixed(2),
+                y.roomBoard.toFixed(2),
+                y.booksSupplies.toFixed(2),
+                y.miscellaneous.toFixed(2),
+                y.grossAnnualCost.toFixed(2),
+                y.annualAid.toFixed(2),
+                y.netAnnualCost.toFixed(2)
+            ]);
+
+            doc.autoTable({
+                startY: currentY,
+                head: [['Year', 'Tuition & Fees', 'R&B', 'Books', 'Misc.', 'Gross Annual', 'Annual Aid', 'Net Annual']],
+                body: breakdownTableData,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                styles: { fontSize: 7, cellPadding: 3 }, // Smaller font/padding for many columns
+                margin: { left: margin, right: margin },
+                didDrawPage: function(data) {
+                    let pageCount = doc.internal.getNumberOfPages();
+                    doc.setFontSize(8);
+                    doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber + ' of ' + pageCount, data.settings.margin.left, doc.internal.pageSize.height - 20);
+                }
+            });
+
+            // Comparison Table (if any)
+            if (comparedScenarios.length > 0) {
+                doc.addPage();
+                currentY = margin;
+                doc.setFontSize(16);
+                doc.text('College Cost Comparison', pageWidth / 2, currentY, { align: 'center' });
+                currentY += 20;
+
+                const comparisonTableData = comparedScenarios.map(s => [
+                    s.name,
+                    s.programLength,
+                    s.estimatedLoanNeeded.toFixed(2),
+                    s.estimatedMonthlyLoanPayment.toFixed(2),
+                    s.totalLoanInterest.toFixed(2),
+                    s.overallOutOfPocketCost.toFixed(2)
+                ]);
+
+                doc.autoTable({
+                    startY: currentY,
+                    head: [['Scenario', 'Program Length (Yrs)', 'Est. Loan Needed', 'Monthly Loan Pmt.', 'Total Loan Interest', 'Overall Out-of-Pocket Cost']],
+                    body: comparisonTableData,
+                    theme: 'grid',
+                    headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                    styles: { fontSize: 8, cellPadding: 4 },
+                    margin: { left: margin, right: margin },
+                    didDrawPage: function(data) {
+                        let pageCount = doc.internal.getNumberOfPages();
+                        doc.setFontSize(8);
+                        doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber + ' of ' + pageCount, data.settings.margin.left, doc.internal.pageSize.height - 20);
+                    }
+                });
+            }
+            
+            doc.save('college_cost_report.pdf');
+        }
+        
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+            
+            // Sheet 1: Summary
+            const summaryData = [
+                ["College Cost Report", ""],
+                ["Calculated On", new Date().toLocaleDateString()],
+                [],
+                ["Input Details", ""],
+                ["Program Length (Years)", currentCostResults.programLength],
+                ["Annual Tuition & Fees", currentCostResults.annualTuitionFees],
+                ["Expected Annual Increase (%)", currentCostResults.annualIncreaseRate],
+                ["Annual Room & Board", currentCostResults.annualRoomBoard],
+                ["Annual Books & Supplies", currentCostResults.annualBooksSupplies],
+                ["Annual Miscellaneous", currentCostResults.annualMiscellaneous],
+                ["Annual Grants & Scholarships", currentCostResults.annualGrantsScholarships],
+                ["Annual Other Aid", currentCostResults.annualOtherAid],
+                ["Student Loan Interest Rate (%)", currentCostResults.loanInterestRate],
+                ["Loan Repayment Term (Years)", currentCostResults.loanRepaymentTermYears],
+                [],
+                ["Results", ""],
+                ["Gross Total Program Cost", currentCostResults.grossTotalProgramCost],
+                ["Total Financial Aid", currentCostResults.totalFinancialAid],
+                ["Net Cost (After Aid)", currentCostResults.netCostAfterAid],
+                ["Estimated Loan Needed", currentCostResults.estimatedLoanNeeded],
+                ["Estimated Monthly Loan Payment", currentCostResults.estimatedMonthlyLoanPayment],
+                ["Total Loan Interest", currentCostResults.totalLoanInterest],
+                ["Overall Out-of-Pocket Cost", currentCostResults.overallOutOfPocketCost]
+            ];
+            const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, summaryWs, "Summary");
+
+            // Sheet 2: Year-by-Year Cost Breakdown
+            const breakdownHeaders = [
+                "Year", "Tuition & Fees", "Room & Board", "Books & Supplies", 
+                "Miscellaneous", "Gross Annual Cost", "Annual Aid", "Net Annual Cost"
+            ];
+            const breakdownData = [breakdownHeaders];
+            costBreakdownSchedule.forEach(y => {
+                breakdownData.push([
+                    y.year, y.tuitionFees, y.roomBoard, y.booksSupplies, 
+                    y.miscellaneous, y.grossAnnualCost, y.annualAid, y.netAnnualCost
+                ]);
+            });
+            const breakdownWs = XLSX.utils.aoa_to_sheet(breakdownData);
+            XLSX.utils.book_append_sheet(wb, breakdownWs, "Yearly Breakdown");
+
+            // Sheet 3: Comparison (if any)
+            if (comparedScenarios.length > 0) {
+                const comparisonHeaders = [
+                    "Scenario", "Program Length (Yrs)", "Est. Loan Needed", "Monthly Loan Pmt.", 
+                    "Total Loan Interest", "Overall Out-of-Pocket Cost"
+                ];
+                const comparisonData = [comparisonHeaders];
+                comparedScenarios.forEach(s => {
+                    comparisonData.push([
+                        s.name, s.programLength, s.estimatedLoanNeeded, s.estimatedMonthlyLoanPayment,
+                        s.totalLoanInterest, s.overallOutOfPocketCost
+                    ]);
+                });
+                const comparisonWs = XLSX.utils.aoa_to_sheet(comparisonData);
+                XLSX.utils.book_append_sheet(wb, comparisonWs, "Comparison");
+            }
+            
+            XLSX.writeFile(wb, 'college_cost_report.xlsx');
+        }
+        
+        function exportToCSV() {
+            let csvContent = "";
+
+            // Summary data
+            csvContent += "College Cost Report\n";
+            csvContent += `"Calculated On","${new Date().toLocaleDateString()}"\n\n`;
+            csvContent += `"Input Details",\n`;
+            csvContent += `"Program Length (Years)",${currentCostResults.programLength}\n`;
+            csvContent += `"Annual Tuition & Fees",${currentCostResults.annualTuitionFees}\n`;
+            csvContent += `"Expected Annual Increase",${currentCostResults.annualIncreaseRate}%\n`;
+            csvContent += `"Annual Room & Board",${currentCostResults.annualRoomBoard}\n`;
+            csvContent += `"Annual Books & Supplies",${currentCostResults.annualBooksSupplies}\n`;
+            csvContent += `"Annual Miscellaneous",${currentCostResults.annualMiscellaneous}\n`;
+            csvContent += `"Annual Grants & Scholarships",${currentCostResults.annualGrantsScholarships}\n`;
+            csvContent += `"Annual Other Aid",${currentCostResults.annualOtherAid}\n`;
+            csvContent += `"Student Loan Interest Rate",${currentCostResults.loanInterestRate}%\n`;
+            csvContent += `"Loan Repayment Term (Years)",${currentCostResults.loanRepaymentTermYears}\n\n`;
+            csvContent += `"Results",\n`;
+            csvContent += `"Gross Total Program Cost",${currentCostResults.grossTotalProgramCost.toFixed(2)}\n`;
+            csvContent += `"Total Financial Aid",${currentCostResults.totalFinancialAid.toFixed(2)}\n`;
+            csvContent += `"Net Cost (After Aid)",${currentCostResults.netCostAfterAid.toFixed(2)}\n`;
+            csvContent += `"Estimated Loan Needed",${currentCostResults.estimatedLoanNeeded.toFixed(2)}\n`;
+            csvContent += `"Estimated Monthly Loan Payment",${currentCostResults.estimatedMonthlyLoanPayment.toFixed(2)}\n`;
+            csvContent += `"Total Loan Interest",${currentCostResults.totalLoanInterest.toFixed(2)}\n`;
+            csvContent += `"Overall Out-of-Pocket Cost",${currentCostResults.overallOutOfPocketCost.toFixed(2)}\n\n`;
+
+            // Year-by-Year Cost Breakdown
+            csvContent += "Year-by-Year Cost Breakdown\n";
+            csvContent += "Year,Tuition & Fees,Room & Board,Books & Supplies,Miscellaneous,Gross Annual Cost,Annual Aid,Net Annual Cost\n";
+            costBreakdownSchedule.forEach(y => {
+                csvContent += `${y.year},${y.tuitionFees.toFixed(2)},${y.roomBoard.toFixed(2)},${y.booksSupplies.toFixed(2)},${y.miscellaneous.toFixed(2)},${y.grossAnnualCost.toFixed(2)},${y.annualAid.toFixed(2)},${y.netAnnualCost.toFixed(2)}\n`;
+            });
+            csvContent += "\n";
+
+            // Comparison (if any)
+            if (comparedScenarios.length > 0) {
+                csvContent += "College Cost Comparison\n";
+                csvContent += "Scenario,Program Length (Yrs),Est. Loan Needed,Monthly Loan Pmt.,Total Loan Interest,Overall Out-of-Pocket Cost\n";
+                comparedScenarios.forEach(s => {
+                    csvContent += `"${s.name}",${s.programLength},${s.estimatedLoanNeeded.toFixed(2)},${s.estimatedMonthlyLoanPayment.toFixed(2)},${s.totalLoanInterest.toFixed(2)},${s.overallOutOfPocketCost.toFixed(2)}\n`;
+                });
+                csvContent += "\n";
+            }
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'college_cost_report.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        function setupSocialSharing() {
+            const grossCost = currentCostResults.grossTotalProgramCost || 0;
+            const aid = currentCostResults.totalFinancialAid || 0;
+            const netCost = currentCostResults.netCostAfterAid || 0;
+            const loanNeeded = currentCostResults.estimatedLoanNeeded || 0;
+            const monthlyPmt = currentCostResults.estimatedMonthlyLoanPayment || 0;
+            const totalLoanInterest = currentCostResults.totalLoanInterest || 0;
+            const overallCost = currentCostResults.overallOutOfPocketCost || 0;
+            const programLength = currentCostResults.programLength || 0;
+
+            let shareText = `I calculated college costs for a ${programLength}-year program! Gross cost: ${formatCurrency(grossCost)}, Aid: ${formatCurrency(aid)}. Net cost: ${formatCurrency(netCost)}.`;
+            if (loanNeeded > 0) {
+                shareText += ` Loan needed: ${formatCurrency(loanNeeded)}, est. monthly payment: ${formatCurrency(monthlyPmt)}. Total loan interest: ${formatCurrency(totalLoanInterest)}.`;
+            }
+            shareText += ` Overall out-of-pocket cost: ${formatCurrency(overallCost)}. Calculate yours here:`;
+            
+            const shareUrl = window.location.href; // Current page URL
+            
+            document.getElementById('emailShare').onclick = () => {
+                window.open(`mailto:?subject=College Cost Calculation Results&body=${encodeURIComponent(shareText + ' ' + shareUrl)}`);
+            };
+            document.getElementById('whatsappShare').onclick = () => {
+                window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`);
+            };
+            document.getElementById('linkedinShare').onclick = () => {
+                window.open(`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent('College Cost Calculation')}&summary=${encodeURIComponent(shareText)}`);
+            };
+            document.getElementById('twitterShare').onclick = () => {
+                window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`);
+            };
+        }
+    </script>
+</body>
+</html>

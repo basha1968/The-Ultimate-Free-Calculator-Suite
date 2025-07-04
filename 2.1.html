@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Area Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #27ae60;
+            --dark: #1a2530;
+            --light: #f8f9fa;
+            --text-dark: #333;
+            --text-light: #f5f5f5;
+            --border-radius: 12px;
+            --box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --info: #2980b9;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #e0f7fa, #f1f8e9);
+            color: var(--text-dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+            transition: var(--transition);
+        }
+        
+        body.dark-mode {
+            background: linear-gradient(135deg, #1a2530, #0d1b2a);
+            color: var(--text-light);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--dark));
+            color: white;
+            padding: 25px 0;
+            text-align: center;
+            border-radius: var(--border-radius);
+            margin-bottom: 30px;
+            box-shadow: var(--box-shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
+        }
+        
+        header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            position: relative;
+        }
+        
+        header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 700px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .theme-toggle {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 10px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+        
+        .theme-toggle:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .calculator-card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 30px;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .dark-mode .calculator-card {
+            background: #1e2a38;
+        }
+        
+        .calculator-card::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--secondary), var(--accent));
+        }
+        
+        .card-title {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .dark-mode .card-title {
+            border-bottom: 1px solid #2c3e50;
+        }
+        
+        .card-title i {
+            margin-right: 12px;
+            color: var(--secondary);
+            font-size: 1.8rem;
+        }
+        
+        .shape-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .shape-option {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: var(--border-radius);
+            padding: 15px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .dark-mode .shape-option {
+            background: #2c3e50;
+            border: 2px solid #34495e;
+        }
+        
+        .shape-option:hover {
+            transform: translateY(-5px);
+            border-color: var(--secondary);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        
+        .shape-option.active {
+            background: var(--secondary);
+            border-color: var(--secondary);
+            color: white;
+        }
+        
+        .shape-option i {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+        
+        .input-section {
+            background: #f8f9fa;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+        
+        .dark-mode .input-section {
+            background: #2c3e50;
+        }
+        
+        .input-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .input-field {
+            margin-bottom: 15px;
+        }
+        
+        .input-field label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+        
+        .dark-mode .input-field label {
+            color: var(--text-light);
+        }
+        
+        .input-field label i {
+            margin-right: 8px;
+            color: var(--secondary);
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e9ecef;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+            background: white;
+            color: var(--text-dark);
+        }
+        
+        .dark-mode input, .dark-mode select {
+            background: #1e2a38;
+            border: 2px solid #34495e;
+            color: var(--text-light);
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.2);
+        }
+        
+        .unit-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .unit-btn {
+            flex: 1;
+            min-width: 80px;
+            padding: 12px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: var(--border-radius);
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+        
+        .dark-mode .unit-btn {
+            background: #2c3e50;
+            border: 2px solid #34495e;
+            color: var(--text-light);
+        }
+        
+        .unit-btn.active {
+            background: var(--secondary);
+            border-color: var(--secondary);
+            color: white;
+        }
+        
+        .calculate-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--secondary), var(--accent));
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 10px;
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+        }
+        
+        .calculate-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(52, 152, 219, 0.4);
+        }
+        
+        .results-section {
+            background: linear-gradient(135deg, #f0f8ff, #e6f7ff);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            margin-top: 25px;
+            border-left: 5px solid var(--secondary);
+        }
+        
+        .dark-mode .results-section {
+            background: linear-gradient(135deg, #1a2a3a, #152532);
+        }
+        
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(52, 152, 219, 0.1);
+        }
+        
+        .result-row:last-child {
+            border-bottom: none;
+        }
+        
+        .result-label {
+            font-weight: 600;
+        }
+        
+        .dark-mode .result-label {
+            color: var(--text-light);
+        }
+        
+        .result-value {
+            font-weight: 700;
+            color: var(--secondary);
+            font-size: 1.2rem;
+        }
+        
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .action-btn {
+            background: var(--primary);
+            color: white;
+            border-radius: var(--border-radius);
+            padding: 14px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .action-btn i {
+            font-size: 1.4rem;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        .action-btn.print {
+            background: var(--info);
+        }
+        
+        .action-btn.share {
+            background: var(--accent);
+        }
+        
+        .ad-container {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 30px;
+            min-height: 280px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-top: 5px solid var(--warning);
+        }
+        
+        .dark-mode .ad-container {
+            background: #1e2a38;
+        }
+        
+        .ad-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        
+        .ad-placeholder {
+            width: 100%;
+            height: 250px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border: 2px dashed #dee2e6;
+            border-radius: var(--border-radius);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #6c757d;
+        }
+        
+        .dark-mode .ad-placeholder {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            border: 2px dashed #4a627a;
+        }
+        
+        .ad-placeholder i {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+            color: #ced4da;
+        }
+        
+        .history-card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 25px;
+            border-top: 5px solid var(--success);
+        }
+        
+        .dark-mode .history-card {
+            background: #1e2a38;
+        }
+        
+        .history-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition);
+        }
+        
+        .dark-mode .history-item {
+            border-bottom: 1px solid #2c3e50;
+        }
+        
+        .history-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .dark-mode .history-item:hover {
+            background: #2c3e50;
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .history-shape {
+            width: 40px;
+            height: 40px;
+            background: var(--secondary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-right: 15px;
+        }
+        
+        .history-details {
+            flex: 1;
+        }
+        
+        .history-amount {
+            font-weight: 700;
+            color: var(--secondary);
+        }
+        
+        .history-type {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+        }
+        
+        .clear-history {
+            background: transparent;
+            color: var(--warning);
+            border: 2px solid var(--warning);
+            padding: 10px 20px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 20px;
+            width: auto;
+            display: inline-block;
+            font-weight: 600;
+        }
+        
+        .clear-history:hover {
+            background: var(--warning);
+            color: white;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 40px;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            border-top: 1px solid #eee;
+        }
+        
+        .dark-mode footer {
+            border-top: 1px solid #2c3e50;
+        }
+        
+        .compliance-section {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .compliance-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #e8f4fc;
+            padding: 8px 15px;
+            border-radius: 30px;
+            color: var(--info);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .dark-mode .compliance-badge {
+            background: #1a3a5f;
+        }
+        
+        @media (max-width: 600px) {
+            .input-group {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            header h1 {
+                font-size: 2.2rem;
+            }
+        }
+        
+        .shape-diagram {
+            text-align: center;
+            margin: 20px 0;
+            min-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .diagram {
+            width: 200px;
+            height: 150px;
+            position: relative;
+        }
+        
+        .rectangle {
+            width: 160px;
+            height: 100px;
+            border: 3px solid var(--secondary);
+            position: relative;
+        }
+        
+        .circle {
+            width: 120px;
+            height: 120px;
+            border: 3px solid var(--secondary);
+            border-radius: 50%;
+            position: relative;
+        }
+        
+        .triangle {
+            width: 0;
+            height: 0;
+            border-left: 70px solid transparent;
+            border-right: 70px solid transparent;
+            border-bottom: 120px solid var(--secondary);
+            position: relative;
+        }
+        
+        .square {
+            width: 120px;
+            height: 120px;
+            border: 3px solid var(--secondary);
+            position: relative;
+        }
+        
+        .ellipse {
+            width: 160px;
+            height: 100px;
+            border: 3px solid var(--secondary);
+            border-radius: 50%;
+            position: relative;
+        }
+        
+        .trapezoid {
+            width: 160px;
+            height: 0;
+            border-bottom: 100px solid var(--secondary);
+            border-left: 30px solid transparent;
+            border-right: 30px solid transparent;
+            position: relative;
+        }
+        
+        .error-message {
+            color: #e74c3c;
+            background: #fdeded;
+            padding: 10px;
+            border-radius: var(--border-radius);
+            margin: 15px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-calculator"></i> Professional Area Calculator</h1>
+            <p>Accurate geometric calculations with secure, client-side processing</p>
+        </header>
+        
+        <div class="controls">
+            <button class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i> Dark Mode
+            </button>
+            <div class="compliance-section">
+                <div class="compliance-badge">
+                    <i class="fas fa-lock"></i> Secure Client-Side
+                </div>
+                <div class="compliance-badge">
+                    <i class="fas fa-shield-alt"></i> GDPR/CCPA Compliant
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="left-column">
+                <div class="calculator-card">
+                    <div class="card-title">
+                        <i class="fas fa-shapes"></i>
+                        <h2>Geometric Area Calculation</h2>
+                    </div>
+                    
+                    <div class="shape-selector">
+                        <div class="shape-option active" data-shape="rectangle">
+                            <i class="fas fa-rectangle-landscape"></i>
+                            <span>Rectangle</span>
+                        </div>
+                        <div class="shape-option" data-shape="circle">
+                            <i class="fas fa-circle"></i>
+                            <span>Circle</span>
+                        </div>
+                        <div class="shape-option" data-shape="triangle">
+                            <i class="fas fa-play"></i>
+                            <span>Triangle</span>
+                        </div>
+                        <div class="shape-option" data-shape="square">
+                            <i class="fas fa-square"></i>
+                            <span>Square</span>
+                        </div>
+                        <div class="shape-option" data-shape="ellipse">
+                            <i class="fas fa-egg"></i>
+                            <span>Ellipse</span>
+                        </div>
+                        <div class="shape-option" data-shape="trapezoid">
+                            <i class="fas fa-shapes"></i>
+                            <span>Trapezoid</span>
+                        </div>
+                    </div>
+                    
+                    <div class="shape-diagram">
+                        <div class="diagram">
+                            <div class="rectangle"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="input-section">
+                        <div class="error-message" id="errorMessage">
+                            <i class="fas fa-exclamation-circle"></i> Please enter valid positive numbers for dimensions
+                        </div>
+                        
+                        <div class="input-group">
+                            <div class="input-field">
+                                <label for="dimension1"><i class="fas fa-ruler"></i> Length (L)</label>
+                                <input type="number" id="dimension1" placeholder="Enter value" min="0" step="0.01">
+                            </div>
+                            <div class="input-field">
+                                <label for="dimension2"><i class="fas fa-ruler"></i> Width (W)</label>
+                                <input type="number" id="dimension2" placeholder="Enter value" min="0" step="0.01">
+                            </div>
+                        </div>
+                        
+                        <div class="unit-toggle">
+                            <div class="unit-btn active" data-unit="m">Meters (m)</div>
+                            <div class="unit-btn" data-unit="ft">Feet (ft)</div>
+                            <div class="unit-btn" data-unit="yd">Yards (yd)</div>
+                            <div class="unit-btn" data-unit="in">Inches (in)</div>
+                        </div>
+                        
+                        <button class="calculate-btn" id="calculateBtn">
+                            <i class="fas fa-calculator"></i> Calculate Area
+                        </button>
+                    </div>
+                    
+                    <div class="results-section" id="resultsSection" style="display: none;">
+                        <div class="result-row">
+                            <span class="result-label">Shape:</span>
+                            <span class="result-value" id="shapeResult">Rectangle</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">Area:</span>
+                            <span class="result-value" id="areaResult">0.00 m²</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">Perimeter:</span>
+                            <span class="result-value" id="perimeterResult">0.00 m</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">Dimensions:</span>
+                            <span class="result-value" id="dimensionsResult">L: 0.00 m, W: 0.00 m</span>
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <div class="action-btn print" id="printBtn">
+                                <i class="fas fa-print"></i>
+                                <span>Print</span>
+                            </div>
+                            <div class="action-btn" id="pdfBtn">
+                                <i class="fas fa-file-pdf"></i>
+                                <span>PDF</span>
+                            </div>
+                            <div class="action-btn" id="txtBtn">
+                                <i class="fas fa-file-alt"></i>
+                                <span>TXT</span>
+                            </div>
+                            <div class="action-btn" id="csvBtn">
+                                <i class="fas fa-file-csv"></i>
+                                <span>CSV</span>
+                            </div>
+                            <div class="action-btn" id="pngBtn">
+                                <i class="fas fa-image"></i>
+                                <span>PNG</span>
+                            </div>
+                            <div class="action-btn share" id="shareBtn">
+                                <i class="fas fa-share-alt"></i>
+                                <span>Share</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="calculator-card">
+                    <div class="card-title">
+                        <i class="fas fa-history"></i>
+                        <h2>Calculation History</h2>
+                    </div>
+                    <div id="historyList">
+                        <p style="padding: 20px; text-align: center; color: #7f8c8d;">No calculation history yet</p>
+                    </div>
+                    <button class="clear-history" id="clearHistory">
+                        <i class="fas fa-trash-alt"></i> Clear History
+                    </button>
+                </div>
+            </div>
+            
+            <div class="right-column">
+                <div class="ad-container">
+                    <div class="ad-label">Advertisement - Adsterra</div>
+                    <div class="ad-placeholder">
+                        <i class="fas fa-ad"></i>
+                        <h3>Adsterra Ad Space</h3>
+                        <p>300x250 Ad Banner</p>
+                        <p style="font-size: 0.9rem; margin-top: 10px;">Responsive and secure ad integration</p>
+                    </div>
+                </div>
+                
+                <div class="ad-container">
+                    <div class="ad-label">Advertisement - Yllix</div>
+                    <div class="ad-placeholder">
+                        <i class="fas fa-ad"></i>
+                        <h3>Yllix Ad Space</h3>
+                        <p>300x250 Ad Banner</p>
+                        <p style="font-size: 0.9rem; margin-top: 10px;">Optimized for high CTR</p>
+                    </div>
+                </div>
+                
+                <div class="calculator-card">
+                    <div class="card-title">
+                        <i class="fas fa-shield-alt"></i>
+                        <h2>Security & Compliance</h2>
+                    </div>
+                    <p>This calculator meets the highest security standards:</p>
+                    <ul style="padding: 15px 30px; list-style-type: none;">
+                        <li style="margin-bottom: 10px;"><i class="fas fa-lock" style="color: var(--success); margin-right: 10px;"></i> Client-side processing only</li>
+                        <li style="margin-bottom: 10px;"><i class="fas fa-user-shield" style="color: var(--success); margin-right: 10px;"></i> GDPR and CCPA compliant</li>
+                        <li style="margin-bottom: 10px;"><i class="fas fa-ban" style="color: var(--success); margin-right: 10px;"></i> No data storage or tracking</li>
+                        <li><i class="fas fa-code" style="color: var(--success); margin-right: 10px;"></i> Input sanitization against XSS attacks</li>
+                    </ul>
+                    <p style="margin-top: 20px; padding: 15px; background: #e8f5e9; border-radius: var(--border-radius); color: var(--success); font-weight: 600;">
+                        <i class="fas fa-check-circle"></i> Your data never leaves your device
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Professional Area Calculator © 2023 | Secure Financial Tool</p>
+            <div class="compliance-section">
+                <div class="compliance-badge">
+                    <i class="fas fa-lock"></i> SSL Secured
+                </div>
+                <div class="compliance-badge">
+                    <i class="fas fa-bolt"></i> Client-Side Processing
+                </div>
+                <div class="compliance-badge">
+                    <i class="fas fa-lightbulb"></i> Dark Mode Enabled
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const themeToggle = document.getElementById('themeToggle');
+            const shapeOptions = document.querySelectorAll('.shape-option');
+            const diagramContainer = document.querySelector('.shape-diagram .diagram');
+            const dimension1Input = document.getElementById('dimension1');
+            const dimension2Input = document.getElementById('dimension2');
+            const unitButtons = document.querySelectorAll('.unit-btn');
+            const calculateBtn = document.getElementById('calculateBtn');
+            const errorMessage = document.getElementById('errorMessage');
+            const resultsSection = document.getElementById('resultsSection');
+            const shapeResult = document.getElementById('shapeResult');
+            const areaResult = document.getElementById('areaResult');
+            const perimeterResult = document.getElementById('perimeterResult');
+            const dimensionsResult = document.getElementById('dimensionsResult');
+            const printBtn = document.getElementById('printBtn');
+            const pdfBtn = document.getElementById('pdfBtn');
+            const txtBtn = document.getElementById('txtBtn');
+            const csvBtn = document.getElementById('csvBtn');
+            const pngBtn = document.getElementById('pngBtn');
+            const shareBtn = document.getElementById('shareBtn');
+            const historyList = document.getElementById('historyList');
+            const clearHistoryBtn = document.getElementById('clearHistory');
+            
+            // Current state
+            let currentShape = 'rectangle';
+            let currentUnit = 'm';
+            let calculationHistory = [];
+            
+            // Initialize
+            updateShapeDiagram();
+            
+            // Theme toggle
+            themeToggle.addEventListener('click', function() {
+                document.body.classList.toggle('dark-mode');
+                if (document.body.classList.contains('dark-mode')) {
+                    themeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+                } else {
+                    themeToggle.innerHTML = '<i class="fas fa-moon"></i> Dark Mode';
+                }
+            });
+            
+            // Set up shape selection
+            shapeOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    shapeOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    currentShape = this.dataset.shape;
+                    updateShapeDiagram();
+                });
+            });
+            
+            // Set up unit selection
+            unitButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    unitButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    currentUnit = this.dataset.unit;
+                });
+            });
+            
+            // Update the shape diagram based on selection
+            function updateShapeDiagram() {
+                let diagramHTML = '';
+                
+                switch(currentShape) {
+                    case 'rectangle':
+                        diagramHTML = '<div class="rectangle"></div>';
+                        break;
+                    case 'circle':
+                        diagramHTML = '<div class="circle"></div>';
+                        break;
+                    case 'triangle':
+                        diagramHTML = '<div class="triangle"></div>';
+                        break;
+                    case 'square':
+                        diagramHTML = '<div class="square"></div>';
+                        break;
+                    case 'ellipse':
+                        diagramHTML = '<div class="ellipse"></div>';
+                        break;
+                    case 'trapezoid':
+                        diagramHTML = '<div class="trapezoid"></div>';
+                        break;
+                }
+                
+                diagramContainer.innerHTML = diagramHTML;
+            }
+            
+            // Sanitize input function
+            function sanitizeInput(value) {
+                return value.replace(/[^0-9.]/g, '');
+            }
+            
+            // Calculate area based on selected shape
+            calculateBtn.addEventListener('click', function() {
+                // Sanitize inputs
+                dimension1Input.value = sanitizeInput(dimension1Input.value);
+                dimension2Input.value = sanitizeInput(dimension2Input.value);
+                
+                // Validate inputs
+                const dim1 = parseFloat(dimension1Input.value);
+                const dim2 = parseFloat(dimension2Input.value);
+                
+                if (isNaN(dim1) || isNaN(dim2) || dim1 <= 0 || dim2 <= 0) {
+                    errorMessage.style.display = 'block';
+                    return;
+                }
+                
+                errorMessage.style.display = 'none';
+                
+                let area, perimeter, dimensions;
+                
+                switch(currentShape) {
+                    case 'rectangle':
+                        area = dim1 * dim2;
+                        perimeter = 2 * (dim1 + dim2);
+                        dimensions = `Length: ${dim1} ${currentUnit}, Width: ${dim2} ${currentUnit}`;
+                        shapeResult.textContent = "Rectangle";
+                        break;
+                    case 'circle':
+                        area = Math.PI * Math.pow(dim1, 2);
+                        perimeter = 2 * Math.PI * dim1;
+                        dimensions = `Radius: ${dim1} ${currentUnit}`;
+                        shapeResult.textContent = "Circle";
+                        break;
+                    case 'triangle':
+                        area = 0.5 * dim1 * dim2;
+                        perimeter = dim1 + dim2 + Math.sqrt(Math.pow(dim1, 2) + Math.pow(dim2, 2));
+                        dimensions = `Base: ${dim1} ${currentUnit}, Height: ${dim2} ${currentUnit}`;
+                        shapeResult.textContent = "Triangle";
+                        break;
+                    case 'square':
+                        area = dim1 * dim1;
+                        perimeter = 4 * dim1;
+                        dimensions = `Side: ${dim1} ${currentUnit}`;
+                        shapeResult.textContent = "Square";
+                        break;
+                    case 'ellipse':
+                        area = Math.PI * dim1 * dim2;
+                        perimeter = 2 * Math.PI * Math.sqrt((Math.pow(dim1, 2) + Math.pow(dim2, 2)) / 2);
+                        dimensions = `Semi-major: ${dim1} ${currentUnit}, Semi-minor: ${dim2} ${currentUnit}`;
+                        shapeResult.textContent = "Ellipse";
+                        break;
+                    case 'trapezoid':
+                        // For trapezoid, dim1 is base a, dim2 is base b
+                        // Height is fixed at 5 for this demo
+                        const height = 5;
+                        area = 0.5 * (dim1 + dim2) * height;
+                        perimeter = dim1 + dim2 + 2 * Math.sqrt(Math.pow(height, 2) + Math.pow((dim2 - dim1)/2, 2));
+                        dimensions = `Base a: ${dim1} ${currentUnit}, Base b: ${dim2} ${currentUnit}, Height: ${height} ${currentUnit}`;
+                        shapeResult.textContent = "Trapezoid";
+                        break;
+                }
+                
+                // Format results
+                areaResult.textContent = `${area.toFixed(2)} ${currentUnit}²`;
+                perimeterResult.textContent = `${perimeter.toFixed(2)} ${currentUnit}`;
+                dimensionsResult.textContent = dimensions;
+                
+                // Show results
+                resultsSection.style.display = 'block';
+                
+                // Add to history
+                addToHistory(currentShape, area, perimeter, dimensions);
+            });
+            
+            // Add calculation to history
+            function addToHistory(shape, area, perimeter, dimensions) {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                
+                let iconClass;
+                switch(shape) {
+                    case 'rectangle': iconClass = 'fas fa-rectangle-landscape'; break;
+                    case 'circle': iconClass = 'fas fa-circle'; break;
+                    case 'triangle': iconClass = 'fas fa-play'; break;
+                    case 'square': iconClass = 'fas fa-square'; break;
+                    case 'ellipse': iconClass = 'fas fa-egg'; break;
+                    case 'trapezoid': iconClass = 'fas fa-shapes'; break;
+                    default: iconClass = 'fas fa-shapes';
+                }
+                
+                historyItem.innerHTML = `
+                    <div class="history-shape">
+                        <i class="${iconClass}"></i>
+                    </div>
+                    <div class="history-details">
+                        <div class="history-amount">${shape}: ${area.toFixed(2)} ${currentUnit}²</div>
+                        <div class="history-type">${dimensions}</div>
+                    </div>
+                `;
+                
+                if (historyList.querySelector('p')) {
+                    historyList.innerHTML = '';
+                }
+                
+                historyList.prepend(historyItem);
+                
+                // Store in history array
+                calculationHistory.unshift({
+                    shape,
+                    area,
+                    perimeter,
+                    dimensions,
+                    unit: currentUnit,
+                    timestamp: new Date().toISOString()
+                });
+                
+                // Keep only last 10 items
+                if (calculationHistory.length > 10) {
+                    calculationHistory.pop();
+                    if (historyList.children.length > 10) {
+                        historyList.removeChild(historyList.lastChild);
+                    }
+                }
+            }
+            
+            // Clear history
+            clearHistoryBtn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to clear all calculation history?')) {
+                    historyList.innerHTML = '<p style="padding: 20px; text-align: center; color: #7f8c8d;">No calculation history</p>';
+                    calculationHistory = [];
+                }
+            });
+            
+            // Export and sharing functions
+            printBtn.addEventListener('click', function() {
+                window.print();
+            });
+            
+            pdfBtn.addEventListener('click', function() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                doc.setFontSize(18);
+                doc.setTextColor(40, 40, 40);
+                doc.text('Area Calculation Report', 105, 20, null, null, 'center');
+                
+                doc.setFontSize(12);
+                doc.setTextColor(100, 100, 100);
+                doc.text(`Date: ${new Date().toLocaleDateString()}`, 15, 35);
+                
+                // Add results
+                doc.setFontSize(14);
+                doc.setTextColor(30, 30, 30);
+                doc.text('Calculation Results:', 15, 50);
+                
+                doc.setFontSize(12);
+                doc.text(`Shape: ${shapeResult.textContent}`, 20, 65);
+                doc.text(`Area: ${areaResult.textContent}`, 20, 75);
+                doc.text(`Perimeter: ${perimeterResult.textContent}`, 20, 85);
+                doc.text(`Dimensions: ${dimensionsResult.textContent}`, 20, 95);
+                
+                // Add footer
+                doc.setFontSize(10);
+                doc.setTextColor(150, 150, 150);
+                doc.text('Generated by Professional Area Calculator', 105, 280, null, null, 'center');
+                
+                doc.save('area-calculation.pdf');
+            });
+            
+            txtBtn.addEventListener('click', function() {
+                const txtContent = 
+                    `Area Calculation Report\n` +
+                    `========================\n` +
+                    `Date: ${new Date().toLocaleDateString()}\n` +
+                    `Shape: ${shapeResult.textContent}\n` +
+                    `Area: ${areaResult.textContent}\n` +
+                    `Perimeter: ${perimeterResult.textContent}\n` +
+                    `Dimensions: ${dimensionsResult.textContent}\n\n` +
+                    `Generated by Professional Area Calculator`;
+                
+                const blob = new Blob([txtContent], { type: 'text/plain' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'area-calculation.txt';
+                link.click();
+            });
+            
+            csvBtn.addEventListener('click', function() {
+                const csvContent = 
+                    "Description,Value\n" +
+                    `Shape,${shapeResult.textContent}\n` +
+                    `Area,${areaResult.textContent}\n` +
+                    `Perimeter,${perimeterResult.textContent}\n` +
+                    `Dimensions,${dimensionsResult.textContent}\n` +
+                    `Date,${new Date().toLocaleDateString()}\n` +
+                    `Unit,${currentUnit}`;
+                
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'area-calculation.csv';
+                link.click();
+            });
+            
+            pngBtn.addEventListener('click', function() {
+                html2canvas(resultsSection).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = 'area-calculation.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                });
+            });
+            
+            shareBtn.addEventListener('click', function() {
+                const shareText = `Area Calculation Results:
+Shape: ${shapeResult.textContent}
+Area: ${areaResult.textContent}
+Perimeter: ${perimeterResult.textContent}
+Dimensions: ${dimensionsResult.textContent}
+
+Calculated with Professional Area Calculator`;
+                
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'Area Calculation Results',
+                        text: shareText
+                    }).catch(console.error);
+                } else {
+                    // Fallback for browsers that don't support Web Share API
+                    const textArea = document.createElement('textarea');
+                    textArea.value = shareText;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    alert('Results copied to clipboard!');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

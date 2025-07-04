@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UK Mortgage Calculator | Professional Financial Tool</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #1d70b8;
+            --primary-dark: #0b4a8c;
+            --secondary: #0f172a;
+            --light: #f8fafc;
+            --dark: #0f172a;
+            --gray: #505a5f;
+            --light-gray: #e2e8f0;
+            --success: #00703c;
+            --warning: #ffdd00;
+            --danger: #d4351c;
+            --card-bg: #ffffff;
+            --card-shadow: rgba(0, 0, 0, 0.1);
+            --text-primary: #0b0c0c;
+            --text-secondary: #383f43;
+            --border: #b1b4b6;
+            --input-bg: #ffffff;
+            --footer-bg: #f1f5f9;
+        }
+
+        .dark-mode {
+            --primary: #5694ca;
+            --primary-dark: #1d70b8;
+            --secondary: #f1f5f9;
+            --light: #0f172a;
+            --dark: #f8fafc;
+            --gray: #94a3b8;
+            --light-gray: #1e293b;
+            --card-bg: #1e293b;
+            --card-shadow: rgba(0, 0, 0, 0.3);
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border: #334155;
+            --input-bg: #334155;
+            --footer-bg: #0f172a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'GDS Transport', Arial, sans-serif;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        body {
+            background-color: var(--light);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 1.5rem 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            font-size: 2rem;
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .theme-switch {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50px;
+            padding: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+        }
+
+        .theme-switch:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px 0;
+        }
+
+        @media (max-width: 992px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 5px 10px -3px var(--card-shadow);
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .card-title i {
+            font-size: 1.6rem;
+        }
+
+        .input-group {
+            margin-bottom: 18px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-group .info-tooltip {
+            color: var(--gray);
+            cursor: help;
+            position: relative;
+        }
+
+        .input-group .tooltip-text {
+            visibility: hidden;
+            width: 250px;
+            background-color: var(--dark);
+            color: var(--light);
+            text-align: center;
+            border-radius: 4px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.9rem;
+            font-weight: normal;
+        }
+
+        .input-group .info-tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            background-color: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 1rem;
+            outline: none;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(29, 112, 184, 0.2);
+        }
+
+        .range-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .range-container input[type="range"] {
+            flex: 1;
+        }
+
+        .range-value {
+            min-width: 60px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.3s, transform 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: rgba(29, 112, 184, 0.1);
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, rgba(29, 112, 184, 0.1), rgba(86, 148, 202, 0.1));
+            border-radius: 8px;
+            padding: 18px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .result-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .result-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .chart-container {
+            height: 280px;
+            margin: 20px 0;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            max-height: 350px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: rgba(29, 112, 184, 0.05);
+            color: var(--primary);
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover {
+            background-color: rgba(29, 112, 184, 0.03);
+        }
+
+        .export-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .export-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .export-btn:hover {
+            background: rgba(29, 112, 184, 0.1);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .ad-container {
+            background: var(--light-gray);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            margin: 25px 0;
+            border: 1px dashed var(--border);
+            color: var(--text-secondary);
+        }
+
+        .ad-container.dark-mode {
+            background: #334155;
+        }
+
+        .ad-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            color: var(--gray);
+        }
+
+        .social-sharing {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .social-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .social-btn:hover {
+            transform: translateY(-3px);
+        }
+
+        .social-btn.email {
+            background: var(--gray);
+        }
+
+        .social-btn.facebook {
+            background: #3b5998;
+        }
+
+        .social-btn.twitter {
+            background: #1DA1F2;
+        }
+
+        .social-btn.whatsapp {
+            background: #25D366;
+        }
+
+        .social-btn.link {
+            background: var(--primary);
+        }
+
+        footer {
+            background: var(--footer-bg);
+            padding: 25px 0;
+            margin-top: 40px;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .copyright {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            margin-left: 15px;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .disclaimer {
+            background-color: rgba(212, 53, 28, 0.05);
+            border-left: 4px solid var(--danger);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+            
+            .btn-group {
+                grid-template-columns: 1fr;
+            }
+            
+            .result-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .footer-links {
+                margin-top: 10px;
+            }
+            
+            .footer-links a {
+                margin: 0 10px;
+            }
+            
+            .input-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Print-specific styles */
+        @media print {
+            .no-print, .ad-container, .social-sharing, .export-options, .theme-switch, footer {
+                display: none !important;
+            }
+            
+            body, .card {
+                background: white !important;
+                color: black !important;
+                box-shadow: none !important;
+            }
+            
+            .main-content {
+                display: block;
+            }
+            
+            .card {
+                page-break-inside: avoid;
+            }
+            
+            .table-container {
+                max-height: none;
+                overflow: visible;
+            }
+        }
+
+        .error-message {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-home"></i>
+                    <h1>UK Mortgage Calculator</h1>
+                </div>
+                <div class="theme-switch" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Header Ad Space -->
+        <div class="ad-container">
+            <div class="ad-label">Advertisement</div>
+            <div class="ad-content">
+                <!-- Adsterra Ad Code would go here -->
+                <p>Adsterra Ad Space (728x90)</p>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <!-- Input Section -->
+            <div>
+                <div class="card">
+                    <h2 class="card-title"><i class="fas fa-calculator"></i> Mortgage Details</h2>
+                    
+                    <div class="input-group">
+                        <label for="propertyValue">
+                            Property Value (£)
+                            <span class="info-tooltip">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltip-text">Market value of the property</span>
+                            </span>
+                        </label>
+                        <div class="range-container">
+                            <input type="range" id="propertyValueSlider" min="50000" max="1000000" step="10000" value="300000">
+                            <span class="range-value" id="propertyValueValue">£300,000</span>
+                        </div>
+                        <input type="number" id="propertyValue" min="50000" max="1000000" step="10000" value="300000">
+                        <div class="error-message" id="propertyValueError">Please enter a valid property value</div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="deposit">
+                            Deposit (£)
+                            <span class="info-tooltip">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltip-text">Amount you're putting down</span>
+                            </span>
+                        </label>
+                        <div class="range-container">
+                            <input type="range" id="depositSlider" min="0" max="300000" step="10000" value="60000">
+                            <span class="range-value" id="depositValue">£60,000</span>
+                        </div>
+                        <input type="number" id="deposit" min="0" max="300000" step="10000" value="60000">
+                        <div class="error-message" id="depositError">Deposit cannot exceed property value</div>
+                    </div>
+                    
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="loanTerm">
+                                Loan Term (Years)
+                                <span class="info-tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltip-text">Duration of the mortgage</span>
+                                </span>
+                            </label>
+                            <select id="loanTerm">
+                                <option value="10">10 Years</option>
+                                <option value="15">15 Years</option>
+                                <option value="20">20 Years</option>
+                                <option value="25" selected>25 Years</option>
+                                <option value="30">30 Years</option>
+                                <option value="35">35 Years</option>
+                            </select>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="interestRate">
+                                Interest Rate (%)
+                                <span class="info-tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltip-text">Annual interest rate</span>
+                                </span>
+                            </label>
+                            <input type="number" id="interestRate" min="0.1" max="15" step="0.01" value="4.5">
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="repaymentType">
+                            Repayment Type
+                            <span class="info-tooltip">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltip-text">Repayment: Pay off loan over time<br>Interest-only: Pay only interest each month</span>
+                            </span>
+                        </label>
+                        <select id="repaymentType">
+                            <option value="repayment">Repayment Mortgage</option>
+                            <option value="interest-only">Interest-only Mortgage</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="ltv">
+                            Loan-to-Value (LTV)
+                            <span class="info-tooltip">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltip-text">Loan amount as percentage of property value</span>
+                            </span>
+                        </label>
+                        <div class="range-container">
+                            <input type="range" id="ltvSlider" min="5" max="95" step="1" value="80">
+                            <span class="range-value" id="ltvValue">80%</span>
+                        </div>
+                        <input type="number" id="ltv" min="5" max="95" step="1" value="80" readonly>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="additionalPayment">
+                            Additional Monthly Payment (£)
+                            <span class="info-tooltip">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltip-text">Extra amount to pay each month</span>
+                            </span>
+                        </label>
+                        <input type="number" id="additionalPayment" min="0" step="100" value="0">
+                    </div>
+                    
+                    <button id="calculateBtn" class="btn">
+                        <i class="fas fa-calculator"></i> Calculate Mortgage
+                    </button>
+                    
+                    <div class="disclaimer">
+                        <strong>Important:</strong> This calculator provides estimates only. It is not financial advice. 
+                        Mortgage rates and terms vary by lender. Consult a qualified mortgage advisor before making financial decisions.
+                    </div>
+                </div>
+                
+                <!-- Sidebar Ad Space -->
+                <div class="ad-container">
+                    <div class="ad-label">Advertisement</div>
+                    <div class="ad-content">
+                        <!-- Yllix Ad Code would go here -->
+                        <p>Yllix Ad Space (300x600)</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Results Section -->
+            <div>
+                <div class="card">
+                    <h2 class="card-title"><i class="fas fa-chart-pie"></i> Mortgage Summary</h2>
+                    
+                    <div class="result-grid">
+                        <div class="result-card">
+                            <div class="result-label">Monthly Payment</div>
+                            <div class="result-value" id="monthlyPayment">£1,216</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-label">Total Interest</div>
+                            <div class="result-value" id="totalInterest">£164,880</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-label">Loan Amount</div>
+                            <div class="result-value" id="loanAmount">£240,000</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-label">Payoff Date</div>
+                            <div class="result-value" id="payoffDate">Jun 2049</div>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <canvas id="mortgageChart"></canvas>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button id="resetBtn" class="btn btn-outline">
+                            <i class="fas fa-redo"></i> Reset
+                        </button>
+                        <button id="printBtn" class="btn btn-outline">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2 class="card-title"><i class="fas fa-table"></i> Amortization Schedule</h2>
+                    
+                    <div class="table-container">
+                        <table id="amortizationTable">
+                            <thead>
+                                <tr>
+                                    <th>Year</th>
+                                    <th>Principal Paid</th>
+                                    <th>Interest Paid</th>
+                                    <th>Remaining Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>£4,832</td>
+                                    <td>£10,763</td>
+                                    <td>£235,168</td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>£5,057</td>
+                                    <td>£10,538</td>
+                                    <td>£230,111</td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>£5,294</td>
+                                    <td>£10,301</td>
+                                    <td>£224,817</td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td>£5,544</td>
+                                    <td>£10,051</td>
+                                    <td>£219,273</td>
+                                </tr>
+                                <tr>
+                                    <td>5</td>
+                                    <td>£5,807</td>
+                                    <td>£9,788</td>
+                                    <td>£213,466</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="export-options">
+                        <div class="export-btn" id="exportPDF">
+                            <i class="fas fa-file-pdf"></i> Export to PDF
+                        </div>
+                        <div class="export-btn" id="exportExcel">
+                            <i class="fas fa-file-excel"></i> Export to Excel
+                        </div>
+                        <div class="export-btn" id="exportCSV">
+                            <i class="fas fa-file-csv"></i> Export to CSV
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin-top: 25px;">Share Results</h3>
+                    <div class="social-sharing">
+                        <div class="social-btn email" title="Share via Email">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="social-btn facebook" title="Share on Facebook">
+                            <i class="fab fa-facebook-f"></i>
+                        </div>
+                        <div class="social-btn twitter" title="Share on Twitter">
+                            <i class="fab fa-twitter"></i>
+                        </div>
+                        <div class="social-btn whatsapp" title="Share via WhatsApp">
+                            <i class="fab fa-whatsapp"></i>
+                        </div>
+                        <div class="social-btn link" title="Copy Link">
+                            <i class="fas fa-link"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer Ad Space -->
+        <div class="ad-container">
+            <div class="ad-label">Advertisement</div>
+            <div class="ad-content">
+                <!-- Adsterra Ad Code would go here -->
+                <p>Adsterra Ad Space (728x90)</p>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="copyright">
+                    &copy; 2023 UK Mortgage Calculator. All rights reserved.
+                </div>
+                <div class="footer-links">
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Contact Us</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // DOM Elements
+        const themeToggle = document.getElementById('themeToggle');
+        const propertyValueSlider = document.getElementById('propertyValueSlider');
+        const propertyValueInput = document.getElementById('propertyValue');
+        const propertyValueValue = document.getElementById('propertyValueValue');
+        const depositSlider = document.getElementById('depositSlider');
+        const depositInput = document.getElementById('deposit');
+        const depositValue = document.getElementById('depositValue');
+        const ltvSlider = document.getElementById('ltvSlider');
+        const ltvInput = document.getElementById('ltv');
+        const ltvValue = document.getElementById('ltvValue');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const printBtn = document.getElementById('printBtn');
+        const exportPDF = document.getElementById('exportPDF');
+        const exportExcel = document.getElementById('exportExcel');
+        const exportCSV = document.getElementById('exportCSV');
+        const amortizationTable = document.getElementById('amortizationTable').getElementsByTagName('tbody')[0];
+        
+        // Result elements
+        const monthlyPaymentEl = document.getElementById('monthlyPayment');
+        const totalInterestEl = document.getElementById('totalInterest');
+        const loanAmountEl = document.getElementById('loanAmount');
+        const payoffDateEl = document.getElementById('payoffDate');
+        
+        // Chart
+        let mortgageChart;
+        
+        // Initialize the calculator
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set initial values
+            updatePropertyValue();
+            updateDeposit();
+            updateLTV();
+            
+            // Calculate mortgage on page load
+            calculateMortgage();
+            
+            // Set up event listeners
+            setupEventListeners();
+        });
+        
+        function setupEventListeners() {
+            // Theme toggle
+            themeToggle.addEventListener('click', toggleTheme);
+            
+            // Slider and input synchronization
+            propertyValueSlider.addEventListener('input', updatePropertyValue);
+            propertyValueInput.addEventListener('input', updatePropertyValue);
+            depositSlider.addEventListener('input', updateDeposit);
+            depositInput.addEventListener('input', updateDeposit);
+            ltvSlider.addEventListener('input', updateLTV);
+            
+            // Button events
+            calculateBtn.addEventListener('click', calculateMortgage);
+            resetBtn.addEventListener('click', resetCalculator);
+            printBtn.addEventListener('click', printResults);
+            
+            // Export events
+            exportPDF.addEventListener('click', exportToPDF);
+            exportExcel.addEventListener('click', exportToExcel);
+            exportCSV.addEventListener('click', exportToCSV);
+            
+            // Input validation
+            propertyValueInput.addEventListener('blur', validateInputs);
+            depositInput.addEventListener('blur', validateInputs);
+        }
+        
+        function updatePropertyValue() {
+            const value = propertyValueSlider.value;
+            propertyValueInput.value = value;
+            propertyValueValue.textContent = formatCurrency(value);
+            
+            // Sync slider if input changes
+            propertyValueInput.addEventListener('input', function() {
+                propertyValueSlider.value = this.value;
+                propertyValueValue.textContent = formatCurrency(this.value);
+                updateLTV();
+            });
+        }
+        
+        function updateDeposit() {
+            const value = depositSlider.value;
+            depositInput.value = value;
+            depositValue.textContent = formatCurrency(value);
+            
+            // Sync slider if input changes
+            depositInput.addEventListener('input', function() {
+                depositSlider.value = this.value;
+                depositValue.textContent = formatCurrency(this.value);
+                updateLTV();
+            });
+        }
+        
+        function updateLTV() {
+            const propertyValue = parseFloat(propertyValueInput.value) || 300000;
+            const deposit = parseFloat(depositInput.value) || 60000;
+            
+            // Calculate LTV
+            const loanAmount = propertyValue - deposit;
+            const ltv = Math.min(95, Math.max(5, Math.round((loanAmount / propertyValue) * 100)));
+            
+            ltvSlider.value = ltv;
+            ltvInput.value = ltv;
+            ltvValue.textContent = `${ltv}%`;
+        }
+        
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const icon = themeToggle.querySelector('i');
+            
+            if (document.body.classList.contains('dark-mode')) {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+        }
+        
+        function validateInputs() {
+            // Reset errors
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            let isValid = true;
+            const propertyValue = parseFloat(propertyValueInput.value);
+            const deposit = parseFloat(depositInput.value);
+            
+            // Validate property value
+            if (isNaN(propertyValue) || propertyValue < 50000) {
+                document.getElementById('propertyValueError').style.display = 'block';
+                isValid = false;
+            }
+            
+            // Validate deposit
+            if (deposit > propertyValue) {
+                document.getElementById('depositError').style.display = 'block';
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+        
+        function calculateMortgage() {
+            if (!validateInputs()) return;
+            
+            // Get input values
+            const propertyValue = parseFloat(propertyValueInput.value);
+            const deposit = parseFloat(depositInput.value);
+            const loanTerm = parseInt(document.getElementById('loanTerm').value);
+            const interestRate = parseFloat(document.getElementById('interestRate').value) / 100; // Convert to decimal
+            const repaymentType = document.getElementById('repaymentType').value;
+            const additionalPayment = parseFloat(document.getElementById('additionalPayment').value) || 0;
+            
+            // Calculate loan amount
+            const loanAmount = propertyValue - deposit;
+            
+            // Calculate monthly payment based on repayment type
+            let monthlyPayment = 0;
+            let totalInterest = 0;
+            
+            if (repaymentType === "repayment") {
+                // Repayment mortgage calculation
+                const monthlyRate = interestRate / 12;
+                const totalPayments = loanTerm * 12;
+                
+                // Calculate monthly payment
+                monthlyPayment = loanAmount * 
+                    (monthlyRate * Math.pow(1 + monthlyRate, totalPayments)) / 
+                    (Math.pow(1 + monthlyRate, totalPayments) - 1);
+                
+                // Add additional payment
+                monthlyPayment += additionalPayment;
+                
+                // Calculate total interest
+                totalInterest = (monthlyPayment * totalPayments) - loanAmount;
+            } else {
+                // Interest-only mortgage calculation
+                monthlyPayment = (loanAmount * interestRate) / 12;
+                totalInterest = monthlyPayment * loanTerm * 12;
+            }
+            
+            // Calculate payoff date
+            const startDate = new Date();
+            const payoffDate = new Date(startDate);
+            payoffDate.setFullYear(startDate.getFullYear() + loanTerm);
+            
+            // Update UI with results
+            monthlyPaymentEl.textContent = formatCurrency(monthlyPayment);
+            totalInterestEl.textContent = formatCurrency(totalInterest);
+            loanAmountEl.textContent = formatCurrency(loanAmount);
+            payoffDateEl.textContent = formatDate(payoffDate);
+            
+            // Update chart
+            updateChart(loanAmount, totalInterest);
+            
+            // Update amortization table
+            updateAmortizationTable(loanAmount, interestRate, loanTerm, repaymentType, additionalPayment);
+        }
+        
+        function updateChart(loanAmount, totalInterest) {
+            const ctx = document.getElementById('mortgageChart').getContext('2d');
+            
+            // Destroy previous chart if exists
+            if (mortgageChart) {
+                mortgageChart.destroy();
+            }
+            
+            mortgageChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Loan Amount', 'Total Interest'],
+                    datasets: [{
+                        data: [loanAmount, totalInterest],
+                        backgroundColor: [
+                            '#1d70b8',
+                            '#00703c'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: getComputedStyle(document.body).getPropertyValue('--text-primary'),
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${formatCurrency(context.raw)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateAmortizationTable(loanAmount, interestRate, loanTerm, repaymentType, additionalPayment) {
+            // Clear table
+            amortizationTable.innerHTML = '';
+            
+            // Simplified amortization schedule for demo
+            const monthlyRate = interestRate / 12;
+            const totalPayments = loanTerm * 12;
+            let balance = loanAmount;
+            
+            // Yearly summary
+            for (let year = 1; year <= loanTerm; year++) {
+                let yearPrincipal = 0;
+                let yearInterest = 0;
+                
+                for (let month = 1; month <= 12; month++) {
+                    const interest = balance * monthlyRate;
+                    let principal = 0;
+                    
+                    if (repaymentType === "repayment") {
+                        // Standard repayment calculation
+                        const basePayment = loanAmount * 
+                            (monthlyRate * Math.pow(1 + monthlyRate, totalPayments)) / 
+                            (Math.pow(1 + monthlyRate, totalPayments) - 1);
+                        
+                        principal = basePayment - interest + additionalPayment;
+                    } else {
+                        // Interest-only payment
+                        principal = 0;
+                    }
+                    
+                    // Ensure we don't overpay
+                    if (principal > balance) {
+                        principal = balance;
+                    }
+                    
+                    yearPrincipal += principal;
+                    yearInterest += interest;
+                    balance -= principal;
+                    
+                    if (balance <= 0) break;
+                }
+                
+                if (balance < 0) balance = 0;
+                
+                const row = amortizationTable.insertRow();
+                row.insertCell(0).textContent = year;
+                row.insertCell(1).textContent = formatCurrency(yearPrincipal);
+                row.insertCell(2).textContent = formatCurrency(yearInterest);
+                row.insertCell(3).textContent = formatCurrency(balance);
+                
+                if (balance <= 0) break;
+            }
+        }
+        
+        function resetCalculator() {
+            propertyValueInput.value = 300000;
+            propertyValueSlider.value = 300000;
+            propertyValueValue.textContent = formatCurrency(300000);
+            
+            depositInput.value = 60000;
+            depositSlider.value = 60000;
+            depositValue.textContent = formatCurrency(60000);
+            
+            document.getElementById('loanTerm').value = '25';
+            document.getElementById('interestRate').value = '4.5';
+            document.getElementById('repaymentType').value = 'repayment';
+            document.getElementById('additionalPayment').value = '0';
+            
+            updateLTV();
+            calculateMortgage();
+        }
+        
+        function printResults() {
+            window.print();
+        }
+        
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(18);
+            doc.text('UK Mortgage Calculation Report', 105, 15, null, null, 'center');
+            
+            // Add summary
+            doc.setFontSize(11);
+            doc.text(`Property Value: ${formatCurrency(parseFloat(propertyValueInput.value))}`, 20, 30);
+            doc.text(`Deposit: ${formatCurrency(parseFloat(depositInput.value))}`, 20, 40);
+            doc.text(`Loan Term: ${document.getElementById('loanTerm').value} years`, 20, 50);
+            doc.text(`Interest Rate: ${document.getElementById('interestRate').value}%`, 20, 60);
+            doc.text(`Repayment Type: ${document.getElementById('repaymentType').value === 'repayment' ? 'Repayment' : 'Interest-only'}`, 20, 70);
+            doc.text(`Monthly Payment: ${monthlyPaymentEl.textContent}`, 20, 80);
+            
+            // Save the PDF
+            doc.save('uk-mortgage-report.pdf');
+        }
+        
+        function exportToExcel() {
+            // Create a new workbook
+            const wb = XLSX.utils.book_new();
+            
+            // Add summary data
+            const summaryData = [
+                ['UK Mortgage Calculation Report', ''],
+                ['Date', new Date().toLocaleDateString('en-GB')],
+                ['Property Value', parseFloat(propertyValueInput.value)],
+                ['Deposit', parseFloat(depositInput.value)],
+                ['Loan Term', document.getElementById('loanTerm').value + ' years'],
+                ['Interest Rate', document.getElementById('interestRate').value + '%'],
+                ['Repayment Type', document.getElementById('repaymentType').value === 'repayment' ? 'Repayment' : 'Interest-only'],
+                ['Monthly Payment', parseFloat(monthlyPaymentEl.textContent.replace(/[^0-9.-]+/g,""))],
+                ['Total Interest', parseFloat(totalInterestEl.textContent.replace(/[^0-9.-]+/g,""))],
+                ['', ''],
+                ['Amortization Schedule', '']
+            ];
+            
+            const ws = XLSX.utils.aoa_to_sheet(summaryData);
+            
+            // Add worksheet to workbook
+            XLSX.utils.book_append_sheet(wb, ws, 'Mortgage Report');
+            
+            // Save the file
+            XLSX.writeFile(wb, 'uk-mortgage-report.xlsx');
+        }
+        
+        function exportToCSV() {
+            let csvContent = 'Category,Value\n';
+            csvContent += `Property Value,${parseFloat(propertyValueInput.value)}\n`;
+            csvContent += `Deposit,${parseFloat(depositInput.value)}\n`;
+            csvContent += `Loan Term,${document.getElementById('loanTerm').value} years\n`;
+            csvContent += `Interest Rate,${document.getElementById('interestRate').value}%\n`;
+            csvContent += `Repayment Type,${document.getElementById('repaymentType').value === 'repayment' ? 'Repayment' : 'Interest-only'}\n`;
+            csvContent += `Monthly Payment,${monthlyPaymentEl.textContent}\n`;
+            csvContent += `Total Interest,${totalInterestEl.textContent}\n`;
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'uk-mortgage-report.csv');
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        function formatCurrency(value) {
+            return '£' + parseFloat(value).toLocaleString('en-GB', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
+        }
+        
+        function formatDate(date) {
+            return date.toLocaleDateString('en-GB', {
+                year: 'numeric',
+                month: 'short'
+            });
+        }
+    </script>
+</body>
+</html>

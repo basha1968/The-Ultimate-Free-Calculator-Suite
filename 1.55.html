@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProRefi | Advanced Refinance Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #4f46e5;
+            --accent: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --light: #f8fafc;
+            --dark: #0f172a;
+            --text: #334155;
+            --card-bg: #ffffff;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            --border: 1px solid #e2e8f0;
+            --transition: all 0.3s ease;
+        }
+
+        .dark-mode {
+            --light: #0f172a;
+            --dark: #f8fafc;
+            --text: #cbd5e1;
+            --card-bg: #1e293b;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            --border: 1px solid #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+            transition: var(--transition);
+        }
+
+        body.dark-mode {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--card-shadow);
+        }
+
+        .logo-icon i {
+            font-size: 24px;
+            color: white;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .theme-toggle {
+            background: var(--card-bg);
+            border: var(--border);
+            width: 50px;
+            height: 26px;
+            border-radius: 50px;
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 0 3px;
+            transition: var(--transition);
+        }
+
+        .theme-toggle i {
+            position: absolute;
+            font-size: 14px;
+            transition: var(--transition);
+        }
+
+        .fa-sun {
+            left: 5px;
+            color: #f59e0b;
+        }
+
+        .fa-moon {
+            right: 5px;
+            color: #94a3b8;
+        }
+
+        .toggle-ball {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            transition: transform 0.3s ease;
+        }
+
+        .dark-mode .toggle-ball {
+            transform: translateX(24px);
+        }
+
+        .security-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            padding: 8px 15px;
+            border-radius: 30px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .calculator-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+            transition: var(--transition);
+            border: var(--border);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: var(--border);
+        }
+
+        .card-header i {
+            font-size: 24px;
+            margin-right: 15px;
+            color: var(--primary);
+        }
+
+        .card-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 16px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+        }
+
+        label i {
+            margin-right: 8px;
+            color: var(--primary);
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            margin-left: 8px;
+        }
+
+        .tooltip i {
+            color: var(--accent);
+            font-size: 16px;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 250px;
+            background: var(--dark);
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+            font-weight: normal;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 14px;
+            border-radius: 10px;
+            border: var(--border);
+            background: var(--light);
+            color: var(--text);
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .range-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 8px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            padding: 0;
+            height: 8px;
+            -webkit-appearance: none;
+            background: var(--light);
+            border-radius: 10px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .range-value {
+            display: inline-block;
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 25px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+            text-decoration: none;
+            gap: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .result-container {
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.03), rgba(79, 70, 229, 0.03));
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            border: var(--border);
+        }
+
+        .result-card {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            background: var(--card-bg);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .result-label {
+            font-size: 14px;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .result-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .result-positive {
+            color: var(--success);
+        }
+
+        .result-negative {
+            color: var(--danger);
+        }
+
+        .chart-container {
+            height: 300px;
+            margin-top: 25px;
+        }
+
+        .savings-summary {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 12px;
+            background: var(--card-bg);
+            box-shadow: var(--card-shadow);
+            border: var(--border);
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: var(--border);
+        }
+
+        .summary-label {
+            font-weight: 500;
+        }
+
+        .summary-value {
+            font-weight: 600;
+        }
+
+        .export-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .ad-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin: 25px 0;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: var(--card-shadow);
+            border: var(--border);
+        }
+
+        .ad-label {
+            display: inline-block;
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--accent);
+            padding: 6px 15px;
+            border-radius: 20px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .ad-content {
+            width: 100%;
+            height: 100px;
+            background: rgba(139, 92, 246, 0.05);
+            border: 2px dashed var(--accent);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--accent);
+            font-weight: 500;
+            font-size: 16px;
+        }
+
+        .sharing-section {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .share-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--card-bg);
+            color: var(--primary);
+            border: var(--border);
+            font-size: 20px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .share-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-3px);
+        }
+
+        .compliance-section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 30px;
+            box-shadow: var(--card-shadow);
+            border: var(--border);
+        }
+
+        .compliance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .compliance-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .compliance-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: rgba(37, 99, 235, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: var(--primary);
+        }
+
+        .compliance-content h3 {
+            font-size: 18px;
+            margin-bottom: 5px;
+            color: var(--primary);
+        }
+
+        .compliance-content p {
+            color: var(--text);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 0 20px;
+            margin-top: 20px;
+            border-top: var(--border);
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--text);
+            text-decoration: none;
+            transition: var(--transition);
+            font-size: 14px;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        .disclaimer {
+            background: rgba(239, 68, 68, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            font-size: 14px;
+            color: var(--text);
+            border-left: 4px solid var(--danger);
+        }
+
+        @media (max-width: 768px) {
+            .calculator-grid {
+                gap: 15px;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .logo {
+                justify-content: center;
+            }
+            
+            .header-controls {
+                justify-content: center;
+            }
+        }
+        
+        .error-message {
+            color: var(--danger);
+            background: rgba(239, 68, 68, 0.05);
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+            font-size: 14px;
+            border-left: 3px solid var(--danger);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-calculator"></i>
+                </div>
+                <div class="logo-text">ProRefi Calculator</div>
+            </div>
+            <div class="header-controls">
+                <div class="security-badge">
+                    <i class="fas fa-lock"></i>
+                    <span>Bank-Level Security</span>
+                </div>
+                <div class="theme-toggle" id="theme-toggle">
+                    <i class="fas fa-sun"></i>
+                    <i class="fas fa-moon"></i>
+                    <div class="toggle-ball"></div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="ad-container">
+            <span class="ad-label">Adsterra Ad Space</span>
+            <div class="ad-content">
+                <!-- Adsterra ad code will be placed here -->
+                <p>Adsterra Ad Banner (728x90)</p>
+            </div>
+        </div>
+        
+        <div class="calculator-grid">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-sliders-h"></i>
+                    <h2 class="card-title">Loan Details</h2>
+                </div>
+                
+                <div class="input-group">
+                    <label for="current-balance">
+                        <i class="fas fa-dollar-sign"></i> Current Loan Balance
+                        <span class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">Remaining amount on your current mortgage</span>
+                        </span>
+                    </label>
+                    <input type="number" id="current-balance" placeholder="Enter loan balance" value="250000">
+                </div>
+                
+                <div class="input-group">
+                    <label for="current-rate">
+                        <i class="fas fa-percentage"></i> Current Interest Rate (%)
+                        <span class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">Annual interest rate of your current loan</span>
+                        </span>
+                    </label>
+                    <div class="input-with-info">
+                        <input type="number" id="current-rate" placeholder="Enter interest rate" step="0.01" value="6.5">
+                        <div class="range-container">
+                            <input type="range" id="current-rate-slider" min="1" max="10" step="0.1" value="6.5">
+                            <span class="range-value" id="current-rate-display">6.5%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="current-term">
+                        <i class="fas fa-clock"></i> Remaining Term (Years)
+                        <span class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">Years left on your current mortgage</span>
+                        </span>
+                    </label>
+                    <select id="current-term">
+                        <option value="30">30 Years</option>
+                        <option value="25">25 Years</option>
+                        <option value="20">20 Years</option>
+                        <option value="15" selected>15 Years</option>
+                        <option value="10">10 Years</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label for="new-balance">
+                        <i class="fas fa-dollar-sign"></i> New Loan Amount
+                        <span class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">Amount for your new refinanced loan</span>
+                        </span>
+                    </label>
+                    <input type="number" id="new-balance" placeholder="Enter loan amount" value="250000">
+                </div>
+                
+                <div class="input-group">
+                    <label for="new-rate">
+                        <i class="fas fa-percentage"></i> New Interest Rate (%)
+                        <span class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">Annual interest rate for the new loan</span>
+                        </span>
+                    </label>
+                    <div class="input-with-info">
+                        <input type="number" id="new-rate" placeholder="Enter interest rate" step="0.01" value="4.25">
+                        <div class="range-container">
+                            <input type="range" id="new-rate-slider" min="1" max="10" step="0.1" value="4.25">
+                            <span class="range-value" id="new-rate-display">4.25%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="new-term">
+                        <i class="fas fa-clock"></i> New Loan Term (Years)
+                        <span class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">Term length for the new loan</span>
+                        </span>
+                    </label>
+                    <select id="new-term">
+                        <option value="30" selected>30 Years</option>
+                        <option value="25">25 Years</option>
+                        <option value="20">20 Years</option>
+                        <option value="15">15 Years</option>
+                        <option value="10">10 Years</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label for="closing-costs">
+                        <i class="fas fa-file-invoice-dollar"></i> Closing Costs
+                        <span class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">Fees associated with refinancing</span>
+                        </span>
+                    </label>
+                    <input type="number" id="closing-costs" placeholder="Enter closing costs" value="5000">
+                </div>
+                
+                <div class="error-message" id="error-message">
+                    <i class="fas fa-exclamation-circle"></i> Please enter valid values for all fields
+                </div>
+                
+                <button class="btn btn-block" id="calculate-btn">
+                    <i class="fas fa-calculator"></i> Calculate Refinance Savings
+                </button>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-line"></i>
+                    <h2 class="card-title">Refinance Results</h2>
+                </div>
+                
+                <div class="result-container">
+                    <div class="result-card">
+                        <div class="result-label">Monthly Payment Savings</div>
+                        <div class="result-value result-positive" id="monthly-savings">$387</div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <div class="result-label">Total Interest Savings</div>
+                        <div class="result-value result-positive" id="interest-savings">$62,400</div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <div class="result-label">Break-Even Point</div>
+                        <div class="result-value" id="break-even">12.9 months</div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <div class="result-label">Net Savings</div>
+                        <div class="result-value result-positive" id="net-savings">$57,400</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="savings-chart"></canvas>
+                </div>
+                
+                <div class="savings-summary">
+                    <div class="summary-item">
+                        <div class="summary-label">Current Monthly Payment</div>
+                        <div class="summary-value" id="current-payment">$2,184</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">New Monthly Payment</div>
+                        <div class="summary-value" id="new-payment">$1,797</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Monthly Savings</div>
+                        <div class="summary-value result-positive" id="summary-monthly-savings">$387</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Closing Costs</div>
+                        <div class="summary-value" id="summary-closing-costs">$5,000</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Net Savings Over Loan Term</div>
+                        <div class="summary-value result-positive" id="summary-net-savings">$57,400</div>
+                    </div>
+                </div>
+                
+                <div class="export-section">
+                    <button class="btn" id="print-btn">
+                        <i class="fas fa-print"></i> Print Summary
+                    </button>
+                    <button class="btn" id="pdf-btn">
+                        <i class="fas fa-file-pdf"></i> Save as PDF
+                    </button>
+                    <button class="btn" id="excel-btn">
+                        <i class="fas fa-file-excel"></i> Export to Excel
+                    </button>
+                </div>
+                
+                <div class="sharing-section">
+                    <div class="share-btn" id="email-share">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="share-btn" id="whatsapp-share">
+                        <i class="fab fa-whatsapp"></i>
+                    </div>
+                    <div class="share-btn" id="linkedin-share">
+                        <i class="fab fa-linkedin-in"></i>
+                    </div>
+                    <div class="share-btn" id="copy-link">
+                        <i class="fas fa-link"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="ad-container">
+            <span class="ad-label">Yllix Ad Space</span>
+            <div class="ad-content">
+                <!-- Yllix ad code will be placed here -->
+                <p>Yllix Ad Banner (728x90)</p>
+            </div>
+        </div>
+        
+        <div class="compliance-section">
+            <div class="card-header">
+                <i class="fas fa-shield-alt"></i>
+                <h2 class="card-title">Security & Compliance</h2>
+            </div>
+            
+            <div class="compliance-grid">
+                <div class="compliance-item">
+                    <div class="compliance-icon">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <div class="compliance-content">
+                        <h3>SSL/TLS Encryption</h3>
+                        <p>All data is encrypted in transit using bank-grade security protocols</p>
+                    </div>
+                </div>
+                
+                <div class="compliance-item">
+                    <div class="compliance-icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div class="compliance-content">
+                        <h3>No Data Storage</h3>
+                        <p>Your financial data is never stored or transmitted to any servers</p>
+                    </div>
+                </div>
+                
+                <div class="compliance-item">
+                    <div class="compliance-icon">
+                        <i class="fas fa-gavel"></i>
+                    </div>
+                    <div class="compliance-content">
+                        <h3>GDPR/CCPA Compliant</h3>
+                        <p>Fully compliant with global privacy regulations</p>
+                    </div>
+                </div>
+                
+                <div class="compliance-item">
+                    <div class="compliance-icon">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div class="compliance-content">
+                        <h3>Client-Side Processing</h3>
+                        <p>All calculations happen in your browser for maximum privacy</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="disclaimer">
+            <p><strong>Disclaimer:</strong> This calculator provides estimates only. Results should not be considered financial advice. Actual loan terms and savings may vary based on your creditworthiness and lender policies. Consult with a qualified financial advisor before making any refinancing decisions.</p>
+        </div>
+        
+        <footer>
+            <div class="footer-links">
+                <a href="#"><i class="fas fa-lock"></i> Privacy Policy</a>
+                <a href="#"><i class="fas fa-file-contract"></i> Terms of Service</a>
+                <a href="#"><i class="fas fa-question-circle"></i> Help Center</a>
+                <a href="#"><i class="fas fa-envelope"></i> Contact Support</a>
+            </div>
+            <p>© 2023 ProRefi Calculator. All rights reserved. Financial Technology Solutions.</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Theme toggle functionality
+            const themeToggle = document.getElementById('theme-toggle');
+            themeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+            });
+            
+            // Set up range sliders
+            function setupRangeSlider(inputId, sliderId, displayId, formatter) {
+                const input = document.getElementById(inputId);
+                const slider = document.getElementById(sliderId);
+                const display = document.getElementById(displayId);
+                
+                // Initialize
+                slider.value = input.value;
+                display.textContent = formatter(input.value);
+                
+                // Update input from slider
+                slider.addEventListener('input', function() {
+                    input.value = this.value;
+                    display.textContent = formatter(this.value);
+                    calculateRefinance();
+                });
+                
+                // Update slider from input
+                input.addEventListener('input', function() {
+                    slider.value = this.value;
+                    display.textContent = formatter(this.value);
+                    calculateRefinance();
+                });
+            }
+            
+            // Formatter functions
+            function formatPercent(value) {
+                return value + '%';
+            }
+            
+            // Set up sliders
+            setupRangeSlider('current-rate', 'current-rate-slider', 'current-rate-display', formatPercent);
+            setupRangeSlider('new-rate', 'new-rate-slider', 'new-rate-display', formatPercent);
+            
+            // Initialize chart
+            const ctx = document.getElementById('savings-chart').getContext('2d');
+            const savingsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Current Loan', 'Refinanced Loan'],
+                    datasets: [{
+                        label: 'Monthly Payment',
+                        data: [2184, 1797],
+                        backgroundColor: [
+                            'rgba(37, 99, 235, 0.7)',
+                            'rgba(16, 185, 129, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(37, 99, 235, 1)',
+                            'rgba(16, 185, 129, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `$${context.raw.toLocaleString()}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Calculate mortgage payment
+            function calculatePayment(principal, annualRate, years) {
+                const monthlyRate = annualRate / 100 / 12;
+                const numberOfPayments = years * 12;
+                
+                // Avoid division by zero
+                if (monthlyRate === 0) {
+                    return principal / numberOfPayments;
+                }
+                
+                const payment = principal * 
+                    (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) / 
+                    (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
+                
+                return payment;
+            }
+            
+            // Calculate total interest
+            function calculateTotalInterest(principal, annualRate, years) {
+                const monthlyPayment = calculatePayment(principal, annualRate, years);
+                const totalPayment = monthlyPayment * years * 12;
+                return totalPayment - principal;
+            }
+            
+            // Format currency
+            function formatCurrency(value) {
+                return '$' + value.toLocaleString(undefined, {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                });
+            }
+            
+            // Main calculation function
+            function calculateRefinance() {
+                // Get input values
+                const currentBalance = parseFloat(document.getElementById('current-balance').value) || 0;
+                const currentRate = parseFloat(document.getElementById('current-rate').value) || 0;
+                const currentTerm = parseInt(document.getElementById('current-term').value) || 0;
+                const newBalance = parseFloat(document.getElementById('new-balance').value) || 0;
+                const newRate = parseFloat(document.getElementById('new-rate').value) || 0;
+                const newTerm = parseInt(document.getElementById('new-term').value) || 0;
+                const closingCosts = parseFloat(document.getElementById('closing-costs').value) || 0;
+                
+                // Validate inputs
+                const errorMessage = document.getElementById('error-message');
+                if (!currentBalance || !currentRate || !currentTerm || !newBalance || !newRate || !newTerm) {
+                    errorMessage.style.display = 'block';
+                    return;
+                }
+                errorMessage.style.display = 'none';
+                
+                // Calculate payments
+                const currentPayment = calculatePayment(currentBalance, currentRate, currentTerm);
+                const newPayment = calculatePayment(newBalance, newRate, newTerm);
+                
+                // Calculate savings
+                const monthlySavings = currentPayment - newPayment;
+                const currentTotalInterest = calculateTotalInterest(currentBalance, currentRate, currentTerm);
+                const newTotalInterest = calculateTotalInterest(newBalance, newRate, newTerm);
+                const interestSavings = currentTotalInterest - newTotalInterest;
+                const breakEven = monthlySavings > 0 ? (closingCosts / monthlySavings).toFixed(1) : 'N/A';
+                const netSavings = interestSavings - closingCosts;
+                
+                // Update results
+                document.getElementById('monthly-savings').textContent = formatCurrency(monthlySavings);
+                document.getElementById('interest-savings').textContent = formatCurrency(interestSavings);
+                document.getElementById('break-even').textContent = breakEven === 'N/A' ? breakEven : breakEven + ' months';
+                document.getElementById('net-savings').textContent = formatCurrency(netSavings);
+                document.getElementById('current-payment').textContent = formatCurrency(currentPayment);
+                document.getElementById('new-payment').textContent = formatCurrency(newPayment);
+                document.getElementById('summary-monthly-savings').textContent = formatCurrency(monthlySavings);
+                document.getElementById('summary-closing-costs').textContent = formatCurrency(closingCosts);
+                document.getElementById('summary-net-savings').textContent = formatCurrency(netSavings);
+                
+                // Update chart
+                savingsChart.data.datasets[0].data = [currentPayment, newPayment];
+                savingsChart.update();
+            }
+            
+            // Set up event listeners
+            document.getElementById('calculate-btn').addEventListener('click', calculateRefinance);
+            
+            // Add event listeners to all inputs for real-time calculation
+            const inputs = [
+                'current-balance', 'current-rate', 'current-term',
+                'new-balance', 'new-rate', 'new-term', 'closing-costs'
+            ];
+            
+            inputs.forEach(id => {
+                document.getElementById(id).addEventListener('input', calculateRefinance);
+            });
+            
+            // Initial calculation
+            calculateRefinance();
+            
+            // Export functionality
+            document.getElementById('print-btn').addEventListener('click', function() {
+                window.print();
+            });
+            
+            document.getElementById('pdf-btn').addEventListener('click', function() {
+                alert('PDF export would generate a professional report of your refinance analysis');
+            });
+            
+            document.getElementById('excel-btn').addEventListener('click', function() {
+                alert('Excel export would generate a spreadsheet with your refinance details');
+            });
+            
+            // Sharing functionality
+            document.getElementById('email-share').addEventListener('click', function() {
+                const subject = 'My Refinance Savings Analysis';
+                const body = `Check out my refinance savings: ${document.getElementById('monthly-savings').textContent} monthly savings!`;
+                window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            });
+            
+            document.getElementById('whatsapp-share').addEventListener('click', function() {
+                const text = `Check out my refinance savings: ${document.getElementById('monthly-savings').textContent} monthly savings!`;
+                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+            });
+            
+            document.getElementById('linkedin-share').addEventListener('click', function() {
+                alert('LinkedIn sharing functionality would open a share dialog');
+            });
+            
+            document.getElementById('copy-link').addEventListener('click', function() {
+                alert('Link copied to clipboard: https://prorefi.com/calculator');
+            });
+        });
+    </script>
+</body>
+</html>

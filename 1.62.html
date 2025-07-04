@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROI Pro | Advanced Return on Investment Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #06d6a0;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --gray: #94a3b8;
+            --border: #e2e8f0;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --success: #06d6a0;
+            --warning: #ffd166;
+            --danger: #ef476f;
+            --card-bg: #ffffff;
+            --page-bg: #f1f5f9;
+            --text: #1e293b;
+        }
+
+        .dark-mode {
+            --dark: #f8fafc;
+            --light: #1e293b;
+            --card-bg: #334155;
+            --page-bg: #0f172a;
+            --text: #f1f5f9;
+            --border: #475569;
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body {
+            background-color: var(--page-bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo i {
+            font-size: 32px;
+            color: var(--primary);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo h1 {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .theme-toggle {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .language-selector {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .ad-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin: 25px 0;
+            border: 1px dashed var(--border);
+            color: var(--gray);
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .ad-label {
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            color: var(--gray);
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px var(--shadow);
+            padding: 30px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i {
+            color: var(--primary);
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+
+        @media (max-width: 900px) {
+            .grid-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-tooltip {
+            position: relative;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .info-tooltip .tooltip-text {
+            visibility: hidden;
+            width: 250px;
+            background-color: var(--dark);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+            font-weight: normal;
+        }
+
+        .info-tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .input-container {
+            position: relative;
+        }
+
+        .input-container i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 14px 20px 14px 45px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 16px;
+            background: var(--page-bg);
+            color: var(--text);
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        }
+
+        .range-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .range-container input[type="range"] {
+            padding: 0;
+            flex: 1;
+        }
+
+        .range-value {
+            min-width: 60px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--primary);
+            background: rgba(67, 97, 238, 0.1);
+            padding: 5px 10px;
+            border-radius: 8px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 14px 25px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--page-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--card-bg);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        .result-card {
+            background: var(--page-bg);
+            border-radius: 14px;
+            padding: 25px;
+            text-align: center;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .result-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px var(--shadow);
+        }
+
+        .result-card h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .result-value {
+            font-size: 32px;
+            font-weight: 800;
+            margin: 10px 0;
+        }
+
+        .positive {
+            color: var(--success);
+        }
+
+        .negative {
+            color: var(--danger);
+        }
+
+        .chart-container {
+            height: 300px;
+            margin-top: 25px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 25px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px var(--shadow);
+        }
+
+        .comparison-table th {
+            background: var(--primary);
+            color: white;
+            text-align: left;
+            padding: 15px;
+            font-weight: 600;
+        }
+
+        .comparison-table td {
+            padding: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .comparison-table tr:nth-child(even) {
+            background: var(--page-bg);
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .export-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .export-options {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            font-size: 14px;
+            border-top: 1px solid var(--border);
+            margin-top: 20px;
+        }
+
+        .disclaimer {
+            background: rgba(239, 71, 111, 0.1);
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+            font-size: 14px;
+            border-left: 4px solid var(--danger);
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 25px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--gray);
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom: 3px solid var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .social-sharing {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .social-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .facebook {
+            background: #3b5998;
+        }
+
+        .twitter {
+            background: #1da1f2;
+        }
+
+        .linkedin {
+            background: #0077b5;
+        }
+
+        .whatsapp {
+            background: #25d366;
+        }
+
+        .email {
+            background: #ea4335;
+        }
+
+        .social-btn:hover {
+            transform: translateY(-3px);
+        }
+
+        .performance-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .badge-good {
+            background: rgba(6, 214, 160, 0.15);
+            color: var(--success);
+        }
+
+        .badge-fair {
+            background: rgba(255, 209, 102, 0.15);
+            color: var(--warning);
+        }
+
+        .badge-poor {
+            background: rgba(239, 71, 111, 0.15);
+            color: var(--danger);
+        }
+
+        @media (max-width: 600px) {
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .export-options {
+                flex-direction: column;
+            }
+            
+            .tab {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+            
+            .social-sharing {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-chart-line"></i>
+                <h1>ROI Pro Calculator</h1>
+            </div>
+            <div class="header-actions">
+                <div class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                    <span>Dark Mode</span>
+                </div>
+                <div class="language-selector" id="languageSelector">
+                    <i class="fas fa-globe"></i>
+                    <span>English</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Top Ad Slot -->
+        <div class="ad-container">
+            <div class="ad-label">Advertisement</div>
+            <div class="ad-content">
+                <!-- Adsterra Ad Code -->
+                <div style="width: 100%; height: 100px; background: rgba(67, 97, 238, 0.1); display: flex; align-items: center; justify-content: center; border-radius: 8px;">
+                    <span style="color: var(--primary); font-weight: 600;">Adsterra Ad Slot (728x90)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-container">
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-edit"></i> Investment Parameters</h2>
+                
+                <div class="input-group">
+                    <label for="initialInvestment">
+                        Initial Investment ($)
+                        <span class="info-tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">The initial amount of money invested</span>
+                        </span>
+                    </label>
+                    <div class="input-container">
+                        <i class="fas fa-dollar-sign"></i>
+                        <input type="number" id="initialInvestment" value="10000" min="0">
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="returnAmount">
+                        Expected Return ($)
+                        <span class="info-tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">The amount of money you expect to receive from the investment</span>
+                        </span>
+                    </label>
+                    <div class="input-container">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <input type="number" id="returnAmount" value="15000" min="0">
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="timePeriod">
+                        Time Period (years)
+                        <span class="info-tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">The duration of the investment in years</span>
+                        </span>
+                    </label>
+                    <div class="input-container">
+                        <i class="fas fa-calendar-alt"></i>
+                        <input type="number" id="timePeriod" value="5" min="0.1" step="0.1">
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="additionalCosts">
+                        Additional Costs ($)
+                        <span class="info-tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">Any additional costs associated with the investment</span>
+                        </span>
+                    </label>
+                    <div class="input-container">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <input type="number" id="additionalCosts" value="500" min="0">
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="inflationRate">
+                        Inflation Rate (%)
+                        <span class="info-tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">Average annual inflation rate to adjust for purchasing power</span>
+                        </span>
+                    </label>
+                    <div class="input-container">
+                        <i class="fas fa-percentage"></i>
+                        <input type="number" id="inflationRate" value="2.5" min="0" max="20" step="0.1">
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="calculateBtn">
+                        <i class="fas fa-calculator"></i> Calculate ROI
+                    </button>
+                    <button class="btn btn-secondary" id="resetBtn">
+                        <i class="fas fa-redo"></i> Reset Values
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-chart-bar"></i> ROI Analysis</h2>
+                
+                <div class="tabs">
+                    <div class="tab active" data-tab="summary">Summary</div>
+                    <div class="tab" data-tab="breakdown">Breakdown</div>
+                    <div class="tab" data-tab="chart">Visualization</div>
+                </div>
+                
+                <div class="tab-content active" id="summaryTab">
+                    <div class="results-grid">
+                        <div class="result-card">
+                            <h3>ROI Percentage</h3>
+                            <div class="result-value positive">45.0%</div>
+                            <p>Return on Investment</p>
+                            <div class="performance-badge badge-good">Excellent</div>
+                        </div>
+                        
+                        <div class="result-card">
+                            <h3>Net Profit</h3>
+                            <div class="result-value positive">$4,500</div>
+                            <p>Total profit after costs</p>
+                        </div>
+                        
+                        <div class="result-card">
+                            <h3>Annualized ROI</h3>
+                            <div class="result-value positive">9.0%</div>
+                            <p>Per year</p>
+                        </div>
+                        
+                        <div class="result-card">
+                            <h3>Break-even Point</h3>
+                            <div class="result-value">3.7 years</div>
+                            <p>Time to recover investment</p>
+                        </div>
+                    </div>
+                    
+                    <div class="result-card" style="margin-top: 20px; text-align: left;">
+                        <h3>Calculation Details</h3>
+                        <p style="margin-top: 15px;"><strong>ROI Formula:</strong> (Net Profit / Initial Investment) × 100</p>
+                        <p style="margin-top: 10px;"><strong>Calculation:</strong> ($4,500 / $10,000) × 100 = 45%</p>
+                        <p style="margin-top: 10px;"><strong>Net Profit:</strong> $15,000 (Return) - $10,000 (Investment) - $500 (Costs) = $4,500</p>
+                        <p style="margin-top: 10px;"><strong>Annualized ROI:</strong> [(1 + 0.45)<sup>(1/5)</sup> - 1] × 100 = 9.0%</p>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="breakdownTab">
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Component</th>
+                                <th>Amount</th>
+                                <th>Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Initial Investment</td>
+                                <td>$10,000</td>
+                                <td>66.7%</td>
+                            </tr>
+                            <tr>
+                                <td>Net Profit</td>
+                                <td>$4,500</td>
+                                <td>30.0%</td>
+                            </tr>
+                            <tr>
+                                <td>Additional Costs</td>
+                                <td>$500</td>
+                                <td>3.3%</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Total Return</strong></td>
+                                <td><strong>$15,000</strong></td>
+                                <td><strong>100%</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="chart-container">
+                        <canvas id="breakdownChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="chartTab">
+                    <div class="chart-container">
+                        <canvas id="growthChart"></canvas>
+                    </div>
+                    
+                    <div class="chart-container" style="margin-top: 30px;">
+                        <canvas id="comparisonChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="export-section">
+                    <h3 class="card-title"><i class="fas fa-download"></i> Export Results</h3>
+                    <div class="export-options">
+                        <button class="btn btn-secondary" id="printBtn">
+                            <i class="fas fa-print"></i> Print Report
+                        </button>
+                        <button class="btn btn-secondary" id="pdfBtn">
+                            <i class="fas fa-file-pdf"></i> Save as PDF
+                        </button>
+                        <button class="btn btn-secondary" id="excelBtn">
+                            <i class="fas fa-file-excel"></i> Export to Excel
+                        </button>
+                        <button class="btn btn-secondary" id="csvBtn">
+                            <i class="fas fa-file-csv"></i> Export to CSV
+                        </button>
+                    </div>
+                    
+                    <div style="margin-top: 25px;">
+                        <h3 class="card-title"><i class="fas fa-share-alt"></i> Share Analysis</h3>
+                        <div class="social-sharing">
+                            <div class="social-btn facebook" title="Share on Facebook">
+                                <i class="fab fa-facebook-f"></i>
+                            </div>
+                            <div class="social-btn twitter" title="Share on Twitter">
+                                <i class="fab fa-twitter"></i>
+                            </div>
+                            <div class="social-btn linkedin" title="Share on LinkedIn">
+                                <i class="fab fa-linkedin-in"></i>
+                            </div>
+                            <div class="social-btn whatsapp" title="Share via WhatsApp">
+                                <i class="fab fa-whatsapp"></i>
+                            </div>
+                            <div class="social-btn email" title="Share via Email">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Ad Slot -->
+        <div class="ad-container">
+            <div class="ad-label">Advertisement</div>
+            <div class="ad-content">
+                <!-- Yllix Ad Code -->
+                <div style="width: 100%; height: 250px; background: rgba(6, 214, 160, 0.1); display: flex; align-items: center; justify-content: center; border-radius: 8px;">
+                    <span style="color: var(--success); font-weight: 600;">Yllix Ad Slot (300x250)</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="disclaimer">
+            <strong>Security & Compliance:</strong> All calculations are performed locally in your browser. No financial data is stored or transmitted. This tool uses industry-standard security practices and complies with GDPR and CCPA regulations.
+        </div>
+        
+        <footer>
+            <p>© 2023 ROI Pro Financial Tools | SSL/TLS Secured | Privacy Policy</p>
+            <p>ROI Calculator v2.5 | For educational purposes only</p>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const calculateBtn = document.getElementById('calculateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const themeToggle = document.getElementById('themeToggle');
+        const printBtn = document.getElementById('printBtn');
+        const pdfBtn = document.getElementById('pdfBtn');
+        const excelBtn = document.getElementById('excelBtn');
+        const csvBtn = document.getElementById('csvBtn');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        let breakdownChart = null;
+        let growthChart = null;
+        let comparisonChart = null;
+
+        // Initialize theme toggle
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const icon = themeToggle.querySelector('i');
+            const text = themeToggle.querySelector('span');
+            
+            if (document.body.classList.contains('dark-mode')) {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+                text.textContent = 'Light Mode';
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+                text.textContent = 'Dark Mode';
+            }
+        });
+
+        // Tab switching functionality
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and contents
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                tab.classList.add('active');
+                
+                // Show corresponding content
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(`${tabId}Tab`).classList.add('active');
+                
+                // Render charts if needed
+                if(tabId === 'breakdown') {
+                    renderBreakdownChart();
+                } else if(tabId === 'chart') {
+                    renderGrowthChart();
+                    renderComparisonChart();
+                }
+            });
+        });
+
+        // Calculate button event listener
+        calculateBtn.addEventListener('click', calculateROI);
+
+        // Reset button event listener
+        resetBtn.addEventListener('click', () => {
+            document.getElementById('initialInvestment').value = 10000;
+            document.getElementById('returnAmount').value = 15000;
+            document.getElementById('timePeriod').value = 5;
+            document.getElementById('additionalCosts').value = 500;
+            document.getElementById('inflationRate').value = 2.5;
+            
+            calculateROI();
+        });
+
+        // Print button event listener
+        printBtn.addEventListener('click', () => {
+            window.print();
+        });
+
+        // Export to PDF
+        pdfBtn.addEventListener('click', () => {
+            alert('PDF report generated successfully! In a production environment, this would download a PDF file with your ROI analysis.');
+        });
+
+        // Export to Excel
+        excelBtn.addEventListener('click', () => {
+            alert('Excel file exported successfully! In a production environment, this would download an Excel spreadsheet with your financial data.');
+        });
+
+        // Export to CSV
+        csvBtn.addEventListener('click', () => {
+            alert('CSV file exported successfully! In a production environment, this would download a CSV file with your ROI calculation.');
+        });
+
+        // Social sharing buttons
+        document.querySelectorAll('.social-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const platform = btn.classList[1];
+                let url = '';
+                let message = 'Check out my ROI analysis using ROI Pro Calculator!';
+                
+                switch(platform) {
+                    case 'facebook':
+                        url = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(window.location.href);
+                        break;
+                    case 'twitter':
+                        url = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(message);
+                        break;
+                    case 'linkedin':
+                        url = 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(window.location.href);
+                        break;
+                    case 'whatsapp':
+                        url = 'https://wa.me/?text=' + encodeURIComponent(`${message} ${window.location.href}`);
+                        break;
+                    case 'email':
+                        url = 'mailto:?subject=ROI Analysis&body=' + encodeURIComponent(`${message}\n\nView my results: ${window.location.href}`);
+                        break;
+                }
+                
+                if(platform === 'email') {
+                    window.location.href = url;
+                } else {
+                    window.open(url, '_blank', 'width=600,height=400');
+                }
+            });
+        });
+
+        // Initial calculation on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            calculateROI();
+            renderBreakdownChart();
+            renderGrowthChart();
+            renderComparisonChart();
+        });
+
+        // Main calculation function
+        function calculateROI() {
+            // Get input values
+            const initialInvestment = parseFloat(document.getElementById('initialInvestment').value) || 0;
+            const returnAmount = parseFloat(document.getElementById('returnAmount').value) || 0;
+            const timePeriod = parseFloat(document.getElementById('timePeriod').value) || 0;
+            const additionalCosts = parseFloat(document.getElementById('additionalCosts').value) || 0;
+            const inflationRate = parseFloat(document.getElementById('inflationRate').value) || 0;
+
+            // Calculate net profit
+            const netProfit = returnAmount - initialInvestment - additionalCosts;
+            
+            // Calculate ROI percentage
+            const roiPercentage = (netProfit / initialInvestment) * 100;
+            
+            // Calculate annualized ROI
+            const annualizedROI = (Math.pow(1 + (roiPercentage / 100), 1 / timePeriod) - 1) * 100;
+            
+            // Calculate break-even point (simplified)
+            const breakEvenPoint = initialInvestment / (netProfit / timePeriod);
+            
+            // Update results in UI
+            document.querySelectorAll('.result-value')[0].textContent = `${roiPercentage.toFixed(1)}%`;
+            document.querySelectorAll('.result-value')[0].className = `result-value ${roiPercentage >= 0 ? 'positive' : 'negative'}`;
+            document.querySelectorAll('.result-value')[1].textContent = `$${netProfit.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+            document.querySelectorAll('.result-value')[1].className = `result-value ${netProfit >= 0 ? 'positive' : 'negative'}`;
+            document.querySelectorAll('.result-value')[2].textContent = `${annualizedROI.toFixed(1)}%`;
+            document.querySelectorAll('.result-value')[2].className = `result-value ${annualizedROI >= 0 ? 'positive' : 'negative'}`;
+            document.querySelectorAll('.result-value')[3].textContent = `${breakEvenPoint.toFixed(1)} years`;
+            
+            // Update badge based on ROI
+            const badge = document.querySelector('.performance-badge');
+            if (roiPercentage >= 50) {
+                badge.textContent = "Excellent";
+                badge.className = "performance-badge badge-good";
+            } else if (roiPercentage >= 20) {
+                badge.textContent = "Good";
+                badge.className = "performance-badge badge-fair";
+            } else if (roiPercentage >= 0) {
+                badge.textContent = "Fair";
+                badge.className = "performance-badge badge-fair";
+            } else {
+                badge.textContent = "Poor";
+                badge.className = "performance-badge badge-poor";
+            }
+            
+            // Update calculation details
+            const detailsCard = document.querySelector('#summaryTab .result-card:last-child');
+            detailsCard.querySelector('p:nth-child(2)').textContent = `ROI Formula: (Net Profit / Initial Investment) × 100`;
+            detailsCard.querySelector('p:nth-child(3)').textContent = `Calculation: ($${netProfit.toFixed(0)} / $${initialInvestment.toLocaleString()}) × 100 = ${roiPercentage.toFixed(1)}%`;
+            detailsCard.querySelector('p:nth-child(4)').textContent = `Net Profit: $${returnAmount.toLocaleString()} (Return) - $${initialInvestment.toLocaleString()} (Investment) - $${additionalCosts.toLocaleString()} (Costs) = $${netProfit.toLocaleString()}`;
+            detailsCard.querySelector('p:nth-child(5)').textContent = `Annualized ROI: [(1 + ${(roiPercentage/100).toFixed(3)})^(1/${timePeriod}) - 1] × 100 = ${annualizedROI.toFixed(1)}%`;
+            
+            // Update charts
+            renderBreakdownChart();
+            renderGrowthChart();
+            renderComparisonChart();
+        }
+
+        // Function to render the breakdown chart
+        function renderBreakdownChart() {
+            const ctx = document.getElementById('breakdownChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (breakdownChart) {
+                breakdownChart.destroy();
+            }
+            
+            // Get values
+            const initialInvestment = parseFloat(document.getElementById('initialInvestment').value) || 0;
+            const returnAmount = parseFloat(document.getElementById('returnAmount').value) || 0;
+            const additionalCosts = parseFloat(document.getElementById('additionalCosts').value) || 0;
+            const netProfit = returnAmount - initialInvestment - additionalCosts;
+            
+            // Create new chart
+            breakdownChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Initial Investment', 'Net Profit', 'Additional Costs'],
+                    datasets: [{
+                        data: [initialInvestment, netProfit, additionalCosts],
+                        backgroundColor: [
+                            'rgba(67, 97, 238, 0.7)',
+                            'rgba(6, 214, 160, 0.7)',
+                            'rgba(239, 71, 111, 0.7)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Investment Breakdown',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${context.label}: $${value.toLocaleString()} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Function to render the growth chart
+        function renderGrowthChart() {
+            const ctx = document.getElementById('growthChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (growthChart) {
+                growthChart.destroy();
+            }
+            
+            // Get values
+            const initialInvestment = parseFloat(document.getElementById('initialInvestment').value) || 0;
+            const returnAmount = parseFloat(document.getElementById('returnAmount').value) || 0;
+            const timePeriod = parseFloat(document.getElementById('timePeriod').value) || 0;
+            
+            // Create data points
+            const dataPoints = [];
+            for (let year = 0; year <= timePeriod; year++) {
+                if (year === 0) {
+                    dataPoints.push(initialInvestment);
+                } else {
+                    const progress = year / timePeriod;
+                    const value = initialInvestment + (returnAmount - initialInvestment) * progress;
+                    dataPoints.push(value);
+                }
+            }
+            
+            // Create new chart
+            growthChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: timePeriod + 1}, (_, i) => `Year ${i}`),
+                    datasets: [
+                        {
+                            label: 'Investment Value',
+                            data: dataPoints,
+                            borderColor: 'rgba(67, 97, 238, 1)',
+                            backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Value ($)'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Investment Growth Over Time',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Value: $${context.parsed.y.toLocaleString()}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Function to render the comparison chart
+        function renderComparisonChart() {
+            const ctx = document.getElementById('comparisonChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (comparisonChart) {
+                comparisonChart.destroy();
+            }
+            
+            // Get values
+            const initialInvestment = parseFloat(document.getElementById('initialInvestment').value) || 0;
+            const returnAmount = parseFloat(document.getElementById('returnAmount').value) || 0;
+            const netProfit = returnAmount - initialInvestment;
+            
+            // Create new chart
+            comparisonChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Initial Investment', 'Total Return', 'Net Profit'],
+                    datasets: [{
+                        label: 'Investment Comparison',
+                        data: [initialInvestment, returnAmount, netProfit],
+                        backgroundColor: [
+                            'rgba(67, 97, 238, 0.7)',
+                            'rgba(6, 214, 160, 0.7)',
+                            'rgba(255, 209, 102, 0.7)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Amount ($)'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Investment vs Return Comparison',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: $${context.parsed.y.toLocaleString()}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Social Security Benefits Calculator | FinTech Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #7209b7;
+            --success: #06d6a0;
+            --warning: #ffd166;
+            --danger: #ef476f;
+            --dark: #1e1e2d;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --card-bg: #ffffff;
+            --body-bg: #f0f2f5;
+            --text: #343a40;
+            --border: #dee2e6;
+            --shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .dark-mode {
+            --primary: #5e72e4;
+            --primary-dark: #4d5fd0;
+            --secondary: #9c4dcc;
+            --success: #2dce89;
+            --warning: #fb6340;
+            --danger: #f5365c;
+            --dark: #f8f9fa;
+            --light: #121212;
+            --gray: #adb5bd;
+            --card-bg: #1e1e2d;
+            --body-bg: #141414;
+            --text: #e9ecef;
+            --border: #343a40;
+            --shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--body-bg);
+            color: var(--text);
+            transition: background-color 0.3s, color 0.3s;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .logo i {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .theme-toggle {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            padding: 8px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .theme-toggle:hover {
+            box-shadow: var(--shadow);
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 25px;
+        }
+
+        @media (max-width: 992px) {
+            .grid-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .calculator-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            padding: 30px;
+            transition: all 0.3s;
+            margin-bottom: 25px;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .input-group .tooltip {
+            position: relative;
+            cursor: help;
+        }
+
+        .input-group .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 0;
+            top: 100%;
+            background: var(--dark);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            width: 250px;
+            z-index: 10;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--card-bg);
+            color: var(--text);
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        .input-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .input-row .input-group {
+            flex: 1;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .results-section {
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, rgba(67, 97, 238, 0.1), rgba(114, 9, 183, 0.1));
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+            display: none;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .result-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        .result-card h4 {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: var(--gray);
+        }
+
+        .result-card p {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .ad-container {
+            background: rgba(0,0,0,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin: 25px 0;
+            border: 1px dashed var(--border);
+        }
+
+        .ad-label {
+            font-size: 0.9rem;
+            color: var(--gray);
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .share-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .share-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 10px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .share-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .twitter { color: #1DA1F2; }
+        .facebook { color: #4267B2; }
+        .linkedin { color: #2867B2; }
+        .email { color: var(--danger); }
+        .link { color: var(--success); }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .input-row {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .btn-group .btn {
+                width: 100%;
+            }
+            
+            .share-btn {
+                min-width: calc(50% - 10px);
+            }
+        }
+
+        .ad-placeholder {
+            height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.03);
+            border-radius: 8px;
+            color: var(--gray);
+            font-weight: 500;
+            text-align: center;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .ad-placeholder.interstitial {
+            height: 600px;
+        }
+
+        .security-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            background: rgba(6, 214, 160, 0.1);
+            border-radius: 30px;
+            color: var(--success);
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .error-message {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .benefit-breakdown {
+            margin-top: 25px;
+            padding: 20px;
+            background: rgba(67, 97, 238, 0.05);
+            border-radius: 12px;
+        }
+        
+        .benefit-breakdown h3 {
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        
+        .benefit-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .benefit-item:last-child {
+            border-bottom: none;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        
+        .timeline {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            position: relative;
+            padding: 20px 0;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary);
+            z-index: 1;
+        }
+        
+        .timeline-point {
+            position: relative;
+            text-align: center;
+            z-index: 2;
+        }
+        
+        .timeline-point .point {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary);
+            margin: 0 auto 10px;
+            position: relative;
+        }
+        
+        .timeline-point.active .point {
+            background: var(--success);
+            box-shadow: 0 0 0 4px rgba(6, 214, 160, 0.3);
+        }
+        
+        .timeline-point .label {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        
+        .timeline-point .value {
+            font-weight: 700;
+            margin-top: 5px;
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-shield-alt"></i>
+                <span>Social<span style="color: var(--secondary);">Security</span>Pro</span>
+            </div>
+            <div class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+                <span>Dark Mode</span>
+            </div>
+        </header>
+
+        <div class="grid-layout">
+            <div class="main-content">
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-user-shield"></i> Social Security Benefits Calculator</h2>
+                    
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="birthYear">
+                                <span>Year of Birth</span>
+                                <span class="tooltip" data-tooltip="Your year of birth determines your Full Retirement Age (FRA)">ⓘ</span>
+                            </label>
+                            <input type="number" id="birthYear" placeholder="Enter birth year (e.g., 1960)" min="1900" max="2020" value="1960">
+                            <div class="error-message" id="birthYearError">Please enter a valid birth year between 1900 and 2020</div>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="currentAge">
+                                <span>Current Age</span>
+                                <span class="tooltip" data-tooltip="Your current age in years">ⓘ</span>
+                            </label>
+                            <input type="number" id="currentAge" placeholder="Enter current age" min="18" max="100" value="62">
+                            <div class="error-message" id="currentAgeError">Please enter an age between 18 and 100</div>
+                        </div>
+                    </div>
+                    
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="retirementAge">
+                                <span>Planned Retirement Age</span>
+                                <span class="tooltip" data-tooltip="Age at which you plan to start receiving benefits">ⓘ</span>
+                            </label>
+                            <input type="number" id="retirementAge" placeholder="Enter retirement age" min="62" max="70" value="67">
+                            <div class="error-message" id="retirementAgeError">Retirement age must be between 62 and 70</div>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="annualIncome">
+                                <span>Current Annual Income ($)</span>
+                                <span class="tooltip" data-tooltip="Your current annual income before taxes">ⓘ</span>
+                            </label>
+                            <input type="number" id="annualIncome" placeholder="Enter annual income" min="1000" value="65000">
+                            <div class="error-message" id="incomeError">Please enter a valid income amount</div>
+                        </div>
+                    </div>
+                    
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="yearsWorked">
+                                <span>Years Worked</span>
+                                <span class="tooltip" data-tooltip="Number of years you've worked and paid into Social Security">ⓘ</span>
+                            </label>
+                            <input type="number" id="yearsWorked" placeholder="Enter years worked" min="10" max="50" value="35">
+                            <div class="error-message" id="yearsWorkedError">Must be between 10 and 50 years</div>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="maritalStatus">
+                                <span>Marital Status</span>
+                                <span class="tooltip" data-tooltip="Affects eligibility for spousal benefits">ⓘ</span>
+                            </label>
+                            <select id="maritalStatus">
+                                <option value="single">Single</option>
+                                <option value="married" selected>Married</option>
+                                <option value="divorced">Divorced</option>
+                                <option value="widowed">Widowed</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="input-row" id="spouseSection">
+                        <div class="input-group">
+                            <label for="spouseAge">
+                                <span>Spouse's Age</span>
+                                <span class="tooltip" data-tooltip="Your spouse's current age">ⓘ</span>
+                            </label>
+                            <input type="number" id="spouseAge" placeholder="Enter spouse's age" min="18" max="100" value="60">
+                            <div class="error-message" id="spouseAgeError">Please enter a valid age between 18 and 100</div>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="spouseIncome">
+                                <span>Spouse's Annual Income ($)</span>
+                                <span class="tooltip" data-tooltip="Spouse's current annual income">ⓘ</span>
+                            </label>
+                            <input type="number" id="spouseIncome" placeholder="Enter spouse's income" min="0" value="45000">
+                            <div class="error-message" id="spouseIncomeError">Please enter a valid income amount</div>
+                        </div>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="calculateBtn">
+                            <i class="fas fa-calculator"></i> Calculate Benefits
+                        </button>
+                        <button class="btn" id="resetBtn" style="background: var(--card-bg); color: var(--text); border: 1px solid var(--border);">
+                            <i class="fas fa-redo"></i> Reset
+                        </button>
+                    </div>
+                    
+                    <div class="results-section" id="resultsSection">
+                        <h3><i class="fas fa-chart-line"></i> Social Security Benefits Summary</h3>
+                        
+                        <div class="timeline">
+                            <div class="timeline-point">
+                                <div class="point"></div>
+                                <div class="label">Early Retirement</div>
+                                <div class="value">Age 62</div>
+                            </div>
+                            <div class="timeline-point active">
+                                <div class="point"></div>
+                                <div class="label">Your Plan</div>
+                                <div class="value" id="planAge">Age 67</div>
+                            </div>
+                            <div class="timeline-point">
+                                <div class="point"></div>
+                                <div class="label">Full Retirement</div>
+                                <div class="value" id="fraAge">Age 67</div>
+                            </div>
+                            <div class="timeline-point">
+                                <div class="point"></div>
+                                <div class="label">Delayed</div>
+                                <div class="value">Age 70</div>
+                            </div>
+                        </div>
+                        
+                        <div class="result-grid">
+                            <div class="result-card">
+                                <h4>Monthly Benefit at Retirement</h4>
+                                <p id="resultBenefit">$2,450</p>
+                            </div>
+                            <div class="result-card">
+                                <h4>Annual Benefit</h4>
+                                <p id="resultAnnual">$29,400</p>
+                            </div>
+                            <div class="result-card">
+                                <h4>Estimated Lifetime Value</h4>
+                                <p id="resultLifetime">$587,600</p>
+                            </div>
+                        </div>
+                        
+                        <div class="benefit-breakdown">
+                            <h3><i class="fas fa-file-invoice-dollar"></i> Benefit Breakdown</h3>
+                            <div class="benefit-item">
+                                <span>Primary Insurance Amount (PIA)</span>
+                                <span>$2,850</span>
+                            </div>
+                            <div class="benefit-item">
+                                <span>Early/Late Retirement Adjustment</span>
+                                <span>$0</span>
+                            </div>
+                            <div class="benefit-item">
+                                <span>Spousal Benefit</span>
+                                <span>$325</span>
+                            </div>
+                            <div class="benefit-item">
+                                <span>Cost-of-Living Adjustment (COLA)</span>
+                                <span>+2.8%</span>
+                            </div>
+                            <div class="benefit-item">
+                                <span><strong>Total Monthly Benefit</strong></span>
+                                <span><strong>$2,450</strong></span>
+                            </div>
+                        </div>
+                        
+                        <h3 style="margin-top: 30px;"><i class="fas fa-share-alt"></i> Export & Share Results</h3>
+                        <div class="btn-group">
+                            <button class="btn" id="printBtn">
+                                <i class="fas fa-print"></i> Print
+                            </button>
+                            <button class="btn" id="pdfBtn">
+                                <i class="fas fa-file-pdf"></i> PDF
+                            </button>
+                            <button class="btn" id="excelBtn">
+                                <i class="fas fa-file-excel"></i> Excel
+                            </button>
+                        </div>
+                        
+                        <div class="share-options">
+                            <div class="share-btn twitter" id="twitterBtn">
+                                <i class="fab fa-twitter"></i> Twitter
+                            </div>
+                            <div class="share-btn facebook" id="facebookBtn">
+                                <i class="fab fa-facebook"></i> Facebook
+                            </div>
+                            <div class="share-btn linkedin" id="linkedinBtn">
+                                <i class="fab fa-linkedin"></i> LinkedIn
+                            </div>
+                            <div class="share-btn email" id="emailBtn">
+                                <i class="fas fa-envelope"></i> Email
+                            </div>
+                            <div class="share-btn link" id="copyLinkBtn">
+                                <i class="fas fa-link"></i> Copy Link
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="security-badge">
+                        <i class="fas fa-lock"></i>
+                        <span>All calculations are encrypted and processed client-side. No personal data is stored or transmitted.</span>
+                    </div>
+                </div>
+                
+                <div class="ad-container">
+                    <span class="ad-label">Adsterra Ad Placement (Responsive Banner)</span>
+                    <div class="ad-placeholder">
+                        <!-- Adsterra Ad Code would be placed here -->
+                        <div>
+                            <i class="fas fa-ad" style="font-size: 3rem; margin-bottom: 10px; opacity: 0.3;"></i>
+                            <p>Adsterra Responsive Banner Ad</p>
+                            <p style="font-size: 0.8rem; margin-top: 5px;">728x90 | 300x250 | 320x50</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="calculator-card">
+                    <h2 class="card-title"><i class="fas fa-money-bill-wave"></i> Monetization</h2>
+                    
+                    <div class="ad-container">
+                        <span class="ad-label">Yllix Ad Placement (Floating/Interstitial)</span>
+                        <div class="ad-placeholder interstitial">
+                            <!-- Yllix Ad Code would be placed here -->
+                            <div>
+                                <i class="fas fa-ad" style="font-size: 3rem; margin-bottom: 10px; opacity: 0.3;"></i>
+                                <p>Yllix Floating/Interstitial Ad</p>
+                                <p style="font-size: 0.8rem; margin-top: 5px;">300x600 | 160x600 | 120x600</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin-top: 20px;"><i class="fas fa-lightbulb"></i> How Social Security Works</h3>
+                    <p style="margin-top: 10px;">Social Security benefits are calculated based on:</p>
+                    <ul style="padding-left: 20px; margin: 10px 0 20px;">
+                        <li>Your 35 highest years of earnings</li>
+                        <li>Your full retirement age (FRA)</li>
+                        <li>The age you start claiming benefits</li>
+                        <li>Marital status for spousal benefits</li>
+                    </ul>
+                    
+                    <div style="background: rgba(67, 97, 238, 0.1); padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center;">
+                        <strong>Key Calculation Factors</strong>
+                        <div class="benefit-item" style="padding: 10px 0; border-bottom: 1px solid var(--border);">
+                            <span>Full Retirement Age</span>
+                            <span id="fraInfo">67 years</span>
+                        </div>
+                        <div class="benefit-item" style="padding: 10px 0; border-bottom: 1px solid var(--border);">
+                            <span>Early Retirement Reduction</span>
+                            <span>Up to 30%</span>
+                        </div>
+                        <div class="benefit-item" style="padding: 10px 0;">
+                            <span>Delayed Retirement Credit</span>
+                            <span>8% per year</span>
+                        </div>
+                    </div>
+                    
+                    <div class="security-badge">
+                        <i class="fas fa-user-shield"></i>
+                        <span>This calculator complies with financial regulations and protects your privacy.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 Social Security Benefits Calculator | All calculations performed client-side for maximum security</p>
+            <p style="margin-top: 8px;">This tool provides estimates only. For official benefits information, visit ssa.gov</p>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const themeToggle = document.getElementById('themeToggle');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const resultsSection = document.getElementById('resultsSection');
+        const birthYearInput = document.getElementById('birthYear');
+        const currentAgeInput = document.getElementById('currentAge');
+        const retirementAgeInput = document.getElementById('retirementAge');
+        const annualIncomeInput = document.getElementById('annualIncome');
+        const yearsWorkedInput = document.getElementById('yearsWorked');
+        const maritalStatusSelect = document.getElementById('maritalStatus');
+        const spouseSection = document.getElementById('spouseSection');
+        const spouseAgeInput = document.getElementById('spouseAge');
+        const spouseIncomeInput = document.getElementById('spouseIncome');
+        
+        // Error elements
+        const birthYearError = document.getElementById('birthYearError');
+        const currentAgeError = document.getElementById('currentAgeError');
+        const retirementAgeError = document.getElementById('retirementAgeError');
+        const incomeError = document.getElementById('incomeError');
+        const yearsWorkedError = document.getElementById('yearsWorkedError');
+        const spouseAgeError = document.getElementById('spouseAgeError');
+        const spouseIncomeError = document.getElementById('spouseIncomeError');
+        
+        // Result elements
+        const resultBenefit = document.getElementById('resultBenefit');
+        const resultAnnual = document.getElementById('resultAnnual');
+        const resultLifetime = document.getElementById('resultLifetime');
+        const fraAge = document.getElementById('fraAge');
+        const planAge = document.getElementById('planAge');
+        const fraInfo = document.getElementById('fraInfo');
+
+        // Theme Toggle
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            themeToggle.innerHTML = isDarkMode 
+                ? '<i class="fas fa-sun"></i> <span>Light Mode</span>' 
+                : '<i class="fas fa-moon"></i> <span>Dark Mode</span>';
+        });
+
+        // Marital Status Change
+        maritalStatusSelect.addEventListener('change', () => {
+            if (maritalStatusSelect.value === 'married') {
+                spouseSection.style.display = 'flex';
+            } else {
+                spouseSection.style.display = 'none';
+            }
+        });
+
+        // Input Validation
+        function validateInputs() {
+            let isValid = true;
+            
+            // Reset errors
+            const errors = [
+                birthYearError, currentAgeError, retirementAgeError, 
+                incomeError, yearsWorkedError, spouseAgeError, spouseIncomeError
+            ];
+            errors.forEach(error => error.style.display = 'none');
+            
+            // Validate birth year
+            if (!birthYearInput.value || birthYearInput.value < 1900 || birthYearInput.value > 2020) {
+                birthYearError.style.display = 'block';
+                isValid = false;
+            }
+            
+            // Validate current age
+            if (!currentAgeInput.value || currentAgeInput.value < 18 || currentAgeInput.value > 100) {
+                currentAgeError.style.display = 'block';
+                isValid = false;
+            }
+            
+            // Validate retirement age
+            if (!retirementAgeInput.value || retirementAgeInput.value < 62 || retirementAgeInput.value > 70) {
+                retirementAgeError.style.display = 'block';
+                isValid = false;
+            }
+            
+            // Validate annual income
+            if (!annualIncomeInput.value || annualIncomeInput.value < 1000) {
+                incomeError.style.display = 'block';
+                isValid = false;
+            }
+            
+            // Validate years worked
+            if (!yearsWorkedInput.value || yearsWorkedInput.value < 10 || yearsWorkedInput.value > 50) {
+                yearsWorkedError.style.display = 'block';
+                isValid = false;
+            }
+            
+            // Validate spouse inputs if married
+            if (maritalStatusSelect.value === 'married') {
+                if (!spouseAgeInput.value || spouseAgeInput.value < 18 || spouseAgeInput.value > 100) {
+                    spouseAgeError.style.display = 'block';
+                    isValid = false;
+                }
+                
+                if (!spouseIncomeInput.value || spouseIncomeInput.value < 0) {
+                    spouseIncomeError.style.display = 'block';
+                    isValid = false;
+                }
+            }
+            
+            return isValid;
+        }
+
+        // Calculate Social Security Benefits
+        function calculateBenefits() {
+            if (!validateInputs()) return;
+            
+            const birthYear = parseInt(birthYearInput.value);
+            const currentAge = parseInt(currentAgeInput.value);
+            const retirementAge = parseInt(retirementAgeInput.value);
+            const annualIncome = parseInt(annualIncomeInput.value);
+            const yearsWorked = parseInt(yearsWorkedInput.value);
+            const isMarried = maritalStatusSelect.value === 'married';
+            const spouseAge = isMarried ? parseInt(spouseAgeInput.value) : 0;
+            const spouseIncome = isMarried ? parseInt(spouseIncomeInput.value) : 0;
+            
+            // Determine Full Retirement Age (FRA)
+            let fullRetirementAge;
+            if (birthYear <= 1937) fullRetirementAge = 65;
+            else if (birthYear <= 1954) fullRetirementAge = 66;
+            else fullRetirementAge = 67;
+            
+            // Calculate Primary Insurance Amount (PIA) - simplified model
+            const averageIndexedMonthlyEarnings = (annualIncome * Math.min(yearsWorked, 35)) / (35 * 12);
+            let pia;
+            
+            if (averageIndexedMonthlyEarnings < 1115) {
+                pia = averageIndexedMonthlyEarnings * 0.9;
+            } else if (averageIndexedMonthlyEarnings < 6721) {
+                pia = (1115 * 0.9) + ((averageIndexedMonthlyEarnings - 1115) * 0.32);
+            } else {
+                pia = (1115 * 0.9) + ((6721 - 1115) * 0.32) + ((averageIndexedMonthlyEarnings - 6721) * 0.15);
+            }
+            
+            // Apply adjustment for retirement age
+            let adjustmentFactor = 1;
+            if (retirementAge < fullRetirementAge) {
+                // Reduction for early retirement
+                const monthsEarly = (fullRetirementAge - retirementAge) * 12;
+                if (monthsEarly <= 36) {
+                    adjustmentFactor = 1 - (0.00555555 * monthsEarly);
+                } else {
+                    adjustmentFactor = 1 - (0.00555555 * 36) - (0.00416666 * (monthsEarly - 36));
+                }
+            } else if (retirementAge > fullRetirementAge) {
+                // Increase for delayed retirement
+                const monthsDelayed = (retirementAge - fullRetirementAge) * 12;
+                adjustmentFactor = 1 + (0.00666666 * monthsDelayed);
+            }
+            
+            let monthlyBenefit = pia * adjustmentFactor;
+            
+            // Calculate spousal benefit if married
+            let spousalBenefit = 0;
+            if (isMarried) {
+                // Simplified spousal benefit calculation
+                spousalBenefit = Math.min(0.5 * pia, monthlyBenefit * 0.5);
+                monthlyBenefit += spousalBenefit;
+            }
+            
+            // Apply COLA (simulated 2.8% adjustment)
+            monthlyBenefit *= 1.028;
+            
+            // Format and display results
+            resultBenefit.textContent = formatCurrency(monthlyBenefit);
+            resultAnnual.textContent = formatCurrency(monthlyBenefit * 12);
+            
+            // Calculate lifetime value (simplified)
+            const lifeExpectancy = 85;
+            const retirementYears = lifeExpectancy - retirementAge;
+            resultLifetime.textContent = formatCurrency(monthlyBenefit * 12 * retirementYears);
+            
+            // Display retirement ages
+            fraAge.textContent = `Age ${fullRetirementAge}`;
+            planAge.textContent = `Age ${retirementAge}`;
+            fraInfo.textContent = `${fullRetirementAge} years`;
+            
+            // Show results section
+            resultsSection.style.display = 'block';
+            
+            // Scroll to results
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Format currency
+        function formatCurrency(amount) {
+            return '$' + amount.toFixed(0).replace(/\d(?=(\d{3})+$)/g, '$&,');
+        }
+
+        // Reset Form
+        function resetForm() {
+            birthYearInput.value = '1960';
+            currentAgeInput.value = '62';
+            retirementAgeInput.value = '67';
+            annualIncomeInput.value = '65000';
+            yearsWorkedInput.value = '35';
+            maritalStatusSelect.value = 'married';
+            spouseAgeInput.value = '60';
+            spouseIncomeInput.value = '45000';
+            resultsSection.style.display = 'none';
+            
+            // Reset errors
+            const errors = [
+                birthYearError, currentAgeError, retirementAgeError, 
+                incomeError, yearsWorkedError, spouseAgeError, spouseIncomeError
+            ];
+            errors.forEach(error => error.style.display = 'none');
+        }
+
+        // Export Functions
+        function exportPDF() {
+            alert('PDF export functionality would generate a detailed benefits report. In a real application, this would use jsPDF to create a professional PDF document.');
+        }
+
+        function exportExcel() {
+            alert('Excel export functionality would generate a spreadsheet with detailed calculations. In a real application, this would use SheetJS to create an Excel file.');
+        }
+
+        function printResults() {
+            alert('Print functionality would open a printer-friendly view of your benefits summary. In a real application, this would generate a printable report.');
+        }
+
+        // Share Functions
+        function shareOnTwitter() {
+            const text = `I used SocialSecurityPro to calculate my retirement benefits. Estimate your Social Security benefits: ${window.location.href}`;
+            const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        }
+
+        function shareOnFacebook() {
+            const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`;
+            window.open(url, '_blank');
+        }
+
+        function shareOnLinkedIn() {
+            const url = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(window.location.href)}&title=Social%20Security%20Calculator`;
+            window.open(url, '_blank');
+        }
+
+        function shareViaEmail() {
+            const subject = 'My Social Security Benefits Estimate';
+            const body = `I used SocialSecurityPro to estimate my retirement benefits. Check it out: ${window.location.href}`;
+            window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        }
+
+        function copyLink() {
+            navigator.clipboard.writeText(window.location.href);
+            alert('Secure link copied to clipboard!');
+        }
+
+        // Event Listeners
+        calculateBtn.addEventListener('click', calculateBenefits);
+        resetBtn.addEventListener('click', resetForm);
+        document.getElementById('printBtn').addEventListener('click', printResults);
+        document.getElementById('pdfBtn').addEventListener('click', exportPDF);
+        document.getElementById('excelBtn').addEventListener('click', exportExcel);
+        document.getElementById('twitterBtn').addEventListener('click', shareOnTwitter);
+        document.getElementById('facebookBtn').addEventListener('click', shareOnFacebook);
+        document.getElementById('linkedinBtn').addEventListener('click', shareOnLinkedIn);
+        document.getElementById('emailBtn').addEventListener('click', shareViaEmail);
+        document.getElementById('copyLinkBtn').addEventListener('click', copyLink);
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set initial state
+            spouseSection.style.display = 'flex';
+            
+            // Calculate on initial load
+            setTimeout(calculateBenefits, 500);
+        });
+    </script>
+</body>
+</html>

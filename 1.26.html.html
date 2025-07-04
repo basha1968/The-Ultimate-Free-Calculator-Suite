@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Discount Calculator | Financial Tool</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #4a6cf7;
+            --primary-dark: #3a56d4;
+            --secondary: #10b981;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --gray: #64748b;
+            --light-gray: #e2e8f0;
+            --border: #cbd5e1;
+            --card-bg: #ffffff;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        .dark-mode {
+            --dark: #f8fafc;
+            --light: #0f172a;
+            --gray: #94a3b8;
+            --light-gray: #1e293b;
+            --border: #334155;
+            --card-bg: #1e293b;
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+            transition: background-color 0.3s, color 0.3s;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #f5f7ff 0%, #eef1fc 100%);
+        }
+
+        .dark-mode body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 1.5rem 0;
+            box-shadow: 0 4px 6px var(--shadow);
+            position: relative;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo i {
+            font-size: 2rem;
+        }
+
+        .logo h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .theme-toggle {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: white;
+            transition: all 0.3s;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .security-badge {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 6px 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+        }
+
+        main {
+            padding: 2.5rem 0;
+        }
+
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        @media (min-width: 992px) {
+            .calculator-grid {
+                grid-template-columns: 1.2fr 0.8fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px var(--shadow);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s;
+            border: 1px solid var(--border);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            color: var(--gray);
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 220px;
+            background-color: var(--dark);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.85rem;
+            font-weight: normal;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--light);
+            color: var(--dark);
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.2);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: rgba(74, 108, 247, 0.1);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #0da271;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 20px;
+            margin: 1.5rem 0;
+        }
+
+        .summary-card {
+            background: var(--light);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .summary-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 10px 0;
+            color: var(--primary);
+        }
+
+        .summary-label {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .savings-badge {
+            display: inline-block;
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+
+        .price-comparison {
+            display: flex;
+            justify-content: space-between;
+            margin: 2rem 0;
+            position: relative;
+            height: 80px;
+        }
+
+        .price-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            width: 45%;
+            position: relative;
+        }
+
+        .price-label {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+
+        .price-visual {
+            width: 100%;
+            background: var(--primary);
+            border-radius: 8px 8px 0 0;
+            position: relative;
+        }
+
+        .price-original {
+            height: 70px;
+            background: linear-gradient(to top, var(--primary), #6b8cff);
+        }
+
+        .price-final {
+            height: 50px;
+            background: linear-gradient(to top, var(--success), #34d399);
+        }
+
+        .price-amount {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-weight: 700;
+            color: var(--dark);
+            background: var(--card-bg);
+            padding: 5px 10px;
+            border-radius: 20px;
+            box-shadow: 0 2px 5px var(--shadow);
+            white-space: nowrap;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        .results-table th {
+            background: var(--primary);
+            color: white;
+            text-align: left;
+            padding: 12px 15px;
+        }
+
+        .results-table tr:nth-child(even) {
+            background: var(--light);
+        }
+
+        .results-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .monetization {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 2rem 0;
+        }
+
+        .ad-container {
+            background: var(--light);
+            border: 1px dashed var(--border);
+            border-radius: 10px;
+            height: 250px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray);
+        }
+
+        .ad-container i {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+
+        .export-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 1.5rem 0;
+        }
+
+        .ad-space {
+            background: linear-gradient(45deg, #f8fafc, #e2e8f0);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            color: #64748b;
+            margin: 20px 0;
+            font-weight: 600;
+        }
+
+        footer {
+            background: var(--dark);
+            color: white;
+            padding: 2.5rem 0;
+            margin-top: 2rem;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .footer-section h3 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+        .footer-section h3::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: var(--primary);
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 10px;
+        }
+
+        .footer-links a {
+            color: #cbd5e1;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 2rem;
+            margin-top: 2rem;
+            border-top: 1px solid #334155;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .error-message {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .discount-badge {
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            background: var(--primary);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 10px rgba(74, 108, 247, 0.3);
+            z-index: 10;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .card {
+                padding: 1.5rem;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .calculator-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-percentage"></i>
+                    <h1>Discount Calculator Pro</h1>
+                </div>
+                <div class="header-actions">
+                    <div class="security-badge">
+                        <i class="fas fa-lock"></i>
+                        <span>Secure & Encrypted</span>
+                    </div>
+                    <button class="theme-toggle" id="themeToggle">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="ad-space">
+            <p>AD SPACE: Adsterra Ad (728x90)</p>
+        </div>
+        
+        <div class="calculator-grid">
+            <!-- Input Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Calculate Discount</h2>
+                    <i class="fas fa-tag"></i>
+                </div>
+                
+                <div class="input-group">
+                    <div class="input-label">
+                        <label for="originalPrice">Original Price ($)</label>
+                        <span class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">Price before any discounts are applied</span>
+                        </span>
+                    </div>
+                    <input type="number" id="originalPrice" class="input-field" placeholder="e.g., 100" value="100">
+                    <div class="error-message" id="priceError">Please enter a valid price</div>
+                </div>
+                
+                <div class="input-group">
+                    <div class="input-label">
+                        <label for="discountPercent">Discount Percentage (%)</label>
+                        <span class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">Percentage discount being applied</span>
+                        </span>
+                    </div>
+                    <input type="number" id="discountPercent" class="input-field" placeholder="e.g., 20" value="20">
+                    <div class="error-message" id="discountError">Please enter a valid discount (0-100)</div>
+                </div>
+                
+                <div class="input-group">
+                    <div class="input-label">
+                        <label for="taxRate">Tax Rate (%)</label>
+                        <span class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltip-text">Sales tax rate to apply after discount</span>
+                        </span>
+                    </div>
+                    <input type="number" id="taxRate" class="input-field" placeholder="e.g., 8" value="8">
+                </div>
+                
+                <div class="btn-group">
+                    <button id="calculateBtn" class="btn btn-primary">
+                        <i class="fas fa-calculator"></i> Calculate Discount
+                    </button>
+                    <button id="resetBtn" class="btn btn-outline">
+                        <i class="fas fa-redo"></i> Reset
+                    </button>
+                </div>
+                
+                <!-- Ad Space -->
+                <div class="ad-container" style="margin-top: 2rem;">
+                    <i class="fas fa-ad"></i>
+                    <p>Yllix Ad Space (300x250)</p>
+                    <small>Premium financial offers</small>
+                </div>
+            </div>
+            
+            <!-- Results Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Discount Results</h2>
+                    <div class="discount-badge" id="discountBadge">20%</div>
+                </div>
+                
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <div class="summary-label">Original Price</div>
+                        <div class="summary-value" id="originalResult">$100.00</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Discount Amount</div>
+                        <div class="summary-value" id="discountAmount">$20.00</div>
+                        <div class="savings-badge">You Save</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Tax Amount</div>
+                        <div class="summary-value" id="taxAmount">$6.40</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Final Price</div>
+                        <div class="summary-value" id="finalPrice">$86.40</div>
+                    </div>
+                </div>
+                
+                <div class="price-comparison">
+                    <div class="price-bar">
+                        <div class="price-label">Original Price</div>
+                        <div class="price-visual price-original">
+                            <div class="price-amount">$100.00</div>
+                        </div>
+                    </div>
+                    <div class="price-bar">
+                        <div class="price-label">Discounted Price</div>
+                        <div class="price-visual price-final">
+                            <div class="price-amount">$86.40</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>Price Breakdown</h3>
+                <div class="table-responsive">
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="breakdownBody">
+                            <tr>
+                                <td>Original Price</td>
+                                <td>$100.00</td>
+                            </tr>
+                            <tr>
+                                <td>Discount (20%)</td>
+                                <td>-$20.00</td>
+                            </tr>
+                            <tr>
+                                <td>Subtotal</td>
+                                <td>$80.00</td>
+                            </tr>
+                            <tr>
+                                <td>Tax (8%)</td>
+                                <td>+$6.40</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Total Price</strong></td>
+                                <td><strong>$86.40</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="export-options">
+                    <button id="printBtn" class="btn btn-outline">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+                    <button id="pdfBtn" class="btn btn-outline">
+                        <i class="fas fa-file-pdf"></i> Save as PDF
+                    </button>
+                    <button id="csvBtn" class="btn btn-outline">
+                        <i class="fas fa-file-csv"></i> Export to CSV
+                    </button>
+                    <button id="shareBtn" class="btn btn-success">
+                        <i class="fas fa-share-alt"></i> Share Results
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Security & Compliance Section -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Security & Compliance</h2>
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <i class="fas fa-lock" style="font-size: 2rem; margin-bottom: 15px;"></i>
+                    <h3>Client-Side Processing</h3>
+                    <p>All calculations happen in your browser. No data is stored on servers.</p>
+                </div>
+                <div class="summary-card">
+                    <i class="fas fa-user-shield" style="font-size: 2rem; margin-bottom: 15px;"></i>
+                    <h3>GDPR Compliant</h3>
+                    <p>We follow strict data protection regulations for your privacy.</p>
+                </div>
+                <div class="summary-card">
+                    <i class="fas fa-key" style="font-size: 2rem; margin-bottom: 15px;"></i>
+                    <h3>Encrypted Connection</h3>
+                    <p>All data is transmitted securely via HTTPS protocol.</p>
+                </div>
+                <div class="summary-card">
+                    <i class="fas fa-ban" style="font-size: 2rem; margin-bottom: 15px;"></i>
+                    <h3>No Tracking</h3>
+                    <p>We don't use cookies or track your financial information.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Discount Calculator Pro</h3>
+                    <p>Professional financial tools for accurate discount calculations and smart shopping.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <ul class="footer-links">
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Shopping Tips</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Financial Education</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Budgeting Tools</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Price Comparison</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Legal</h3>
+                    <ul class="footer-links">
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Privacy Policy</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Terms of Service</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> GDPR Compliance</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right"></i> Financial Disclaimer</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                <p>&copy; 2023 Discount Calculator Pro. All rights reserved. This tool provides estimates only. Consult a financial advisor for personalized advice.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // DOM Elements
+        const themeToggle = document.getElementById('themeToggle');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const printBtn = document.getElementById('printBtn');
+        const pdfBtn = document.getElementById('pdfBtn');
+        const csvBtn = document.getElementById('csvBtn');
+        const shareBtn = document.getElementById('shareBtn');
+        const discountBadge = document.getElementById('discountBadge');
+        
+        // Theme Toggle
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const icon = themeToggle.querySelector('i');
+            if (document.body.classList.contains('dark-mode')) {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+            
+            // Recalculate to update colors
+            calculateDiscount();
+        });
+        
+        // Calculate Button
+        calculateBtn.addEventListener('click', calculateDiscount);
+        
+        // Reset Button
+        resetBtn.addEventListener('click', () => {
+            document.getElementById('originalPrice').value = '100';
+            document.getElementById('discountPercent').value = '20';
+            document.getElementById('taxRate').value = '8';
+            
+            // Clear any errors
+            document.getElementById('priceError').style.display = 'none';
+            document.getElementById('discountError').style.display = 'none';
+            
+            // Calculate with default values
+            calculateDiscount();
+        });
+        
+        // Print Button
+        printBtn.addEventListener('click', () => {
+            window.print();
+        });
+        
+        // PDF Export Button
+        pdfBtn.addEventListener('click', exportPDF);
+        
+        // CSV Export Button
+        csvBtn.addEventListener('click', exportCSV);
+        
+        // Share Button
+        shareBtn.addEventListener('click', shareResults);
+        
+        // Calculate Discount
+        function calculateDiscount() {
+            // Get input values
+            const originalPrice = parseFloat(document.getElementById('originalPrice').value) || 0;
+            const discountPercent = parseFloat(document.getElementById('discountPercent').value) || 0;
+            const taxRate = parseFloat(document.getElementById('taxRate').value) || 0;
+            
+            // Validate inputs
+            if (originalPrice <= 0) {
+                document.getElementById('priceError').style.display = 'block';
+                return;
+            } else {
+                document.getElementById('priceError').style.display = 'none';
+            }
+            
+            if (discountPercent < 0 || discountPercent > 100) {
+                document.getElementById('discountError').style.display = 'block';
+                return;
+            } else {
+                document.getElementById('discountError').style.display = 'none';
+            }
+            
+            // Calculate discount
+            const discountAmount = originalPrice * (discountPercent / 100);
+            const subtotal = originalPrice - discountAmount;
+            const taxAmount = subtotal * (taxRate / 100);
+            const finalPrice = subtotal + taxAmount;
+            
+            // Update discount badge
+            discountBadge.textContent = discountPercent + '%';
+            
+            // Update results
+            document.getElementById('originalResult').textContent = '$' + originalPrice.toFixed(2);
+            document.getElementById('discountAmount').textContent = '$' + discountAmount.toFixed(2);
+            document.getElementById('taxAmount').textContent = '$' + taxAmount.toFixed(2);
+            document.getElementById('finalPrice').textContent = '$' + finalPrice.toFixed(2);
+            
+            // Update price comparison bars
+            const originalBar = document.querySelector('.price-original');
+            const finalBar = document.querySelector('.price-final');
+            
+            // Set heights proportional to prices
+            const maxPrice = Math.max(originalPrice, finalPrice);
+            originalBar.style.height = (originalPrice / maxPrice * 70) + 'px';
+            finalBar.style.height = (finalPrice / maxPrice * 70) + 'px';
+            
+            // Update price labels
+            document.querySelector('.price-original .price-amount').textContent = '$' + originalPrice.toFixed(2);
+            document.querySelector('.price-final .price-amount').textContent = '$' + finalPrice.toFixed(2);
+            
+            // Update breakdown table
+            updateBreakdownTable(originalPrice, discountAmount, discountPercent, subtotal, taxAmount, taxRate, finalPrice);
+        }
+        
+        // Update breakdown table
+        function updateBreakdownTable(original, discount, discountPct, subtotal, tax, taxPct, final) {
+            const tableBody = document.getElementById('breakdownBody');
+            tableBody.innerHTML = '';
+            
+            const rows = [
+                { desc: 'Original Price', amount: '$' + original.toFixed(2) },
+                { desc: `Discount (${discountPct}%)`, amount: '-$' + discount.toFixed(2) },
+                { desc: 'Subtotal', amount: '$' + subtotal.toFixed(2) },
+                { desc: `Tax (${taxPct}%)`, amount: '+$' + tax.toFixed(2) },
+                { desc: '<strong>Total Price</strong>', amount: '<strong>$' + final.toFixed(2) + '</strong>' }
+            ];
+            
+            rows.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.desc}</td>
+                    <td>${row.amount}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+        
+        // Export to PDF
+        function exportPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(18);
+            doc.text('Discount Calculation Report', 105, 20, null, null, 'center');
+            
+            // Add current date
+            const date = new Date().toLocaleDateString();
+            doc.setFontSize(12);
+            doc.text(`Generated on: ${date}`, 105, 30, null, null, 'center');
+            
+            // Add content
+            doc.setFontSize(14);
+            doc.text('Calculation Summary', 20, 45);
+            
+            doc.setFontSize(12);
+            doc.text(`Original Price: ${document.getElementById('originalResult').textContent}`, 20, 55);
+            doc.text(`Discount Amount: ${document.getElementById('discountAmount').textContent}`, 20, 65);
+            doc.text(`Tax Amount: ${document.getElementById('taxAmount').textContent}`, 20, 75);
+            doc.text(`Final Price: ${document.getElementById('finalPrice').textContent}`, 20, 85);
+            
+            doc.text('Price Breakdown', 20, 100);
+            
+            // Add table
+            const rows = [];
+            const table = document.getElementById('breakdownBody');
+            for (let i = 0; i < table.rows.length; i++) {
+                const row = table.rows[i];
+                const rowData = [
+                    row.cells[0].textContent,
+                    row.cells[1].textContent
+                ];
+                rows.push(rowData);
+            }
+            
+            doc.autoTable({
+                startY: 105,
+                head: [['Description', 'Amount']],
+                body: rows,
+                theme: 'grid',
+                headStyles: { fillColor: [74, 108, 247] },
+                styles: { fontSize: 10 }
+            });
+            
+            // Save the PDF
+            doc.save('discount-calculator-report.pdf');
+        }
+        
+        // Export to CSV
+        function exportCSV() {
+            let csv = 'Description,Amount\n';
+            
+            const table = document.getElementById('breakdownBody');
+            for (let i = 0; i < table.rows.length; i++) {
+                const row = table.rows[i];
+                const desc = row.cells[0].textContent.replace(/,/g, '');
+                const amount = row.cells[1].textContent.replace(/,/g, '');
+                csv += `"${desc}","${amount}"\n`;
+            }
+            
+            // Create and download CSV file
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'discount-calculation.csv');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+        
+        // Share Results
+        function shareResults() {
+            const original = document.getElementById('originalResult').textContent;
+            const discount = document.getElementById('discountAmount').textContent;
+            const final = document.getElementById('finalPrice').textContent;
+            const discountPct = document.getElementById('discountPercent').value;
+            
+            const text = `I saved ${discount} (${discountPct}%) using Discount Calculator Pro! Original: ${original}, Final: ${final}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'My Discount Calculation',
+                    text: text,
+                    url: window.location.href
+                })
+                .catch(error => console.log('Sharing failed:', error));
+            } else {
+                // Fallback for browsers without Web Share API
+                alert("Sharing functionality is available in modern browsers. You can copy this text:\n\n" + text);
+            }
+        }
+        
+        // Initialize with default values
+        window.onload = calculateDiscount;
+    </script>
+</body>
+</html>

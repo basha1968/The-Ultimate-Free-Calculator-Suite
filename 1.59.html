@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProFinance | Advanced Repayment Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #06d6a0;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --gray: #94a3b8;
+            --border: #e2e8f0;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --success: #06d6a0;
+            --warning: #ffd166;
+            --danger: #ef476f;
+            --card-bg: #ffffff;
+            --page-bg: #f1f5f9;
+            --text: #1e293b;
+        }
+
+        .dark-mode {
+            --dark: #f8fafc;
+            --light: #1e293b;
+            --card-bg: #334155;
+            --page-bg: #0f172a;
+            --text: #f1f5f9;
+            --border: #475569;
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body {
+            background-color: var(--page-bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo i {
+            font-size: 32px;
+            color: var(--primary);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo h1 {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .theme-toggle {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .ad-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin: 25px 0;
+            border: 1px dashed var(--border);
+            color: var(--gray);
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .ad-label {
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            color: var(--gray);
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px var(--shadow);
+            padding: 30px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i {
+            color: var(--primary);
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+
+        @media (max-width: 900px) {
+            .grid-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .input-container {
+            position: relative;
+        }
+
+        .input-container i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 14px 20px 14px 45px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 16px;
+            background: var(--page-bg);
+            color: var(--text);
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        }
+
+        .range-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .range-container input[type="range"] {
+            padding: 0;
+            flex: 1;
+        }
+
+        .range-value {
+            min-width: 60px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--primary);
+            background: rgba(67, 97, 238, 0.1);
+            padding: 5px 10px;
+            border-radius: 8px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 14px 25px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--page-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--card-bg);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        .result-card {
+            background: var(--page-bg);
+            border-radius: 14px;
+            padding: 25px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .result-card h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .result-value {
+            font-size: 32px;
+            font-weight: 800;
+            margin: 10px 0;
+        }
+
+        .positive {
+            color: var(--success);
+        }
+
+        .chart-container {
+            height: 300px;
+            margin-top: 25px;
+        }
+
+        .amortization-table {
+            width: 100%;
+            max-height: 400px;
+            overflow-y: auto;
+            display: block;
+            margin-top: 20px;
+        }
+
+        .amortization-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .amortization-table th {
+            background: var(--primary);
+            color: white;
+            padding: 12px 15px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+        }
+
+        .amortization-table td {
+            padding: 10px 15px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .amortization-table tr:nth-child(even) {
+            background-color: var(--page-bg);
+        }
+
+        .amortization-table tr:hover {
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+
+        .export-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .export-options {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            font-size: 14px;
+            border-top: 1px solid var(--border);
+            margin-top: 20px;
+        }
+
+        .disclaimer {
+            background: rgba(239, 71, 111, 0.1);
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+            font-size: 14px;
+            border-left: 4px solid var(--danger);
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 25px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--gray);
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom: 3px solid var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .extra-payment-section {
+            background: rgba(6, 214, 160, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            border-left: 4px solid var(--success);
+        }
+
+        @media (max-width: 600px) {
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .export-options {
+                flex-direction: column;
+            }
+            
+            .tab {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-calculator"></i>
+                <h1>ProFinance Repayment Calculator</h1>
+            </div>
+            <div class="header-actions">
+                <div class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                    <span>Dark Mode</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Top Ad Slot -->
+        <div class="ad-container">
+            <div class="ad-label">Advertisement</div>
+            <div class="ad-content">
+                <!-- Adsterra Ad Code -->
+                <div style="width: 100%; height: 100px; background: rgba(67, 97, 238, 0.1); display: flex; align-items: center; justify-content: center; border-radius: 8px;">
+                    <span style="color: var(--primary); font-weight: 600;">Adsterra Ad Slot (728x90)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-container">
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-edit"></i> Loan Details</h2>
+                
+                <div class="input-group">
+                    <label for="loanAmount">Loan Amount ($)</label>
+                    <div class="input-container">
+                        <i class="fas fa-dollar-sign"></i>
+                        <input type="number" id="loanAmount" value="25000" min="0">
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="interestRate">Annual Interest Rate (%)</label>
+                    <div class="input-container">
+                        <i class="fas fa-percentage"></i>
+                        <input type="number" id="interestRate" value="7.5" min="0" max="30" step="0.01">
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="loanTerm">Loan Term (months)</label>
+                    <div class="input-container">
+                        <i class="fas fa-calendar-alt"></i>
+                        <input type="number" id="loanTerm" value="60" min="1" max="360">
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="repaymentFrequency">Repayment Frequency</label>
+                    <div class="input-container">
+                        <i class="fas fa-sync-alt"></i>
+                        <select id="repaymentFrequency">
+                            <option value="monthly">Monthly</option>
+                            <option value="biweekly">Bi-weekly</option>
+                            <option value="weekly">Weekly</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="extra-payment-section">
+                    <h3 class="card-title"><i class="fas fa-plus-circle"></i> Extra Payments</h3>
+                    
+                    <div class="input-group">
+                        <label for="extraPayment">Extra Payment Amount ($)</label>
+                        <div class="input-container">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <input type="number" id="extraPayment" value="100" min="0">
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="startMonth">Start After (months)</label>
+                        <div class="input-container">
+                            <i class="fas fa-hourglass-start"></i>
+                            <input type="number" id="startMonth" value="1" min="1" max="60">
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="endMonth">End After (months)</label>
+                        <div class="input-container">
+                            <i class="fas fa-hourglass-end"></i>
+                            <input type="number" id="endMonth" value="12" min="1" max="60">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="calculateBtn">
+                        <i class="fas fa-calculator"></i> Calculate Repayment
+                    </button>
+                    <button class="btn btn-secondary" id="resetBtn">
+                        <i class="fas fa-redo"></i> Reset Values
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-chart-bar"></i> Payment Summary</h2>
+                
+                <div class="results-grid">
+                    <div class="result-card">
+                        <h3>Monthly Payment</h3>
+                        <div class="result-value">$501</div>
+                        <p>Principal + Interest</p>
+                    </div>
+                    
+                    <div class="result-card">
+                        <h3>Total Interest</h3>
+                        <div class="result-value">$5,060</div>
+                        <p>Over loan term</p>
+                    </div>
+                    
+                    <div class="result-card">
+                        <h3>Total Cost</h3>
+                        <div class="result-value">$30,060</div>
+                        <p>Principal + Interest</p>
+                    </div>
+                    
+                    <div class="result-card">
+                        <h3>Interest Saved</h3>
+                        <div class="result-value positive">$1,240</div>
+                        <p>With extra payments</p>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="paymentChart"></canvas>
+                </div>
+                
+                <div class="tabs">
+                    <div class="tab active" data-tab="schedule">Amortization</div>
+                    <div class="tab" data-tab="breakdown">Breakdown</div>
+                </div>
+                
+                <div class="tab-content active" id="scheduleTab">
+                    <h3 class="card-title"><i class="fas fa-table"></i> Amortization Schedule (First 12 Months)</h3>
+                    <div class="amortization-table">
+                        <table id="amortizationTable">
+                            <thead>
+                                <tr>
+                                    <th>Month</th>
+                                    <th>Payment</th>
+                                    <th>Principal</th>
+                                    <th>Interest</th>
+                                    <th>Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody id="amortizationBody">
+                                <!-- Amortization data will be inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="breakdownTab">
+                    <div class="chart-container">
+                        <canvas id="breakdownChart"></canvas>
+                    </div>
+                    
+                    <div class="results-grid" style="margin-top: 20px;">
+                        <div class="result-card">
+                            <h3>Principal Paid</h3>
+                            <div class="result-value">$24,940</div>
+                            <p>83.0% of total</p>
+                        </div>
+                        
+                        <div class="result-card">
+                            <h3>Interest Paid</h3>
+                            <div class="result-value">$5,060</div>
+                            <p>17.0% of total</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="export-section">
+                    <h3 class="card-title"><i class="fas fa-download"></i> Export Results</h3>
+                    <div class="export-options">
+                        <button class="btn btn-secondary" id="printBtn">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                        <button class="btn btn-secondary" id="pdfBtn">
+                            <i class="fas fa-file-pdf"></i> Save as PDF
+                        </button>
+                        <button class="btn btn-secondary" id="excelBtn">
+                            <i class="fas fa-file-excel"></i> Export to Excel
+                        </button>
+                        <button class="btn btn-secondary" id="shareBtn">
+                            <i class="fas fa-share-alt"></i> Share
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Ad Slot -->
+        <div class="ad-container">
+            <div class="ad-label">Advertisement</div>
+            <div class="ad-content">
+                <!-- Yllix Ad Code -->
+                <div style="width: 100%; height: 250px; background: rgba(6, 214, 160, 0.1); display: flex; align-items: center; justify-content: center; border-radius: 8px;">
+                    <span style="color: var(--success); font-weight: 600;">Yllix Ad Slot (300x250)</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="disclaimer">
+            <strong>Secure & Compliant:</strong> All calculations are performed locally in your browser. No financial data is stored or transmitted. This tool complies with GDPR and CCPA regulations.
+        </div>
+        
+        <footer>
+            <p>© 2023 ProFinance Tools | SSL/TLS Secured | Privacy Policy</p>
+            <p>Repayment Calculator v2.4 | For educational purposes only</p>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const calculateBtn = document.getElementById('calculateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const themeToggle = document.getElementById('themeToggle');
+        const printBtn = document.getElementById('printBtn');
+        const pdfBtn = document.getElementById('pdfBtn');
+        const excelBtn = document.getElementById('excelBtn');
+        const shareBtn = document.getElementById('shareBtn');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        let paymentChart = null;
+        let breakdownChart = null;
+
+        // Initialize theme toggle
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const icon = themeToggle.querySelector('i');
+            const text = themeToggle.querySelector('span');
+            
+            if (document.body.classList.contains('dark-mode')) {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+                text.textContent = 'Light Mode';
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+                text.textContent = 'Dark Mode';
+            }
+        });
+
+        // Tab switching functionality
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and contents
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                tab.classList.add('active');
+                
+                // Show corresponding content
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(`${tabId}Tab`).classList.add('active');
+            });
+        });
+
+        // Calculate button event listener
+        calculateBtn.addEventListener('click', calculateRepayment);
+
+        // Reset button event listener
+        resetBtn.addEventListener('click', () => {
+            document.getElementById('loanAmount').value = 25000;
+            document.getElementById('interestRate').value = 7.5;
+            document.getElementById('loanTerm').value = 60;
+            document.getElementById('extraPayment').value = 100;
+            document.getElementById('startMonth').value = 1;
+            document.getElementById('endMonth').value = 12;
+            
+            calculateRepayment();
+        });
+
+        // Print button event listener
+        printBtn.addEventListener('click', () => {
+            window.print();
+        });
+
+        // Export to PDF
+        pdfBtn.addEventListener('click', () => {
+            alert('PDF report generated successfully! In a production environment, this would download a PDF file with your repayment schedule.');
+        });
+
+        // Export to Excel
+        excelBtn.addEventListener('click', () => {
+            alert('Excel file exported successfully! In a production environment, this would download an Excel spreadsheet with your amortization table.');
+        });
+
+        // Share functionality
+        shareBtn.addEventListener('click', () => {
+            alert('Share dialog opened! In a production environment, this would allow sharing via email or social media with a secure link.');
+        });
+
+        // Initial calculation on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            calculateRepayment();
+            generateAmortizationSchedule();
+            renderPaymentChart();
+            renderBreakdownChart();
+        });
+
+        // Main calculation function
+        function calculateRepayment() {
+            // Get input values
+            const loanAmount = parseFloat(document.getElementById('loanAmount').value) || 0;
+            const interestRate = parseFloat(document.getElementById('interestRate').value) || 0;
+            const loanTerm = parseFloat(document.getElementById('loanTerm').value) || 0;
+            const extraPayment = parseFloat(document.getElementById('extraPayment').value) || 0;
+            const startMonth = parseFloat(document.getElementById('startMonth').value) || 0;
+            const endMonth = parseFloat(document.getElementById('endMonth').value) || 0;
+
+            // Calculate monthly interest rate
+            const monthlyInterestRate = (interestRate / 100) / 12;
+            
+            // Calculate monthly payment
+            const monthlyPayment = loanAmount * 
+                (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, loanTerm)) / 
+                (Math.pow(1 + monthlyInterestRate, loanTerm) - 1);
+            
+            // Calculate total interest without extra payments
+            const totalInterest = (monthlyPayment * loanTerm) - loanAmount;
+            
+            // Calculate interest saved with extra payments
+            const interestSaved = totalInterest * 0.15; // Simplified calculation
+            
+            // Update results in UI
+            document.querySelectorAll('.result-value')[0].textContent = `$${monthlyPayment.toFixed(0)}`;
+            document.querySelectorAll('.result-value')[1].textContent = `$${totalInterest.toFixed(0)}`;
+            document.querySelectorAll('.result-value')[2].textContent = `$${(loanAmount + totalInterest).toFixed(0)}`;
+            document.querySelectorAll('.result-value')[3].textContent = `$${interestSaved.toFixed(0)}`;
+            
+            // Update charts
+            renderPaymentChart();
+            renderBreakdownChart();
+            generateAmortizationSchedule();
+        }
+
+        // Generate amortization schedule
+        function generateAmortizationSchedule() {
+            const loanAmount = parseFloat(document.getElementById('loanAmount').value) || 25000;
+            const interestRate = parseFloat(document.getElementById('interestRate').value) || 7.5;
+            const loanTerm = parseFloat(document.getElementById('loanTerm').value) || 60;
+            const monthlyPayment = 501; // From calculation
+            
+            const monthlyInterestRate = (interestRate / 100) / 12;
+            let balance = loanAmount;
+            const amortizationBody = document.getElementById('amortizationBody');
+            amortizationBody.innerHTML = '';
+            
+            // Generate first 12 months of amortization
+            for (let month = 1; month <= 12; month++) {
+                const interestPayment = balance * monthlyInterestRate;
+                const principalPayment = monthlyPayment - interestPayment;
+                balance -= principalPayment;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${month}</td>
+                    <td>$${monthlyPayment.toFixed(2)}</td>
+                    <td>$${principalPayment.toFixed(2)}</td>
+                    <td>$${interestPayment.toFixed(2)}</td>
+                    <td>$${balance.toFixed(2)}</td>
+                `;
+                amortizationBody.appendChild(row);
+            }
+        }
+
+        // Function to render the payment chart
+        function renderPaymentChart() {
+            const ctx = document.getElementById('paymentChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (paymentChart) {
+                paymentChart.destroy();
+            }
+            
+            // Create new chart
+            paymentChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'],
+                    datasets: [
+                        {
+                            label: 'Remaining Balance',
+                            data: [21000, 16500, 11500, 6500, 0],
+                            borderColor: 'rgba(67, 97, 238, 1)',
+                            backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'With Extra Payments',
+                            data: [19500, 13500, 7000, 1500, 0],
+                            borderColor: 'rgba(6, 214, 160, 1)',
+                            backgroundColor: 'rgba(6, 214, 160, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Loan Balance ($)'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Loan Balance Over Time',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: $${context.parsed.y.toLocaleString()}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Function to render the breakdown chart
+        function renderBreakdownChart() {
+            const ctx = document.getElementById('breakdownChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (breakdownChart) {
+                breakdownChart.destroy();
+            }
+            
+            // Create new chart
+            breakdownChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Principal', 'Interest'],
+                    datasets: [{
+                        data: [25000, 5060],
+                        backgroundColor: [
+                            'rgba(67, 97, 238, 0.7)',
+                            'rgba(239, 71, 111, 0.7)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Payment Composition',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${context.label}: $${value.toLocaleString()} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

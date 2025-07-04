@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Budget Calculator</title>
+    <!-- 
+        Content-Security-Policy: For production deployment, configure this via your web server (e.g., Nginx, Apache) 
+        for best practice. If using a meta tag, ensure all CDN domains (Chart.js, jsPDF, SheetJS) are whitelisted.
+        For this single-file, self-contained solution, inline scripts/styles require 'unsafe-inline'.
+        Example for meta (adjust for your specific ad networks if they inject more):
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com cdn.jsdelivr.net cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src * data:; media-src *; connect-src *;">
+    -->
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        /* CSS Variables for theming */
+        :root {
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --danger: #e74c3c;
+            --dark-heading-bg: #2c3e50; /* Used for table headers in light mode */
+            --light-bg-secondary: #ecf0f1; /* Used for ad containers, tab non-active */
+            --text-color: #333;
+            --bg-color: #f9f9f9;
+            --card-bg: #fff;
+            --border-color: #ddd;
+            --chart-color-income: #2ecc71; /* Green */
+            --chart-color-expenses: #e74c3c; /* Red */
+            --chart-color-net: #3498db; /* Blue */
+            --chart-color-pie1: #3498db;
+            --chart-color-pie2: #2ecc71;
+            --chart-color-pie3: #f1c40f;
+            --chart-color-pie4: #e74c3c;
+            --chart-color-pie5: #9b59b6;
+            --chart-color-pie6: #1abc9c;
+        }
+        
+        /* Dark Theme Variables */
+        [data-theme="dark"] {
+            --primary: #2980b9;
+            --secondary: #27ae60;
+            --danger: #c0392b;
+            --dark-heading-bg: #34495e; /* Adjusted for dark mode table headers */
+            --light-bg-secondary: #4a667e; /* Adjusted for dark mode ad containers/tabs */
+            --text-color: #ecf0f1;
+            --bg-color: #2c3e50;
+            --card-bg: #34495e;
+            --border-color: #555;
+            --chart-color-income: #27ae60; 
+            --chart-color-expenses: #c0392b; 
+            --chart-color-net: #2980b9; 
+            --chart-color-pie1: #4a90e2;
+            --chart-color-pie2: #4CAF50;
+            --chart-color-pie3: #f5d342;
+            --chart-color-pie4: #ff6b6b;
+            --chart-color-pie5: #c792ea;
+            --chart-color-pie6: #16a085;
+        }
+        
+        /* Global Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            transition: all 0.3s ease; /* Smooth transition for theme change */
+        }
+        
+        .calculator-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .calculator-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .input-section, .results-section {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1, h2, h3 {
+            color: var(--primary);
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            transition: border-color 0.3s, background-color 0.3s, color 0.3s;
+        }
+        
+        /* Buttons */
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--secondary);
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        /* Ad Containers */
+        .ad-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--light-bg-secondary);
+            border-radius: 4px;
+            text-align: center;
+            min-height: 90px;
+            color: var(--text-color);
+            display: flex; /* For centering text */
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            border: 1px dashed var(--border-color);
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .summary-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .summary-card h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: var(--text-color); /* Use theme variable */
+        }
+        
+        .summary-card p {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: var(--primary); /* Use primary color */
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            color: var(--text-color);
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background-color: var(--dark-heading-bg); /* Use dark card bg for table headers */
+            color: white;
+        }
+        
+        tr:hover {
+            background-color: rgba(0,0,0,0.05); /* Light mode hover */
+        }
+        [data-theme="dark"] tr:hover {
+            background-color: rgba(255,255,255,0.05); /* Dark mode hover */
+        }
+        
+        /* Tooltips */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            color: var(--primary);
+            font-size: 0.9em;
+            margin-left: 5px;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 250px; /* Wider for more text */
+            background-color: var(--dark-heading-bg);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+            font-weight: normal;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Export & Share Options */
+        .export-options, .social-sharing {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .social-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 12px;
+            border-radius: 4px;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            transition: opacity 0.3s;
+        }
+        .social-btn:hover {
+            opacity: 0.8;
+        }
+        
+        .email { background-color: #777; }
+        .whatsapp { background-color: #25D366; }
+        .linkedin { background-color: #0077B5; }
+        .twitter { background-color: #1DA1F2; }
+        
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: absolute; 
+            top: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 1.2em;
+            width: 40px; /* Fixed width/height for round button */
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        /* Error Messages */
+        .error-message {
+            color: var(--danger);
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        /* How to Use / Disclaimer Section */
+        .info-section {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        .info-section h2 {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-color); /* Ensure heading matches text color */
+        }
+        .info-content {
+            display: none;
+            color: var(--text-color); /* Ensure content matches text color */
+        }
+        .info-content.active {
+            display: block;
+        }
+        .info-section p {
+            margin-bottom: 10px;
+        }
+        .info-section ul {
+            list-style-type: disc;
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+        .info-section li {
+            margin-bottom: 5px;
+        }
+
+        /* Input Table for Income/Expenses */
+        .budget-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        .budget-table th, .budget-table td {
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            text-align: left;
+        }
+        .budget-table th {
+            background-color: var(--light-bg-secondary);
+            color: var(--text-color);
+        }
+        .budget-table input[type="text"], 
+        .budget-table input[type="number"],
+        .budget-table select {
+            width: 100%;
+            box-sizing: border-box; /* Ensure padding doesn't make input wider than cell */
+            padding: 6px;
+            font-size: 14px;
+        }
+        .budget-table .remove-row-btn {
+            background-color: var(--danger);
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+        .add-row-btn {
+            margin-top: 10px;
+            margin-bottom: 20px;
+            background-color: var(--secondary);
+        }
+        .add-row-btn:hover {
+            background-color: #27ae60;
+        }
+
+        /* Chart container styling for multiple charts */
+        .charts-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        .chart-container-half {
+            flex: 1 1 45%; /* Occupy roughly half width */
+            min-width: 300px; /* Minimum width for readability */
+            height: 350px; /* Fixed height for charts */
+            margin: 0; /* Override default chart-container margin */
+        }
+        .chart-container-half canvas {
+            max-height: 100%;
+        }
+
+        /* Print Specific Styles */
+        @media print {
+            .no-print, .ad-container, .theme-toggle, .info-section, .export-options, .social-sharing, .budget-table .remove-row-btn, .add-row-btn {
+                display: none !important;
+            }
+            body {
+                background: none;
+                padding: 0;
+                color: black; /* Force black text for print */
+            }
+            .calculator-container {
+                display: block;
+            }
+            .input-section {
+                display: none; /* Hide input section in print */
+            }
+            .results-section {
+                box-shadow: none; /* Remove shadow for print */
+                padding: 0;
+            }
+            table {
+                font-size: 10px; /* Smaller font for print tables */
+                color: black;
+            }
+            th, td {
+                padding: 8px;
+                border-color: #ccc; /* Lighter border for print */
+            }
+            th {
+                background-color: #eee !important; /* Lighter header for print */
+                color: black !important;
+            }
+            tr:hover {
+                background-color: transparent !important;
+            }
+            .charts-wrapper {
+                flex-direction: column; /* Stack charts vertically for print */
+            }
+            .chart-container-half {
+                max-width: 100% !important; /* Allow charts to take full width */
+                min-width: unset;
+                height: 250px; /* Adjust height for print */
+                page-break-inside: avoid; /* Prevent charts from breaking across pages */
+            }
+            .summary-card h3, .summary-card p {
+                color: black !important; /* Ensure readable colors in print */
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle no-print" id="themeToggle" aria-label="Toggle dark/light mode">🌓</button>
+    
+    <h1>Professional Budget Calculator</h1>
+    
+    <div class="calculator-container">
+        <div class="input-section">
+            <h2>Your Budget</h2>
+            
+            <div class="input-group">
+                <label for="currencySelect">
+                    Currency
+                    <span class="tooltip" aria-label="Currency Selection">ℹ️
+                        <span class="tooltiptext">
+                            Select the currency symbol and formatting for your budget.
+                        </span>
+                    </span>
+                </label>
+                <select id="currencySelect" aria-describedby="currency-error">
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP (£)</option>
+                    <option value="JPY">JPY (¥)</option>
+                    <option value="CAD">CAD (C$)</option>
+                    <option value="AUD">AUD (A$)</option>
+                    <option value="INR">INR (₹)</option>
+                    <option value="BRL">BRL (R$)</option>
+                </select>
+                <div class="error-message" id="currency-error" role="alert" aria-live="polite"></div>
+            </div>
+
+            <h3>Income</h3>
+            <table class="budget-table" id="incomeTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Amount</th>
+                        <th>Frequency</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="text" class="item-name" value="Salary" placeholder="e.g., Salary" aria-label="Income Name"></td>
+                        <td><input type="number" class="item-amount" min="0" step="100" value="4000" aria-label="Income Amount"></td>
+                        <td>
+                            <select class="item-frequency" aria-label="Income Frequency">
+                                <option value="monthly">Monthly</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="annually">Annually</option>
+                                <option value="one-time">One-time</option>
+                            </select>
+                        </td>
+                        <td><button class="remove-row-btn" aria-label="Remove Income Row">X</button></td>
+                    </tr>
+                </tbody>
+            </table>
+            <button class="add-row-btn" data-type="income" aria-label="Add Income Row">Add Income</button>
+
+            <h3>Expenses</h3>
+            <table class="budget-table" id="expenseTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Amount</th>
+                        <th>Frequency</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="text" class="item-name" value="Rent" placeholder="e.g., Rent" aria-label="Expense Name"></td>
+                        <td><input type="number" class="item-amount" min="0" step="10" value="1500" aria-label="Expense Amount"></td>
+                        <td>
+                            <select class="item-frequency" aria-label="Expense Frequency">
+                                <option value="monthly">Monthly</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="annually">Annually</option>
+                                <option value="one-time">One-time</option>
+                            </select>
+                        </td>
+                        <td><button class="remove-row-btn" aria-label="Remove Expense Row">X</button></td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" class="item-name" value="Groceries" placeholder="e.g., Groceries" aria-label="Expense Name"></td>
+                        <td><input type="number" class="item-amount" min="0" step="10" value="400" aria-label="Expense Amount"></td>
+                        <td>
+                            <select class="item-frequency" aria-label="Expense Frequency">
+                                <option value="monthly">Monthly</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="annually">Annually</option>
+                                <option value="one-time">One-time</option>
+                            </select>
+                        </td>
+                        <td><button class="remove-row-btn" aria-label="Remove Expense Row">X</button></td>
+                    </tr>
+                </tbody>
+            </table>
+            <button class="add-row-btn" data-type="expense" aria-label="Add Expense Row">Add Expense</button>
+            
+            <button id="calculateBtn">Calculate Budget</button>
+        </div>
+        
+        <div class="results-section">
+            <h2>Monthly Budget Summary</h2>
+            
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <h3>Total Monthly Income</h3>
+                    <p id="totalMonthlyIncome">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Monthly Expenses</h3>
+                    <p id="totalMonthlyExpenses">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Net Monthly Income</h3>
+                    <p id="netMonthlyIncome">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Monthly Savings/Deficit</h3>
+                    <p id="monthlySavingsDeficit">$0.00</p>
+                </div>
+            </div>
+            
+            <div class="charts-wrapper">
+                <div class="chart-container-half">
+                    <canvas id="incomeExpensesChart" aria-label="Income vs Expenses Bar Chart"></canvas>
+                </div>
+                <div class="chart-container-half">
+                    <canvas id="expenseBreakdownChart" aria-label="Expense Category Pie Chart"></canvas>
+                </div>
+            </div>
+
+            <h3>Detailed Income Breakdown</h3>
+            <div style="overflow-x: auto;">
+                <table id="detailedIncomeTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Amount</th>
+                            <th>Frequency</th>
+                            <th>Monthly Equivalent</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detailedIncomeTableBody">
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>Detailed Expense Breakdown</h3>
+            <div style="overflow-x: auto;">
+                <table id="detailedExpenseTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Amount</th>
+                            <th>Frequency</th>
+                            <th>Monthly Equivalent</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detailedExpenseTableBody">
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="ad-container">
+                Advertisement Space (Adsterra Header/Footer)
+                <small>This space is reserved for ad network code (e.g., 728x90).</small>
+            </div>
+
+            <div class="export-options no-print">
+                <button id="printBtn">Print Budget</button>
+                <button id="pdfBtn">Save as PDF</button>
+                <button id="excelBtn">Save as Excel</button>
+                <button id="csvBtn">Save as CSV</button>
+            </div>
+            
+            <div class="social-sharing no-print">
+                <button class="social-btn email" id="emailShare" aria-label="Share via Email">Email</button>
+                <button class="social-btn whatsapp" id="whatsappShare" aria-label="Share via WhatsApp">WhatsApp</button>
+                <button class="social-btn linkedin" id="linkedinShare" aria-label="Share via LinkedIn">LinkedIn</button>
+                <button class="social-btn twitter" id="twitterShare" aria-label="Share via Twitter">Twitter</button>
+                <button class="social-btn btn-secondary" id="shareLink" aria-label="Copy Shareable Link">Copy Share Link</button>
+            </div>
+
+            <div class="ad-container" style="height: 250px;">
+                Advertisement Space (Yllix Sidebar/Floating)
+                <small>This space is reserved for ad network code (e.g., 300x250).</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <h2 id="howToUseToggle" aria-expanded="false" aria-controls="howToUseContent">
+            How to Use This Calculator <span aria-hidden="true">▼</span>
+        </h2>
+        <div class="info-content" id="howToUseContent">
+            <p>This calculator helps you organize your personal budget by tracking your income and expenses.</p>
+            <ul>
+                <li><strong>1. Enter Income & Expenses:</strong> Use the "Add Income" and "Add Expense" buttons to add new rows. For each item, enter a name (e.g., "Salary", "Rent"), the amount, and its frequency (Monthly, Weekly, Annually, or One-time).</li>
+                <li><strong>2. Select Currency:</strong> Choose your preferred currency from the dropdown at the top.</li>
+                <li><strong>3. Calculate:</strong> Click the "Calculate Budget" button to see your monthly summary, detailed breakdowns, and visual charts.</li>
+                <li><strong>4. Review Results:</strong>
+                    <ul>
+                        <li><strong>Total Monthly Income:</strong> Your total income normalized to a monthly figure.</li>
+                        <li><strong>Total Monthly Expenses:</strong> Your total expenses normalized to a monthly figure.</li>
+                        <li><strong>Net Monthly Income:</strong> Your income minus your expenses. A positive number means you have money left; negative means a deficit.</li>
+                        <li><strong>Monthly Savings/Deficit:</strong> Clearly states if you're saving or overspending.</li>
+                    </ul>
+                </li>
+                <li><strong>5. Export & Share:</strong> Use the buttons to print, save as PDF/Excel/CSV, or share your budget scenario with others via a unique link.</li>
+            </ul>
+            <p style="font-style: italic; color: var(--danger);"><strong>Disclaimer:</strong> This budget calculator is for informational purposes only. It provides a general overview based on your inputs. Individual financial situations vary greatly. Consult a qualified financial advisor for personalized budgeting and financial planning advice.</p>
+        </div>
+    </div>
+
+    <script>
+        // Global variables to store budget data and chart instances
+        let currentBudget = {
+            incomes: [],
+            expenses: []
+        };
+        let incomeExpensesChartInstance = null;
+        let expenseBreakdownChartInstance = null;
+
+        // Frequency conversion rates to monthly
+        const FREQUENCY_RATES = {
+            'monthly': 1,
+            'weekly': 4.33,   // Approximate weeks in a month
+            'annually': 1 / 12,
+            'one-time': 1 / 1   // Will be divided by 1 month for monthly equivalent if not explicitly set to 0. It means one-time in a month.
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up theme toggle
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+            
+            // Set up event listeners for adding/removing rows
+            document.getElementById('incomeTable').addEventListener('click', handleRowButtonClick);
+            document.getElementById('expenseTable').addEventListener('click', handleRowButtonClick);
+            document.querySelectorAll('.add-row-btn').forEach(btn => btn.addEventListener('click', addRow));
+
+            // Set up main calculation and export buttons
+            document.getElementById('calculateBtn').addEventListener('click', calculateBudget);
+            document.getElementById('printBtn').addEventListener('click', printSummary);
+            document.getElementById('pdfBtn').addEventListener('click', exportToPDF);
+            document.getElementById('excelBtn').addEventListener('click', exportToExcel);
+            document.getElementById('csvBtn').addEventListener('click', exportToCSV);
+            document.getElementById('shareLink').addEventListener('click', copyShareLink);
+
+            // Set up how-to-use toggle
+            const howToUseToggle = document.getElementById('howToUseToggle');
+            const howToUseContent = document.getElementById('howToUseContent');
+            howToUseToggle.addEventListener('click', function() {
+                const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                this.setAttribute('aria-expanded', !isExpanded);
+                howToUseContent.classList.toggle('active');
+                howToUseToggle.querySelector('span').textContent = isExpanded ? '▼' : '▲';
+            });
+            // Initial state for how-to-use
+            howToUseContent.classList.remove('active');
+            howToUseToggle.setAttribute('aria-expanded', 'false');
+            howToUseToggle.querySelector('span').textContent = '▼';
+
+            // Decode share link parameters on page load if present
+            decodeShareLink();
+
+            // Initial calculation to populate the UI (from default values or decoded link)
+            calculateBudget();
+            setupSocialSharing(); // Needs initial data
+        });
+        
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            }
+            // Update chart colors on theme change
+            updateCharts();
+        }
+        
+        // --- Error Handling Utilities ---
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+        }
+
+        function showError(elementId, message) {
+            document.getElementById(elementId).textContent = message;
+        }
+
+        // --- Dynamic Row Management ---
+        function addRow(event) {
+            const type = event.target.dataset.type; // 'income' or 'expense'
+            const tableBody = document.getElementById(`${type}Table`).querySelector('tbody');
+            const newRow = tableBody.insertRow();
+            newRow.innerHTML = `
+                <td><input type="text" class="item-name" placeholder="e.g., ${type === 'income' ? 'Bonus' : 'Utilities'}" aria-label="${type === 'income' ? 'Income' : 'Expense'} Name"></td>
+                <td><input type="number" class="item-amount" min="0" step="10" value="" aria-label="${type === 'income' ? 'Income' : 'Expense'} Amount"></td>
+                <td>
+                    <select class="item-frequency" aria-label="${type === 'income' ? 'Income' : 'Expense'} Frequency">
+                        <option value="monthly">Monthly</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="annually">Annually</option>
+                        <option value="one-time">One-time</option>
+                    </select>
+                </td>
+                <td><button class="remove-row-btn" aria-label="Remove ${type === 'income' ? 'Income' : 'Expense'} Row">X</button></td>
+            `;
+            // Add event listener for the new remove button
+            newRow.querySelector('.remove-row-btn').addEventListener('click', removeRow);
+        }
+
+        function removeRow(event) {
+            event.target.closest('tr').remove();
+            calculateBudget(); // Recalculate after removing a row
+        }
+
+        function handleRowButtonClick(event) {
+            if (event.target.classList.contains('remove-row-btn')) {
+                removeRow(event);
+            }
+        }
+        
+        // --- Core Budget Calculation Logic ---
+        function calculateBudget() {
+            clearErrors(); // Clear previous errors
+
+            currentBudget.incomes = readTableData('incomeTable');
+            currentBudget.expenses = readTableData('expenseTable');
+
+            let totalMonthlyIncome = 0;
+            let totalMonthlyExpenses = 0;
+            let isValid = true;
+
+            // Validate and sum incomes
+            currentBudget.incomes.forEach((item, index) => {
+                const monthlyAmount = convertToMonthly(item.amount, item.frequency);
+                if (isNaN(monthlyAmount) || !isFinite(monthlyAmount) || item.name.trim() === '') {
+                    showError('currency-error', `Invalid income entry on row ${index + 1}. Check Name/Amount.`);
+                    isValid = false;
+                }
+                item.monthlyEquivalent = monthlyAmount; // Store monthly equivalent
+                totalMonthlyIncome += monthlyAmount;
+            });
+
+            // Validate and sum expenses
+            currentBudget.expenses.forEach((item, index) => {
+                const monthlyAmount = convertToMonthly(item.amount, item.frequency);
+                if (isNaN(monthlyAmount) || !isFinite(monthlyAmount) || item.name.trim() === '') {
+                    showError('currency-error', `Invalid expense entry on row ${index + 1}. Check Name/Amount.`);
+                    isValid = false;
+                }
+                item.monthlyEquivalent = monthlyAmount; // Store monthly equivalent
+                totalMonthlyExpenses += monthlyAmount;
+            });
+
+            if (!isValid) {
+                document.getElementById('results-section').style.display = 'none';
+                return;
+            }
+
+            const netMonthlyIncome = totalMonthlyIncome - totalMonthlyExpenses;
+            const monthlySavingsDeficit = netMonthlyIncome >= 0 ? 
+                                          `${formatCurrency(netMonthlyIncome, document.getElementById('currencySelect').value)} Savings` :
+                                          `${formatCurrency(Math.abs(netMonthlyIncome), document.getElementById('currencySelect').value)} Deficit`;
+            
+            // Store results for display and export
+            currentBudget.summary = {
+                totalMonthlyIncome: totalMonthlyIncome,
+                totalMonthlyExpenses: totalMonthlyExpenses,
+                netMonthlyIncome: netMonthlyIncome,
+                monthlySavingsDeficit: monthlySavingsDeficit
+            };
+
+            // Update UI
+            updateSummaryCards(currentBudget.summary);
+            updateCharts();
+            displayDetailedTables();
+            setupSocialSharing(); // Update sharing links
+
+            document.getElementById('results-section').style.display = 'block';
+        }
+
+        function readTableData(tableId) {
+            const table = document.getElementById(tableId);
+            const rows = table.querySelector('tbody').rows;
+            const data = [];
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const name = row.querySelector('.item-name').value;
+                const amount = parseFloat(row.querySelector('.item-amount').value);
+                const frequency = row.querySelector('.item-frequency').value;
+                data.push({ name: name, amount: amount, frequency: frequency });
+            }
+            return data;
+        }
+
+        function convertToMonthly(amount, frequency) {
+            if (isNaN(amount) || amount < 0) {
+                return NaN;
+            }
+            return amount * (FREQUENCY_RATES[frequency] || 0);
+        }
+        
+        // --- UI Update Functions ---
+        function updateSummaryCards(summary) {
+            const currency = document.getElementById('currencySelect').value;
+            document.getElementById('totalMonthlyIncome').textContent = formatCurrency(summary.totalMonthlyIncome, currency);
+            document.getElementById('totalMonthlyExpenses').textContent = formatCurrency(summary.totalMonthlyExpenses, currency);
+            document.getElementById('netMonthlyIncome').textContent = formatCurrency(summary.netMonthlyIncome, currency);
+            document.getElementById('monthlySavingsDeficit').textContent = summary.monthlySavingsDeficit;
+        }
+
+        function updateCharts() {
+            const rootStyle = getComputedStyle(document.documentElement);
+            const textColor = rootStyle.getPropertyValue('--text-color');
+
+            // --- Income vs Expenses Bar Chart ---
+            const ieCtx = document.getElementById('incomeExpensesChart').getContext('2d');
+            if (incomeExpensesChartInstance) incomeExpensesChartInstance.destroy();
+
+            incomeExpensesChartInstance = new Chart(ieCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Income', 'Expenses', 'Net Income'],
+                    datasets: [{
+                        label: 'Amount',
+                        data: [
+                            currentBudget.summary.totalMonthlyIncome,
+                            currentBudget.summary.totalMonthlyExpenses,
+                            currentBudget.summary.netMonthlyIncome
+                        ],
+                        backgroundColor: [
+                            rootStyle.getPropertyValue('--chart-color-income'),
+                            rootStyle.getPropertyValue('--chart-color-expenses'),
+                            rootStyle.getPropertyValue('--chart-color-net')
+                        ],
+                        borderColor: [
+                            rootStyle.getPropertyValue('--chart-color-income'),
+                            rootStyle.getPropertyValue('--chart-color-expenses'),
+                            rootStyle.getPropertyValue('--chart-color-net')
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Monthly Income vs. Expenses',
+                            color: textColor
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${formatCurrency(context.raw, document.getElementById('currencySelect').value)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: textColor },
+                            grid: { color: 'rgba(100,100,100,0.1)' }
+                        },
+                        y: {
+                            ticks: { 
+                                callback: function(value) { return formatCurrency(value, document.getElementById('currencySelect').value); },
+                                color: textColor 
+                            },
+                            grid: { color: 'rgba(100,100,100,0.1)' }
+                        }
+                    }
+                }
+            });
+
+            // --- Expense Breakdown Pie Chart ---
+            const ebCtx = document.getElementById('expenseBreakdownChart').getContext('2d');
+            if (expenseBreakdownChartInstance) expenseBreakdownChartInstance.destroy();
+
+            const expenseLabels = currentBudget.expenses.map(item => item.name);
+            const expenseData = currentBudget.expenses.map(item => item.monthlyEquivalent);
+
+            const pieChartColors = [
+                rootStyle.getPropertyValue('--chart-color-pie1'),
+                rootStyle.getPropertyValue('--chart-color-pie2'),
+                rootStyle.getPropertyValue('--chart-color-pie3'),
+                rootStyle.getPropertyValue('--chart-color-pie4'),
+                rootStyle.getPropertyValue('--chart-color-pie5'),
+                rootStyle.getPropertyValue('--chart-color-pie6'),
+            ];
+
+            expenseBreakdownChartInstance = new Chart(ebCtx, {
+                type: 'pie',
+                data: {
+                    labels: expenseLabels,
+                    datasets: [{
+                        data: expenseData,
+                        backgroundColor: pieChartColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'right', 
+                            labels: { color: textColor } 
+                        },
+                        title: {
+                            display: true,
+                            text: 'Expense Breakdown',
+                            color: textColor
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? (value / total * 100).toFixed(1) : 0;
+                                    return `${context.label}: ${formatCurrency(value, document.getElementById('currencySelect').value)} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function displayDetailedTables() {
+            const currency = document.getElementById('currencySelect').value;
+            
+            // Detailed Income Table
+            const incomeTableBody = document.getElementById('detailedIncomeTableBody');
+            incomeTableBody.innerHTML = '';
+            currentBudget.incomes.forEach(item => {
+                const row = incomeTableBody.insertRow();
+                row.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>${formatCurrency(item.amount, currency)}</td>
+                    <td>${item.frequency.charAt(0).toUpperCase() + item.frequency.slice(1)}</td>
+                    <td>${formatCurrency(item.monthlyEquivalent, currency)}</td>
+                `;
+            });
+
+            // Detailed Expense Table
+            const expenseTableBody = document.getElementById('detailedExpenseTableBody');
+            expenseTableBody.innerHTML = '';
+            currentBudget.expenses.forEach(item => {
+                const row = expenseTableBody.insertRow();
+                row.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>${formatCurrency(item.amount, currency)}</td>
+                    <td>${item.frequency.charAt(0).toUpperCase() + item.frequency.slice(1)}</td>
+                    <td>${formatCurrency(item.monthlyEquivalent, currency)}</td>
+                `;
+            });
+        }
+        
+        // --- Formatting Utility ---
+        function formatCurrency(amount, currencyCode) {
+            // Check for NaN or Infinity before formatting
+            if (isNaN(amount) || !isFinite(amount)) {
+                return "N/A"; 
+            }
+            return new Intl.NumberFormat('en-US', { // Use 'en-US' for consistency or locale-specific
+                style: 'currency',
+                currency: currencyCode,
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        }
+        
+        // --- Export Functions ---
+        function printSummary() {
+            window.print();
+        }
+        
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'pt', 'letter');
+            let currentY = 40;
+            const margin = 40;
+            const pageWidth = doc.internal.pageSize.width;
+            const currency = document.getElementById('currencySelect').value;
+
+            doc.setFontSize(18);
+            doc.text('Budget Report', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 30;
+
+            doc.setFontSize(12);
+            doc.text(`Calculated On: ${new Date().toLocaleDateString()}`, margin, currentY);
+            doc.text(`Currency: ${currency}`, margin, currentY + 15);
+            currentY += 40;
+
+            // Summary Results
+            const summaryResults = [
+                ["Total Monthly Income", formatCurrency(currentBudget.summary.totalMonthlyIncome, currency)],
+                ["Total Monthly Expenses", formatCurrency(currentBudget.summary.totalMonthlyExpenses, currency)],
+                ["Net Monthly Income", formatCurrency(currentBudget.summary.netMonthlyIncome, currency)],
+                ["Monthly Savings/Deficit", currentBudget.summary.monthlySavingsDeficit]
+            ];
+            doc.autoTable({
+                startY: currentY,
+                head: [['Summary', 'Value']],
+                body: summaryResults,
+                theme: 'grid',
+                headStyles: { fillColor: [46, 204, 113], textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                margin: { left: margin, right: margin }
+            });
+            currentY = doc.autoTable.previous.finalY + 30;
+
+            // Detailed Income Table
+            doc.addPage();
+            currentY = margin;
+            doc.setFontSize(16);
+            doc.text('Detailed Income Breakdown', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 20;
+            const incomeTableData = currentBudget.incomes.map(item => [
+                item.name,
+                item.amount.toFixed(2),
+                item.frequency.charAt(0).toUpperCase() + item.frequency.slice(1),
+                item.monthlyEquivalent.toFixed(2)
+            ]);
+            doc.autoTable({
+                startY: currentY,
+                head: [['Name', 'Amount', 'Frequency', 'Monthly Equivalent']],
+                body: incomeTableData,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                margin: { left: margin, right: margin }
+            });
+            currentY = doc.autoTable.previous.finalY + 30;
+
+            // Detailed Expense Table
+            doc.addPage();
+            currentY = margin;
+            doc.setFontSize(16);
+            doc.text('Detailed Expense Breakdown', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 20;
+            const expenseTableData = currentBudget.expenses.map(item => [
+                item.name,
+                item.amount.toFixed(2),
+                item.frequency.charAt(0).toUpperCase() + item.frequency.slice(1),
+                item.monthlyEquivalent.toFixed(2)
+            ]);
+            doc.autoTable({
+                startY: currentY,
+                head: [['Name', 'Amount', 'Frequency', 'Monthly Equivalent']],
+                body: expenseTableData,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                margin: { left: margin, right: margin },
+                didDrawPage: function(data) {
+                    let pageCount = doc.internal.getNumberOfPages();
+                    doc.setFontSize(8);
+                    doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber + ' of ' + pageCount, data.settings.margin.left, doc.internal.pageSize.height - 20);
+                }
+            });
+            
+            doc.save('budget_report.pdf');
+        }
+        
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+            const currency = document.getElementById('currencySelect').value;
+
+            // Sheet 1: Summary
+            const summaryData = [
+                ["Budget Report", ""],
+                ["Calculated On", new Date().toLocaleDateString()],
+                ["Currency", currency],
+                [],
+                ["Summary", ""],
+                ["Total Monthly Income", currentBudget.summary.totalMonthlyIncome],
+                ["Total Monthly Expenses", currentBudget.summary.totalMonthlyExpenses],
+                ["Net Monthly Income", currentBudget.summary.netMonthlyIncome],
+                ["Monthly Savings/Deficit", currentBudget.summary.monthlySavingsDeficit]
+            ];
+            const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, summaryWs, "Summary");
+
+            // Sheet 2: Detailed Income
+            const incomeHeaders = ["Name", "Amount", "Frequency", "Monthly Equivalent"];
+            const incomeData = [incomeHeaders];
+            currentBudget.incomes.forEach(item => {
+                incomeData.push([item.name, item.amount, item.frequency, item.monthlyEquivalent]);
+            });
+            const incomeWs = XLSX.utils.aoa_to_sheet(incomeData);
+            XLSX.utils.book_append_sheet(wb, incomeWs, "Income Details");
+
+            // Sheet 3: Detailed Expenses
+            const expenseHeaders = ["Name", "Amount", "Frequency", "Monthly Equivalent"];
+            const expenseData = [expenseHeaders];
+            currentBudget.expenses.forEach(item => {
+                expenseData.push([item.name, item.amount, item.frequency, item.monthlyEquivalent]);
+            });
+            const expenseWs = XLSX.utils.aoa_to_sheet(expenseData);
+            XLSX.utils.book_append_sheet(wb, expenseWs, "Expense Details");
+            
+            XLSX.writeFile(wb, 'budget_report.xlsx');
+        }
+        
+        function exportToCSV() {
+            let csvContent = "";
+            const currency = document.getElementById('currencySelect').value;
+
+            // Section 1: Summary
+            csvContent += "Budget Report\n";
+            csvContent += `"Calculated On","${new Date().toLocaleDateString()}"\n`;
+            csvContent += `"Currency","${currency}"\n\n`;
+            csvContent += `"Summary",\n`;
+            csvContent += `"Total Monthly Income",${currentBudget.summary.totalMonthlyIncome.toFixed(2)}\n`;
+            csvContent += `"Total Monthly Expenses",${currentBudget.summary.totalMonthlyExpenses.toFixed(2)}\n`;
+            csvContent += `"Net Monthly Income",${currentBudget.summary.netMonthlyIncome.toFixed(2)}\n`;
+            csvContent += `"Monthly Savings/Deficit","${currentBudget.summary.monthlySavingsDeficit}"\n\n`;
+
+            // Section 2: Detailed Income
+            csvContent += "Income Details\n";
+            csvContent += "Name,Amount,Frequency,Monthly Equivalent\n";
+            currentBudget.incomes.forEach(item => {
+                csvContent += `"${item.name}",${item.amount.toFixed(2)},"${item.frequency}",${item.monthlyEquivalent.toFixed(2)}\n`;
+            });
+            csvContent += "\n";
+
+            // Section 3: Detailed Expenses
+            csvContent += "Expense Details\n";
+            csvContent += "Name,Amount,Frequency,Monthly Equivalent\n";
+            currentBudget.expenses.forEach(item => {
+                csvContent += `"${item.name}",${item.amount.toFixed(2)},"${item.frequency}",${item.monthlyEquivalent.toFixed(2)}\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'budget_report.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- Share Link Logic ---
+        function generateShareLink() {
+            const dataToShare = {
+                currency: document.getElementById('currencySelect').value,
+                incomes: currentBudget.incomes.map(item => ({name: item.name, amount: item.amount, frequency: item.frequency})),
+                expenses: currentBudget.expenses.map(item => ({name: item.name, amount: item.amount, frequency: item.frequency}))
+            };
+            const jsonString = JSON.stringify(dataToShare);
+            const encodedData = btoa(encodeURIComponent(jsonString)); // Base64 encode after URI encoding
+            const shareUrl = `${window.location.origin}${window.location.pathname}?budget=${encodedData}`;
+            return shareUrl;
+        }
+
+        function copyShareLink() {
+            const shareUrl = generateShareLink();
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                alert('Share link copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy share link: ', err);
+                alert('Failed to copy link. Please copy manually: ' + shareUrl);
+            });
+        }
+
+        function decodeShareLink() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const encodedBudget = urlParams.get('budget');
+            if (encodedBudget) {
+                try {
+                    const decodedJsonString = decodeURIComponent(atob(encodedBudget)); // Decode URI then Base64
+                    const sharedData = JSON.parse(decodedJsonString);
+                    
+                    document.getElementById('currencySelect').value = sharedData.currency || 'USD';
+                    
+                    // Clear existing rows
+                    document.getElementById('incomeTable').querySelector('tbody').innerHTML = '';
+                    document.getElementById('expenseTable').querySelector('tbody').innerHTML = '';
+
+                    // Populate income rows
+                    sharedData.incomes.forEach(item => {
+                        addTableRowData('income', item);
+                    });
+                    // Populate expense rows
+                    sharedData.expenses.forEach(item => {
+                        addTableRowData('expense', item);
+                    });
+
+                    // Clear budget parameter from URL to prevent re-decoding on refresh
+                    const newUrl = new URL(window.location.href);
+                    newUrl.searchParams.delete('budget');
+                    window.history.replaceState({}, document.title, newUrl.toString());
+
+                    calculateBudget(); // Recalculate based on shared link's data
+                } catch (e) {
+                    console.error("Failed to decode share link parameters:", e);
+                    showError('currency-error', 'Invalid share link detected. Please check the URL or try new calculation.');
+                }
+            }
+        }
+
+        function addTableRowData(type, itemData) {
+            const tableBody = document.getElementById(`${type}Table`).querySelector('tbody');
+            const newRow = tableBody.insertRow();
+            newRow.innerHTML = `
+                <td><input type="text" class="item-name" value="${itemData.name || ''}" placeholder="e.g., ${type === 'income' ? 'Bonus' : 'Utilities'}" aria-label="${type === 'income' ? 'Income' : 'Expense'} Name"></td>
+                <td><input type="number" class="item-amount" min="0" step="10" value="${itemData.amount || ''}" aria-label="${type === 'income' ? 'Income' : 'Expense'} Amount"></td>
+                <td>
+                    <select class="item-frequency" aria-label="${type === 'income' ? 'Income' : 'Expense'} Frequency">
+                        <option value="monthly"${itemData.frequency === 'monthly' ? ' selected' : ''}>Monthly</option>
+                        <option value="weekly"${itemData.frequency === 'weekly' ? ' selected' : ''}>Weekly</option>
+                        <option value="annually"${itemData.frequency === 'annually' ? ' selected' : ''}>Annually</option>
+                        <option value="one-time"${itemData.frequency === 'one-time' ? ' selected' : ''}>One-time</option>
+                    </select>
+                </td>
+                <td><button class="remove-row-btn" aria-label="Remove ${type === 'income' ? 'Income' : 'Expense'} Row">X</button></td>
+            `;
+            newRow.querySelector('.remove-row-btn').addEventListener('click', removeRow);
+        }
+
+        function setupSocialSharing() {
+            const income = document.getElementById('totalMonthlyIncome').textContent;
+            const expenses = document.getElementById('totalMonthlyExpenses').textContent;
+            const net = document.getElementById('netMonthlyIncome').textContent;
+            const savingsDeficit = document.getElementById('monthlySavingsDeficit').textContent;
+            const currency = document.getElementById('currencySelect').value;
+            const shareUrl = generateShareLink(); 
+
+            const shareText = `Check out my monthly budget! Income: ${income}, Expenses: ${expenses}, Net: ${net}. Result: ${savingsDeficit}. Calculate your budget here:`;
+            
+            document.getElementById('emailShare').onclick = () => {
+                window.open(`mailto:?subject=My Budget Calculation Results&body=${encodeURIComponent(shareText + ' ' + shareUrl)}`);
+            };
+            document.getElementById('whatsappShare').onclick = () => {
+                window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`);
+            };
+            document.getElementById('linkedinShare').onclick = () => {
+                window.open(`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent('My Budget Breakdown')}&summary=${encodeURIComponent(shareText)}`);
+            };
+            document.getElementById('twitterShare').onclick = () => {
+                window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`);
+            };
+        }
+    </script>
+</body>
+</html>

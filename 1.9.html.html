@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Boat Loan Calculator</title>
+    <!-- 
+        Content-Security-Policy: For production deployment, configure this via your web server (e.g., Nginx, Apache) 
+        for best practice. If using a meta tag, ensure all CDN domains (Chart.js, jsPDF, SheetJS) are whitelisted.
+        For this single-file, self-contained solution, inline scripts/styles require 'unsafe-inline'.
+        Example for meta (adjust for your specific ad networks if they inject more):
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com cdn.jsdelivr.net cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src * data:; media-src *; connect-src *;">
+    -->
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        /* CSS Variables for theming */
+        :root {
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --danger: #e74c3c;
+            --dark-heading-bg: #2c3e50; /* Used for table headers in light mode */
+            --light-bg-secondary: #ecf0f1; /* Used for ad containers, tab non-active */
+            --text-color: #333;
+            --bg-color: #f9f9f9;
+            --card-bg: #fff;
+            --border-color: #ddd;
+            --chart-color-principal: #3498db; /* Blue */
+            --chart-color-interest: #e74c3c; /* Red */
+            --chart-color-downpayment: #2ecc71; /* Green */
+            --chart-color-fees-tax-insurance: #f39c12; /* Orange */
+        }
+        
+        /* Dark Theme Variables */
+        [data-theme="dark"] {
+            --primary: #2980b9;
+            --secondary: #27ae60;
+            --danger: #c0392b;
+            --dark-heading-bg: #34495e; /* Adjusted for dark mode table headers */
+            --light-bg-secondary: #4a667e; /* Adjusted for dark mode ad containers/tabs */
+            --text-color: #ecf0f1;
+            --bg-color: #2c3e50;
+            --card-bg: #34495e;
+            --border-color: #555;
+            --chart-color-principal: #4a90e2; 
+            --chart-color-interest: #ff6b6b;
+            --chart-color-downpayment: #4CAF50;
+            --chart-color-fees-tax-insurance: #f9c26b;
+        }
+        
+        /* Global Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            transition: all 0.3s ease; /* Smooth transition for theme change */
+        }
+        
+        .calculator-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .calculator-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .input-section, .results-section {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1, h2, h3 {
+            color: var(--primary);
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            transition: border-color 0.3s, background-color 0.3s, color 0.3s;
+        }
+        
+        /* Buttons */
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--secondary);
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        /* Ad Containers */
+        .ad-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--light-bg-secondary);
+            border-radius: 4px;
+            text-align: center;
+            min-height: 90px;
+            color: var(--text-color);
+            display: flex; /* For centering text */
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            border: 1px dashed var(--border-color);
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .summary-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .summary-card h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: var(--text-color); /* Use theme variable */
+        }
+        
+        .summary-card p {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: var(--primary); /* Use primary color */
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            color: var(--text-color);
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background-color: var(--dark-heading-bg); /* Use dark card bg for table headers */
+            color: white;
+        }
+        
+        tr:hover {
+            background-color: rgba(0,0,0,0.05); /* Light mode hover */
+        }
+        [data-theme="dark"] tr:hover {
+            background-color: rgba(255,255,255,0.05); /* Dark mode hover */
+        }
+        
+        /* Tooltips */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            color: var(--primary);
+            font-size: 0.9em;
+            margin-left: 5px;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 250px; /* Wider for more text */
+            background-color: var(--dark-heading-bg);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+            font-weight: normal;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Export & Share Options */
+        .export-options, .social-sharing {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .social-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 12px;
+            border-radius: 4px;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            transition: opacity 0.3s;
+        }
+        .social-btn:hover {
+            opacity: 0.8;
+        }
+        
+        .email { background-color: #777; }
+        .whatsapp { background-color: #25D366; }
+        .linkedin { background-color: #0077B5; }
+        .twitter { background-color: #1DA1F2; }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: var(--light-bg-secondary);
+            border: none;
+            border-radius: 4px 4px 0 0;
+            margin-right: 5px;
+            color: var(--text-color);
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background-color: var(--primary);
+            color: white;
+            border-bottom: 2px solid var(--primary);
+        }
+        .tab:not(.active):hover {
+            background-color: rgba(var(--primary), 0.1); /* Subtle hover for non-active */
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: absolute; 
+            top: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 1.2em;
+            width: 40px; /* Fixed width/height for round button */
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        /* Error Messages */
+        .error-message {
+            color: var(--danger);
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        /* Print Specific Styles */
+        @media print {
+            .no-print, .ad-container, .theme-toggle, .tabs, .export-options, .social-sharing {
+                display: none !important;
+            }
+            body {
+                background: none;
+                padding: 0;
+                color: black; /* Force black text for print */
+            }
+            .calculator-container {
+                display: block;
+            }
+            .input-section {
+                display: none; /* Hide input section in print */
+            }
+            .results-section {
+                box-shadow: none; /* Remove shadow for print */
+                padding: 0;
+            }
+            table {
+                font-size: 10px; /* Smaller font for print tables */
+                color: black;
+            }
+            th, td {
+                padding: 8px;
+                border-color: #ccc; /* Lighter border for print */
+            }
+            th {
+                background-color: #eee !important; /* Lighter header for print */
+                color: black !important;
+            }
+            tr:hover {
+                background-color: transparent !important;
+            }
+            .chart-container canvas {
+                max-width: 500px; /* Constrain chart size for print */
+                max-height: 300px;
+                display: block; /* Ensure chart is block level for print */
+                margin: 0 auto;
+            }
+            .summary-card h3, .summary-card p {
+                color: black !important; /* Ensure readable colors in print */
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle no-print" id="themeToggle" aria-label="Toggle dark/light mode">🌓</button>
+    
+    <h1>Advanced Boat Loan Calculator</h1>
+    
+    <div class="calculator-container">
+        <div class="input-section">
+            <h2>Loan Details</h2>
+            
+            <div class="input-group">
+                <label for="boatPrice">
+                    Boat Price ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">The purchase price of the boat.</span>
+                    </span>
+                </label>
+                <input type="number" id="boatPrice" min="1000" step="1000" value="75000" aria-describedby="boatPrice-error">
+                <div class="error-message" id="boatPrice-error" role="alert" aria-live="polite"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="downPayment">
+                    Down Payment ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">The amount you pay upfront. Reduces the financed amount.</span>
+                    </span>
+                </label>
+                <input type="number" id="downPayment" min="0" step="500" value="15000" aria-describedby="downPayment-error">
+                <div class="error-message" id="downPayment-error" role="alert" aria-live="polite"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="interestRate">
+                    Annual Interest Rate (%)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">The annual percentage rate (APR) charged on the loan.</span>
+                    </span>
+                </label>
+                <input type="number" id="interestRate" min="0" max="25" step="0.01" value="5.5" aria-describedby="interestRate-error">
+                <div class="error-message" id="interestRate-error" role="alert" aria-live="polite"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="loanTermYears">
+                    Loan Term (Years)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">The total duration of the loan in years.</span>
+                    </span>
+                </label>
+                <input type="number" id="loanTermYears" min="1" max="20" step="1" value="10" aria-describedby="loanTermYears-error">
+                <div class="error-message" id="loanTermYears-error" role="alert" aria-live="polite"></div>
+            </div>
+
+            <div class="input-group">
+                <label for="startDate">
+                    Loan Start Date
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">The date your first loan payment will be due. Used for the amortization schedule.</span>
+                    </span>
+                </label>
+                <input type="date" id="startDate">
+                <div class="error-message" id="startDate-error" role="alert" aria-live="polite"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="salesTaxRate">
+                    Sales Tax Rate (%)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">Annual sales tax percentage applied to the boat price. This is typically financed.</span>
+                    </span>
+                </label>
+                <input type="number" id="salesTaxRate" min="0" max="15" step="0.1" value="6" aria-describedby="salesTaxRate-error">
+                <div class="error-message" id="salesTaxRate-error" role="alert" aria-live="polite"></div>
+            </div>
+
+            <div class="input-group">
+                <label for="upfrontFees">
+                    Upfront Registration/Fees ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">One-time fees paid at loan closing (e.g., title, registration). These are usually financed.</span>
+                    </span>
+                </label>
+                <input type="number" id="upfrontFees" min="0" step="10" value="500" aria-describedby="upfrontFees-error">
+                <div class="error-message" id="upfrontFees-error" role="alert" aria-live="polite"></div>
+            </div>
+
+            <div class="input-group">
+                <label for="annualInsuranceCost">
+                    Annual Insurance Cost ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">The estimated annual cost of boat insurance. This is added to your total monthly outlay.</span>
+                    </span>
+                </label>
+                <input type="number" id="annualInsuranceCost" min="0" step="50" value="700" aria-describedby="annualInsuranceCost-error">
+                <div class="error-message" id="annualInsuranceCost-error" role="alert" aria-live="polite"></div>
+            </div>
+            
+            <button id="calculateBtn">Calculate Loan</button>
+            <button id="addComparisonBtn" class="btn-secondary no-print">Add to Comparison</button>
+        </div>
+        
+        <div class="results-section">
+            <h2>Loan Summary</h2>
+            
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <h3>Monthly Loan Payment</h3>
+                    <p id="monthlyLoanPayment">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Interest</h3>
+                    <p id="totalInterest">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Down Payment</h3>
+                    <p id="displayDownPayment">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Sales Tax</h3>
+                    <p id="totalSalesTax">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Registration/Fees</h3>
+                    <p id="totalRegistrationFees">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Insurance Cost</h3>
+                    <p id="totalInsuranceCost">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Monthly Outlay</h3>
+                    <p id="totalMonthlyOutlay">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Overall Boat Cost</h3>
+                    <p id="overallBoatCost">$0.00</p>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="loanCostChart" aria-label="Boat Loan Cost Breakdown Chart"></canvas>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab active" data-tab="schedule" aria-controls="schedule-tab">Amortization Schedule</button>
+                <button class="tab" data-tab="comparison" aria-controls="comparison-tab">Loan Comparison</button>
+            </div>
+            
+            <div class="tab-content active" id="schedule-tab" role="tabpanel" aria-labelledby="schedule-tab-btn">
+                <h3>Detailed Amortization Schedule</h3>
+                <div style="overflow-x: auto;">
+                    <table id="scheduleTable">
+                        <thead>
+                            <tr>
+                                <th>Period</th>
+                                <th>Payment Date</th>
+                                <th>Starting Balance</th>
+                                <th>Loan Payment</th>
+                                <th>Interest Paid</th>
+                                <th>Principal Paid</th>
+                                <th>Ending Balance</th>
+                                <th>Cum. Interest</th>
+                                <th>Cum. Principal</th>
+                                <th>Monthly Tax</th>
+                                <th>Monthly Ins.</th>
+                                <th>Monthly Fees</th>
+                                <th>Total Outlay</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scheduleBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="comparison-tab" role="tabpanel" aria-labelledby="comparison-tab-btn">
+                <h3>Compared Loan Scenarios</h3>
+                <div style="overflow-x: auto;">
+                    <table id="comparisonTable">
+                        <thead>
+                            <tr>
+                                <th>Scenario</th>
+                                <th>Boat Price</th>
+                                <th>Down Payment</th>
+                                <th>Interest Rate</th>
+                                <th>Term (Yrs)</th>
+                                <th>Monthly Loan Pmt</th>
+                                <th>Total Interest</th>
+                                <th>Total Monthly Outlay</th>
+                                <th>Overall Boat Cost</th>
+                                <th class="no-print">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comparisonBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <button id="clearComparisonBtn" class="btn-secondary no-print">Clear All Comparisons</button>
+            </div>
+            
+            <div class="ad-container">
+                Advertisement Space (Adsterra Header/Footer)
+                <small>This space is reserved for ad network code (e.g., 728x90).</small>
+            </div>
+
+            <div class="export-options no-print">
+                <button id="printBtn">Print Summary</button>
+                <button id="pdfBtn">Save as PDF</button>
+                <button id="excelBtn">Save as Excel</button>
+                <button id="csvBtn">Save as CSV</button>
+            </div>
+            
+            <div class="social-sharing no-print">
+                <button class="social-btn email" id="emailShare" aria-label="Share via Email">Email</button>
+                <button class="social-btn whatsapp" id="whatsappShare" aria-label="Share via WhatsApp">WhatsApp</button>
+                <button class="social-btn linkedin" id="linkedinShare" aria-label="Share via LinkedIn">LinkedIn</button>
+                <button class="social-btn twitter" id="twitterShare" aria-label="Share via Twitter">Twitter</button>
+            </div>
+
+            <div class="ad-container" style="height: 250px;">
+                Advertisement Space (Yllix Sidebar/Floating)
+                <small>This space is reserved for ad network code (e.g., 300x250).</small>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables to store current calculation results for export and chart
+        let currentLoanResults = {};
+        let amortizationSchedule = [];
+        let loanCostChartInstance = null; // To manage Chart.js instance
+        let comparedLoans = []; // Array to store comparison scenarios
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default start date to today
+            const today = new Date();
+            document.getElementById('startDate').valueAsDate = today;
+
+            // Set up theme toggle
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+            
+            // Set up tab functionality
+            setupTabs();
+            
+            // Set up event listeners for calculation and exports
+            document.getElementById('calculateBtn').addEventListener('click', calculateLoan);
+            document.getElementById('addComparisonBtn').addEventListener('click', addLoanToComparison);
+            document.getElementById('clearComparisonBtn').addEventListener('click', clearAllComparisons);
+            document.getElementById('printBtn').addEventListener('click', printSummary);
+            document.getElementById('pdfBtn').addEventListener('click', exportToPDF);
+            document.getElementById('excelBtn').addEventListener('click', exportToExcel);
+            document.getElementById('csvBtn').addEventListener('click', exportToCSV);
+            
+            // Initial calculation on page load
+            calculateLoan();
+            setupSocialSharing(); // Needs initial data
+        });
+        
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            }
+            // Update chart colors on theme change
+            if (loanCostChartInstance) {
+                const rootStyle = getComputedStyle(document.documentElement);
+                loanCostChartInstance.data.datasets[0].backgroundColor = [
+                    rootStyle.getPropertyValue('--chart-color-principal'),
+                    rootStyle.getPropertyValue('--chart-color-interest'),
+                    rootStyle.getPropertyValue('--chart-color-downpayment'),
+                    rootStyle.getPropertyValue('--chart-color-fees-tax-insurance')
+                ];
+                loanCostChartInstance.options.plugins.legend.labels.color = rootStyle.getPropertyValue('--text-color');
+                loanCostChartInstance.options.plugins.title.color = rootStyle.getPropertyValue('--text-color');
+                loanCostChartInstance.update();
+            }
+        }
+        
+        function setupTabs() {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                });
+            });
+        }
+
+        // --- Error Handling Utilities ---
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+        }
+
+        function showError(elementId, message) {
+            document.getElementById(elementId).textContent = message;
+        }
+        
+        // --- Core Loan Calculation Logic ---
+        function calculateLoan() {
+            clearErrors(); // Clear previous errors
+
+            // Get input values
+            const boatPrice = parseFloat(document.getElementById('boatPrice').value);
+            const downPayment = parseFloat(document.getElementById('downPayment').value);
+            let annualInterestRate = parseFloat(document.getElementById('interestRate').value);
+            const loanTermYears = parseInt(document.getElementById('loanTermYears').value);
+            const startDateInput = document.getElementById('startDate').value;
+            const startDate = new Date(startDateInput);
+            let salesTaxRate = parseFloat(document.getElementById('salesTaxRate').value);
+            const upfrontFees = parseFloat(document.getElementById('upfrontFees').value);
+            const annualInsuranceCost = parseFloat(document.getElementById('annualInsuranceCost').value);
+            
+            // Convert percentages to decimals
+            annualInterestRate /= 100;
+            salesTaxRate /= 100;
+            
+            // --- Input Validation ---
+            let isValid = true;
+            if (isNaN(boatPrice) || boatPrice <= 0) {
+                showError('boatPrice', 'Must be a positive number.'); isValid = false;
+            }
+            if (isNaN(downPayment) || downPayment < 0) {
+                showError('downPayment', 'Must be non-negative.'); isValid = false;
+            }
+            // Temporarily skip downPayment >= boatPrice check here to allow amountFinanced to be calculated first
+            
+            if (isNaN(annualInterestRate) || annualInterestRate < 0 || annualInterestRate > 0.25) { // Max 25% typical boat loan
+                showError('interestRate', 'Must be between 0% and 25%.'); isValid = false;
+            }
+            if (isNaN(loanTermYears) || loanTermYears <= 0 || !Number.isInteger(loanTermYears)) {
+                showError('loanTermYears', 'Must be a positive whole number.'); isValid = false;
+            }
+            if (!startDateInput || isNaN(startDate.getTime())) { // Check if input is empty or invalid date
+                showError('startDate', 'Please select a valid start date.'); isValid = false;
+            }
+            if (isNaN(salesTaxRate) || salesTaxRate < 0 || salesTaxRate > 0.15) { // Max 15% sales tax
+                showError('salesTaxRate', 'Must be between 0% and 15%.'); isValid = false;
+            }
+            if (isNaN(upfrontFees) || upfrontFees < 0) {
+                showError('upfrontFees', 'Must be a non-negative number.'); isValid = false;
+            }
+            if (isNaN(annualInsuranceCost) || annualInsuranceCost < 0) {
+                showError('annualInsuranceCost', 'Must be a non-negative number.'); isValid = false;
+            }
+            
+            if (!isValid) {
+                document.getElementById('results-section').style.display = 'none';
+                return;
+            }
+
+            // --- Loan Calculation Steps ---
+            const totalTax = boatPrice * salesTaxRate;
+            const amountFinanced = boatPrice - downPayment + totalTax + upfrontFees;
+
+            // Critical validation: amount to finance must be positive
+            if (amountFinanced <= 0) {
+                showError('boatPrice', 'Amount to be financed must be positive after down payment, tax, and fees.');
+                showError('downPayment', 'Adjust down payment, tax, or fees. Amount to finance cannot be zero or negative.');
+                document.getElementById('results-section').style.display = 'none';
+                return;
+            }
+
+            const periodicRate = annualInterestRate / 12; // Monthly payments assumed
+            const totalPayments = loanTermYears * 12; // Always convert to months for consistency
+
+            let monthlyLoanPayment;
+            if (periodicRate === 0) {
+                monthlyLoanPayment = amountFinanced / totalPayments;
+            } else {
+                monthlyLoanPayment = amountFinanced * (periodicRate * Math.pow(1 + periodicRate, totalPayments)) / 
+                                 (Math.pow(1 + periodicRate, totalPayments) - 1);
+            }
+            
+            const totalInterest = (monthlyLoanPayment * totalPayments) - amountFinanced;
+            const totalPrincipalPaid = amountFinanced; // This is the amount financed
+
+            const monthlyInsurance = annualInsuranceCost / 12;
+            const totalInsuranceCost = annualInsuranceCost * loanTermYears;
+
+            const totalMonthlyOutlay = monthlyLoanPayment + monthlyInsurance; // Simplified, assumes tax/fees are financed
+            const overallBoatCost = boatPrice + totalInterest + totalTax + upfrontFees + totalInsuranceCost;
+
+            // Validate final calculated values (e.g., if input leads to NaN or Infinity)
+            if (isNaN(monthlyLoanPayment) || !isFinite(monthlyLoanPayment)) {
+                showError('interestRate', 'Calculation resulted in invalid numbers (e.g., extremely low rate or too long term).');
+                document.getElementById('results-section').style.display = 'none';
+                return;
+            }
+
+            // Store results in global object for export and comparison
+            currentLoanResults = {
+                boatPrice: boatPrice,
+                downPayment: downPayment,
+                annualInterestRate: annualInterestRate * 100, // Store as percentage for display
+                loanTermYears: loanTermYears,
+                startDate: startDate, // Store the Date object
+                salesTaxRate: salesTaxRate * 100,
+                upfrontFees: upfrontFees,
+                annualInsuranceCost: annualInsuranceCost,
+                
+                amountFinanced: amountFinanced,
+                totalPayments: totalPayments, // Total months
+                
+                monthlyLoanPayment: monthlyLoanPayment,
+                totalInterest: totalInterest,
+                totalPrincipalPaid: totalPrincipalPaid,
+                
+                totalSalesTax: totalTax,
+                totalRegistrationFees: upfrontFees,
+                monthlyInsurance: monthlyInsurance,
+                totalInsuranceCost: totalInsuranceCost,
+                
+                totalMonthlyOutlay: totalMonthlyOutlay,
+                overallBoatCost: overallBoatCost
+            };
+
+            // Generate detailed amortization schedule
+            amortizationSchedule = generateAmortizationSchedule(currentLoanResults);
+            
+            // Update UI
+            updateSummaryCards(currentLoanResults);
+            updateChart(currentLoanResults);
+            displayScheduleTable(amortizationSchedule);
+            displayComparisonTable(); // Redraw comparison table in case it's open
+            setupSocialSharing(); // Update sharing links with new data
+
+            document.getElementById('results-section').style.display = 'block';
+        }
+
+        // --- Amortization Schedule Generation ---
+        function generateAmortizationSchedule(results) {
+            const schedule = [];
+            let currentBalance = results.amountFinanced;
+            let cumulativeInterestPaid = 0;
+            let cumulativePrincipalPaid = 0;
+            
+            const periodicRate = (results.annualInterestRate / 100) / 12;
+            let monthlyLoanPayment = results.monthlyLoanPayment; // Use 'let' because it might be adjusted for final payment
+            const totalPeriods = results.totalPayments;
+            const loanStartDateOriginal = new Date(results.startDate); // Use a copy of the original start date for fixed reference
+
+            const monthlyTaxAmount = results.totalSalesTax / totalPeriods; // Prorated monthly if financed
+            const monthlyUpfrontFeesAmount = results.upfrontFees / totalPeriods; // Prorated monthly if financed
+
+            for (let i = 1; i <= totalPeriods; i++) {
+                // If balance is already 0 (due to previous period's rounding or exact payout)
+                if (currentBalance <= 0.01 && i > 1) { 
+                    currentBalance = 0; 
+                    break; 
+                }
+
+                const interestPaidThisPeriod = currentBalance * periodicRate;
+                let principalPaidThisPeriod = monthlyLoanPayment - interestPaidThisPeriod;
+
+                // Adjust for final payment to zero out the balance precisely
+                if (i === totalPeriods || (currentBalance - principalPaidThisPeriod) < 0.01) {
+                    principalPaidThisPeriod = currentBalance; // Pay off remaining balance
+                    // Recalculate monthlyLoanPayment for this *final* period to match exact principal + interest
+                    monthlyLoanPayment = principalPaidThisPeriod + interestPaidThisPeriod; 
+                }
+
+                principalPaidThisPeriod = Math.max(0, principalPaidThisPeriod); // Ensure principal paid is not negative
+
+                // Calculate current balance after this payment
+                currentBalance -= principalPaidThisPeriod;
+                cumulativeInterestPaid += interestPaidThisPeriod;
+                cumulativePrincipalPaid += principalPaidThisPeriod;
+
+                // Calculate payment date for this period (create new date object each time)
+                const paymentDate = new Date(loanStartDateOriginal); 
+                paymentDate.setMonth(loanStartDateOriginal.getMonth() + i); 
+
+                schedule.push({
+                    period: i,
+                    paymentDate: paymentDate,
+                    startingBalance: parseFloat((results.amountFinanced - (i === 1 ? 0 : (cumulativePrincipalPaid - principalPaidThisPeriod))).toFixed(2)),
+                    loanPayment: parseFloat(monthlyLoanPayment.toFixed(2)),
+                    interestPaid: parseFloat(interestPaidThisPeriod.toFixed(2)),
+                    principalPaid: parseFloat(principalPaidThisPeriod.toFixed(2)),
+                    endingBalance: parseFloat(Math.max(0, currentBalance).toFixed(2)), 
+                    cumulativeInterest: parseFloat(cumulativeInterestPaid.toFixed(2)),
+                    cumulativePrincipal: parseFloat(cumulativePrincipalPaid.toFixed(2)),
+                    
+                    monthlyTax: parseFloat(monthlyTaxAmount.toFixed(2)),
+                    monthlyInsurance: parseFloat(results.monthlyInsurance.toFixed(2)),
+                    monthlyFees: parseFloat(monthlyUpfrontFeesAmount.toFixed(2)),
+                    totalMonthlyOutlay: parseFloat((monthlyLoanPayment + results.monthlyInsurance + monthlyTaxAmount + monthlyUpfrontFeesAmount).toFixed(2)) // Sum of all monthly cash outlays
+                });
+            }
+            return schedule;
+        }
+
+        // --- Loan Comparison Logic ---
+        function addLoanToComparison() {
+            if (Object.keys(currentLoanResults).length === 0 || isNaN(currentLoanResults.monthlyLoanPayment)) {
+                alert("Please calculate a valid loan first before adding to comparison.");
+                return;
+            }
+            
+            const scenarioName = prompt("Enter a name for this loan scenario (e.g., 'Option A', 'Longer Term Loan'):");
+            if (!scenarioName) return; // User cancelled or entered empty name
+
+            const newScenario = {
+                id: Date.now(), // Unique ID
+                name: scenarioName,
+                boatPrice: currentLoanResults.boatPrice,
+                downPayment: currentLoanResults.downPayment,
+                interestRate: currentLoanResults.annualInterestRate,
+                loanTermYears: currentLoanResults.loanTermYears,
+                monthlyLoanPayment: currentLoanResults.monthlyLoanPayment,
+                totalInterest: currentLoanResults.totalInterest,
+                totalMonthlyOutlay: currentLoanResults.totalMonthlyOutlay, // Includes loan, insurance, etc.
+                overallBoatCost: currentLoanResults.overallBoatCost // Includes all costs
+            };
+            comparedLoans.push(newScenario);
+            displayComparisonTable();
+            // Switch to comparison tab if it's not active
+            document.querySelector('.tabs .tab[data-tab="comparison"]').click();
+        }
+
+        function removeLoanFromComparison(idToRemove) {
+            comparedLoans = comparedLoans.filter(loan => loan.id !== idToRemove);
+            displayComparisonTable();
+        }
+
+        function clearAllComparisons() {
+            if (confirm("Are you sure you want to clear all compared loan scenarios? This action cannot be undone.")) {
+                comparedLoans = [];
+                displayComparisonTable();
+            }
+        }
+
+        // --- UI Update Functions ---
+        function updateSummaryCards(results) {
+            document.getElementById('monthlyLoanPayment').textContent = formatCurrency(results.monthlyLoanPayment);
+            document.getElementById('totalInterest').textContent = formatCurrency(results.totalInterest);
+            document.getElementById('displayDownPayment').textContent = formatCurrency(results.downPayment);
+            document.getElementById('totalSalesTax').textContent = formatCurrency(results.totalSalesTax);
+            document.getElementById('totalRegistrationFees').textContent = formatCurrency(results.totalRegistrationFees);
+            document.getElementById('totalInsuranceCost').textContent = formatCurrency(results.totalInsuranceCost);
+            document.getElementById('totalMonthlyOutlay').textContent = formatCurrency(results.totalMonthlyOutlay);
+            document.getElementById('overallBoatCost').textContent = formatCurrency(results.overallBoatCost);
+        }
+        
+        function updateChart(results) {
+            const ctx = document.getElementById('loanCostChart').getContext('2d');
+            
+            // Destroy previous chart if exists
+            if (loanCostChartInstance) {
+                loanCostChartInstance.destroy();
+            }
+
+            if (results.overallBoatCost <= 0) { // No meaningful data to chart
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                return;
+            }
+
+            const labels = ['Principal Financed (Boat)', 'Total Interest', 'Down Payment', 'Total Tax, Reg. & Insurance'];
+            const data = [
+                results.boatPrice - results.downPayment, // Principal directly related to boat price
+                results.totalInterest,
+                results.downPayment,
+                results.totalSalesTax + results.totalRegistrationFees + results.totalInsuranceCost
+            ];
+
+            // Filter out zero values for chart if they are not relevant for visual representation
+            const filteredLabels = [];
+            const filteredData = [];
+            const backgroundColors = [];
+            const rootStyle = getComputedStyle(document.documentElement);
+            const chartColors = [
+                rootStyle.getPropertyValue('--chart-color-principal'),
+                rootStyle.getPropertyValue('--chart-color-interest'),
+                rootStyle.getPropertyValue('--chart-color-downpayment'),
+                rootStyle.getPropertyValue('--chart-color-fees-tax-insurance')
+            ];
+
+            for(let i = 0; i < data.length; i++) {
+                if (Math.abs(data[i]) > 0.01) { // Filter out very small values (near zero)
+                    filteredData.push(data[i]);
+                    filteredLabels.push(labels[i]);
+                    backgroundColors.push(chartColors[i]);
+                }
+            }
+
+            loanCostChartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: filteredLabels,
+                    datasets: [{
+                        data: filteredData,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: rootStyle.getPropertyValue('--text-color')
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                    return `${context.label}: ${formatCurrency(value)} (${percentage}%)`;
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Overall Boat Cost Breakdown',
+                            color: rootStyle.getPropertyValue('--text-color')
+                        }
+                    }
+                }
+            });
+        }
+
+        function displayScheduleTable(schedule) {
+            const tableBody = document.getElementById('scheduleBody');
+            tableBody.innerHTML = '';
+            
+            // Only show every 12th payment if there are many, plus first and last
+            const showAllThreshold = 12 * 5; // Show all if 5 years or less (60 months)
+            const showAll = schedule.length <= showAllThreshold;
+            
+            schedule.forEach((period, i) => {
+                const isEndOfYear = (i + 1) % 12 === 0;
+                const isFirstOrLast = i === 0 || i === schedule.length - 1;
+
+                if (showAll || isEndOfYear || isFirstOrLast) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${period.period}</td>
+                        <td>${period.paymentDate.toLocaleDateString()}</td>
+                        <td>${formatCurrency(period.startingBalance)}</td>
+                        <td>${formatCurrency(period.loanPayment)}</td>
+                        <td>${formatCurrency(period.interestPaid)}</td>
+                        <td>${formatCurrency(period.principalPaid)}</td>
+                        <td>${formatCurrency(period.endingBalance)}</td>
+                        <td>${formatCurrency(period.cumulativeInterest)}</td>
+                        <td>${formatCurrency(period.cumulativePrincipal)}</td>
+                        <td>${formatCurrency(period.monthlyTax)}</td>
+                        <td>${formatCurrency(period.monthlyInsurance)}</td>
+                        <td>${formatCurrency(period.monthlyFees)}</td>
+                        <td>${formatCurrency(period.totalMonthlyOutlay)}</td>
+                    `;
+                    tableBody.appendChild(row);
+                }
+            });
+        }
+
+        function displayComparisonTable() {
+            const tableBody = document.getElementById('comparisonBody');
+            tableBody.innerHTML = '';
+
+            if (comparedLoans.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="10" style="text-align: center;">No loans added for comparison yet.</td></tr>';
+                return;
+            }
+
+            comparedLoans.forEach(loan => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${loan.name}</td>
+                    <td>${formatCurrency(loan.boatPrice)}</td>
+                    <td>${formatCurrency(loan.downPayment)}</td>
+                    <td>${formatPercentage(loan.interestRate)}</td>
+                    <td>${loan.loanTermYears}</td>
+                    <td>${formatCurrency(loan.monthlyLoanPayment)}</td>
+                    <td>${formatCurrency(loan.totalInterest)}</td>
+                    <td>${formatCurrency(loan.totalMonthlyOutlay)}</td>
+                    <td>${formatCurrency(loan.overallBoatCost)}</td>
+                    <td class="no-print"><button class="btn-secondary" onclick="removeLoanFromComparison(${loan.id})">Remove</button></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // --- Formatting Utilities ---
+        function formatCurrency(amount) {
+            // Check for NaN or Infinity before formatting
+            if (isNaN(amount) || !isFinite(amount)) {
+                return "$0.00"; 
+            }
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        }
+
+        function formatPercentage(value) {
+            // Check for NaN or Infinity before formatting
+            if (isNaN(value) || !isFinite(value)) {
+                return "0.00%";
+            }
+            return value.toFixed(2) + '%';
+        }
+        
+        // --- Export Functions ---
+        function printSummary() {
+            window.print();
+        }
+        
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'pt', 'letter');
+            let currentY = 40;
+            const margin = 40;
+            const pageWidth = doc.internal.pageSize.width;
+
+            doc.setFontSize(18);
+            doc.text('Boat Loan Report', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 30;
+
+            doc.setFontSize(12);
+            doc.text(`Calculated On: ${new Date().toLocaleDateString()}`, margin, currentY);
+            currentY += 20;
+
+            // Input Details
+            const inputDetails = [
+                ["Boat Price", formatCurrency(currentLoanResults.boatPrice)],
+                ["Down Payment", formatCurrency(currentLoanResults.downPayment)],
+                ["Annual Interest Rate", formatPercentage(currentLoanResults.annualInterestRate)],
+                ["Loan Term (Years)", currentLoanResults.loanTermYears],
+                ["Loan Start Date", currentLoanResults.startDate.toLocaleDateString()],
+                ["Sales Tax Rate", formatPercentage(currentLoanResults.salesTaxRate)],
+                ["Upfront Registration/Fees", formatCurrency(currentLoanResults.upfrontFees)],
+                ["Annual Insurance Cost", formatCurrency(currentLoanResults.annualInsuranceCost)]
+            ];
+            doc.autoTable({
+                startY: currentY,
+                head: [['Parameter', 'Value']],
+                body: inputDetails,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                margin: { left: margin, right: margin }
+            });
+            currentY = doc.autoTable.previous.finalY + 20;
+
+            // Summary Results
+            const summaryResults = [
+                ["Monthly Loan Payment", document.getElementById('monthlyLoanPayment').textContent],
+                ["Total Interest", document.getElementById('totalInterest').textContent],
+                ["Total Down Payment", document.getElementById('displayDownPayment').textContent],
+                ["Total Sales Tax", document.getElementById('totalSalesTax').textContent],
+                ["Total Registration/Fees", document.getElementById('totalRegistrationFees').textContent],
+                ["Total Insurance Cost", document.getElementById('totalInsuranceCost').textContent],
+                ["Total Monthly Outlay", document.getElementById('totalMonthlyOutlay').textContent],
+                ["Overall Boat Cost", document.getElementById('overallBoatCost').textContent]
+            ];
+            doc.autoTable({
+                startY: currentY,
+                head: [['Result', 'Value']],
+                body: summaryResults,
+                theme: 'grid',
+                headStyles: { fillColor: [46, 204, 113], textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                margin: { left: margin, right: margin }
+            });
+            currentY = doc.autoTable.previous.finalY + 30;
+
+            // Detailed Amortization Schedule
+            doc.addPage();
+            currentY = margin;
+            doc.setFontSize(16);
+            doc.text('Detailed Amortization Schedule', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 20;
+
+            // Prepare data for PDF, using original numbers for accuracy
+            const scheduleTableData = amortizationSchedule.map(p => [
+                p.period,
+                p.paymentDate.toLocaleDateString('en-US'),
+                p.startingBalance.toFixed(2),
+                p.loanPayment.toFixed(2),
+                p.interestPaid.toFixed(2),
+                p.principalPaid.toFixed(2),
+                p.endingBalance.toFixed(2),
+                p.cumulativeInterest.toFixed(2),
+                p.cumulativePrincipal.toFixed(2),
+                p.monthlyTax.toFixed(2),
+                p.monthlyInsurance.toFixed(2),
+                p.monthlyFees.toFixed(2),
+                p.totalMonthlyOutlay.toFixed(2)
+            ]);
+
+            doc.autoTable({
+                startY: currentY,
+                head: [['Per.', 'Date', 'Start Bal', 'Loan Pmt', 'Int.', 'Prin.', 'End Bal', 'Cum. Int.', 'Cum. Prin.', 'Tax', 'Ins.', 'Fees', 'Total Outlay']],
+                body: scheduleTableData,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                styles: { fontSize: 6, cellPadding: 2 }, // Very small font/padding for many columns
+                margin: { left: margin, right: margin },
+                didDrawPage: function(data) {
+                    let pageCount = doc.internal.getNumberOfPages();
+                    doc.setFontSize(8);
+                    doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber + ' of ' + pageCount, data.settings.margin.left, doc.internal.pageSize.height - 20);
+                }
+            });
+
+            // Loan Comparison Table (if any)
+            if (comparedLoans.length > 0) {
+                doc.addPage();
+                currentY = margin;
+                doc.setFontSize(16);
+                doc.text('Loan Comparison', pageWidth / 2, currentY, { align: 'center' });
+                currentY += 20;
+
+                const comparisonTableData = comparedLoans.map(loan => [
+                    loan.name,
+                    loan.boatPrice.toFixed(2),
+                    loan.downPayment.toFixed(2),
+                    loan.interestRate.toFixed(2),
+                    loan.loanTermYears,
+                    loan.monthlyLoanPayment.toFixed(2),
+                    loan.totalInterest.toFixed(2),
+                    loan.totalMonthlyOutlay.toFixed(2),
+                    loan.overallBoatCost.toFixed(2)
+                ]);
+
+                doc.autoTable({
+                    startY: currentY,
+                    head: [['Scenario', 'Boat Price', 'Down Pmt', 'Rate (%)', 'Term (Yrs)', 'Loan Pmt', 'Total Interest', 'Total Monthly Outlay', 'Overall Cost']],
+                    body: comparisonTableData,
+                    theme: 'grid',
+                    headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                    styles: { fontSize: 8, cellPadding: 4 },
+                    margin: { left: margin, right: margin },
+                    didDrawPage: function(data) {
+                        let pageCount = doc.internal.getNumberOfPages();
+                        doc.setFontSize(8);
+                        doc.text('Page ' + doc.internal.getCurrentPageInfo().pageNumber + ' of ' + pageCount, data.settings.margin.left, doc.internal.pageSize.height - 20);
+                    }
+                });
+            }
+            
+            doc.save('boat_loan_report.pdf');
+        }
+        
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+            
+            // Sheet 1: Summary
+            const summaryData = [
+                ["Boat Loan Report", ""],
+                ["Calculated On", new Date().toLocaleDateString()],
+                [],
+                ["Input Details", ""],
+                ["Boat Price", currentLoanResults.boatPrice],
+                ["Down Payment", currentLoanResults.downPayment],
+                ["Annual Interest Rate", currentLoanResults.annualInterestRate], // Unformatted for Excel
+                ["Loan Term (Years)", currentLoanResults.loanTermYears],
+                ["Loan Start Date", currentLoanResults.startDate.toLocaleDateString()],
+                ["Sales Tax Rate", currentLoanResults.salesTaxRate],
+                ["Upfront Registration/Fees", currentLoanResults.upfrontFees],
+                ["Annual Insurance Cost", currentLoanResults.annualInsuranceCost],
+                [],
+                ["Results", ""],
+                ["Monthly Loan Payment", currentLoanResults.monthlyLoanPayment], // Unformatted
+                ["Total Interest", currentLoanResults.totalInterest], // Unformatted
+                ["Total Down Payment", currentLoanResults.downPayment], // Unformatted
+                ["Total Sales Tax", currentLoanResults.totalSalesTax], // Unformatted
+                ["Total Registration/Fees", currentLoanResults.totalRegistrationFees], // Unformatted
+                ["Total Insurance Cost", currentLoanResults.totalInsuranceCost], // Unformatted
+                ["Total Monthly Outlay", currentLoanResults.totalMonthlyOutlay], // Unformatted
+                ["Overall Boat Cost", currentLoanResults.overallBoatCost] // Unformatted
+            ];
+            const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, summaryWs, "Loan Summary");
+
+            // Sheet 2: Amortization Schedule
+            const detailedScheduleHeaders = [
+                "Period", "Payment Date", "Starting Balance", "Loan Payment", 
+                "Interest Paid", "Principal Paid", "Ending Balance", "Cumulative Interest", 
+                "Cumulative Principal", "Monthly Tax", "Monthly Insurance", "Monthly Fees", "Total Monthly Outlay"
+            ];
+            const detailedScheduleData = [detailedScheduleHeaders];
+            amortizationSchedule.forEach(p => {
+                detailedScheduleData.push([
+                    p.period,
+                    p.paymentDate.toLocaleDateString('en-US'),
+                    p.startingBalance,
+                    p.loanPayment,
+                    p.interestPaid,
+                    p.principalPaid,
+                    p.endingBalance,
+                    p.cumulativeInterest,
+                    p.cumulativePrincipal,
+                    p.monthlyTax,
+                    p.monthlyInsurance,
+                    p.monthlyFees,
+                    p.totalMonthlyOutlay
+                ]);
+            });
+            const detailedScheduleWs = XLSX.utils.aoa_to_sheet(detailedScheduleData);
+            XLSX.utils.book_append_sheet(wb, detailedScheduleWs, "Amortization Schedule");
+
+            // Sheet 3: Loan Comparison (if any)
+            if (comparedLoans.length > 0) {
+                const comparisonHeaders = [
+                    "Scenario", "Boat Price", "Down Payment", "Interest Rate (%)", "Term (Yrs)", 
+                    "Monthly Loan Payment", "Total Interest", "Total Monthly Outlay", "Overall Boat Cost"
+                ];
+                const comparisonData = [comparisonHeaders];
+                comparedLoans.forEach(loan => {
+                    comparisonData.push([
+                        loan.name,
+                        loan.boatPrice,
+                        loan.downPayment,
+                        loan.interestRate,
+                        loan.loanTermYears,
+                        loan.monthlyLoanPayment,
+                        loan.totalInterest,
+                        loan.totalMonthlyOutlay,
+                        loan.overallBoatCost
+                    ]);
+                });
+                const comparisonWs = XLSX.utils.aoa_to_sheet(comparisonData);
+                XLSX.utils.book_append_sheet(wb, comparisonWs, "Loan Comparison");
+            }
+            
+            XLSX.writeFile(wb, 'boat_loan_report.xlsx');
+        }
+        
+        function exportToCSV() {
+            let csvContent = "";
+
+            // Summary data
+            csvContent += "Boat Loan Report\n";
+            csvContent += `"Calculated On","${new Date().toLocaleDateString()}"\n\n`;
+            csvContent += `"Input Details",\n`;
+            csvContent += `"Boat Price",${currentLoanResults.boatPrice}\n`;
+            csvContent += `"Down Payment",${currentLoanResults.downPayment}\n`;
+            csvContent += `"Annual Interest Rate",${currentLoanResults.annualInterestRate}%\n`; // Formatted for CSV
+            csvContent += `"Loan Term (Years)",${currentLoanResults.loanTermYears}\n`;
+            csvContent += `"Loan Start Date","${currentLoanResults.startDate.toLocaleDateString()}"\n`;
+            csvContent += `"Sales Tax Rate",${currentLoanResults.salesTaxRate}%\n`;
+            csvContent += `"Upfront Registration/Fees",${currentLoanResults.upfrontFees}\n`;
+            csvContent += `"Annual Insurance Cost",${currentLoanResults.annualInsuranceCost}\n\n`;
+            csvContent += `"Results",\n`;
+            csvContent += `"Monthly Loan Payment",${currentLoanResults.monthlyLoanPayment.toFixed(2)}\n`; // Formatted for CSV
+            csvContent += `"Total Interest",${currentLoanResults.totalInterest.toFixed(2)}\n`; // Formatted for CSV
+            csvContent += `"Total Down Payment",${currentLoanResults.downPayment.toFixed(2)}\n`; // Formatted for CSV
+            csvContent += `"Total Sales Tax",${currentLoanResults.totalSalesTax.toFixed(2)}\n`; // Formatted for CSV
+            csvContent += `"Total Registration/Fees",${currentLoanResults.totalRegistrationFees.toFixed(2)}\n`; // Formatted for CSV
+            csvContent += `"Total Insurance Cost",${currentLoanResults.totalInsuranceCost.toFixed(2)}\n`; // Formatted for CSV
+            csvContent += `"Total Monthly Outlay",${currentLoanResults.totalMonthlyOutlay.toFixed(2)}\n`; // Formatted for CSV
+            csvContent += `"Overall Boat Cost",${currentLoanResults.overallBoatCost.toFixed(2)}\n\n`; // Formatted for CSV
+
+            // Detailed Amortization Schedule
+            csvContent += "Amortization Schedule\n";
+            csvContent += "Period,Payment Date,Starting Balance,Loan Payment,Interest Paid,Principal Paid,Ending Balance,Cumulative Interest,Cumulative Principal,Monthly Tax,Monthly Insurance,Monthly Fees,Total Monthly Outlay\n";
+            amortizationSchedule.forEach(p => {
+                csvContent += `${p.period},"${p.paymentDate.toLocaleDateString('en-US')}",${p.startingBalance.toFixed(2)},${p.loanPayment.toFixed(2)},${p.interestPaid.toFixed(2)},${p.principalPaid.toFixed(2)},${p.endingBalance.toFixed(2)},${p.cumulativeInterest.toFixed(2)},${p.cumulativePrincipal.toFixed(2)},${p.monthlyTax.toFixed(2)},${p.monthlyInsurance.toFixed(2)},${p.monthlyFees.toFixed(2)},${p.totalMonthlyOutlay.toFixed(2)}\n`;
+            });
+            csvContent += "\n";
+
+            // Loan Comparison (if any)
+            if (comparedLoans.length > 0) {
+                csvContent += "Loan Comparison\n";
+                csvContent += "Scenario,Boat Price,Down Payment,Interest Rate (%),Term (Yrs),Monthly Loan Payment,Total Interest,Total Monthly Outlay,Overall Boat Cost\n";
+                comparedLoans.forEach(loan => {
+                    csvContent += `"${loan.name}",${loan.boatPrice.toFixed(2)},${loan.downPayment.toFixed(2)},${loan.interestRate.toFixed(2)},${loan.loanTermYears},${loan.monthlyLoanPayment.toFixed(2)},${loan.totalInterest.toFixed(2)},${loan.totalMonthlyOutlay.toFixed(2)},${loan.overallBoatCost.toFixed(2)}\n`;
+                });
+                csvContent += "\n";
+            }
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'boat_loan_report.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        function setupSocialSharing() {
+            const boatPrice = currentLoanResults.boatPrice || 0;
+            const loanTermYears = currentLoanResults.loanTermYears || 0;
+            const annualInterestRate = currentLoanResults.annualInterestRate || 0;
+            const monthlyLoanPayment = currentLoanResults.monthlyLoanPayment || 0;
+            const totalMonthlyOutlay = currentLoanResults.totalMonthlyOutlay || 0;
+            const overallBoatCost = currentLoanResults.overallBoatCost || 0;
+
+            const shareText = `I calculated my boat loan! For a ${formatCurrency(boatPrice)} boat over ${loanTermYears} years at ${annualInterestRate.toFixed(2)}% interest, my estimated monthly payment is ${formatCurrency(monthlyLoanPayment)}, with a total monthly outlay of ${formatCurrency(totalMonthlyOutlay)}. The overall cost is ${formatCurrency(overallBoatCost)}. Calculate yours here:`;
+            
+            const shareUrl = window.location.href; // Current page URL
+            
+            document.getElementById('emailShare').onclick = () => {
+                window.open(`mailto:?subject=Boat Loan Calculation Results&body=${encodeURIComponent(shareText + ' ' + shareUrl)}`);
+            };
+            document.getElementById('whatsappShare').onclick = () => {
+                window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`);
+            };
+            document.getElementById('linkedinShare').onclick = () => {
+                window.open(`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent('Advanced Boat Loan Calculation')}&summary=${encodeURIComponent(shareText)}`);
+            };
+            document.getElementById('twitterShare').onclick = () => {
+                window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`);
+            };
+        }
+    </script>
+</body>
+</html>

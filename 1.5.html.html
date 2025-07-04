@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced APR Calculator</title>
+    <!-- 
+        Content-Security-Policy: For production deployment, configure this via your web server (e.g., Nginx, Apache) 
+        for best practice. If using a meta tag, ensure all CDN domains (Chart.js, jsPDF, SheetJS) are whitelisted.
+        For this single-file, self-contained solution, inline scripts/styles require 'unsafe-inline'.
+        Example for meta (adjust for your specific ad networks if they inject more):
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com cdn.jsdelivr.net cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src * data:; media-src *; connect-src *;">
+    -->
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        /* CSS Variables for theming */
+        :root {
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --danger: #e74c3c;
+            --dark-heading-bg: #2c3e50; /* Used for table headers in light mode */
+            --light-bg-secondary: #ecf0f1; /* Used for ad containers, tab non-active */
+            --text-color: #333;
+            --bg-color: #f9f9f9;
+            --card-bg: #fff;
+            --border-color: #ddd;
+            --chart-color-principal: #3498db; /* Blue */
+            --chart-color-interest: #e74c3c; /* Red */
+            --chart-color-fees: #f39c12; /* Orange */
+        }
+        
+        /* Dark Theme Variables */
+        [data-theme="dark"] {
+            --primary: #2980b9;
+            --secondary: #27ae60;
+            --danger: #c0392b;
+            --dark-heading-bg: #34495e; /* Adjusted for dark mode table headers */
+            --light-bg-secondary: #4a667e; /* Adjusted for dark mode ad containers/tabs */
+            --text-color: #ecf0f1;
+            --bg-color: #2c3e50;
+            --card-bg: #34495e;
+            --border-color: #555;
+            --chart-color-principal: #4a90e2; 
+            --chart-color-interest: #ff6b6b;
+            --chart-color-fees: #f9c26b;
+        }
+        
+        /* Global Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            transition: all 0.3s ease; /* Smooth transition for theme change */
+        }
+        
+        .calculator-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .calculator-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .input-section, .results-section {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1, h2, h3 {
+            color: var(--primary);
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            transition: border-color 0.3s, background-color 0.3s, color 0.3s;
+        }
+        
+        /* Buttons */
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--secondary);
+        }
+        
+        /* Ad Containers */
+        .ad-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--light-bg-secondary);
+            border-radius: 4px;
+            text-align: center;
+            min-height: 90px;
+            color: var(--text-color);
+            display: flex; /* For centering text */
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            border: 1px dashed var(--border-color);
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .summary-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .summary-card h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: var(--text-color); /* Use theme variable */
+        }
+        
+        .summary-card p {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: var(--primary); /* Use primary color */
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            color: var(--text-color);
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background-color: var(--dark-heading-bg); /* Use dark card bg for table headers */
+            color: white;
+        }
+        
+        tr:hover {
+            background-color: rgba(0,0,0,0.05); /* Light mode hover */
+        }
+        [data-theme="dark"] tr:hover {
+            background-color: rgba(255,255,255,0.05); /* Dark mode hover */
+        }
+        
+        /* Tooltips */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            color: var(--primary);
+            font-size: 0.9em;
+            margin-left: 5px;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 250px; /* Wider for more text */
+            background-color: var(--dark-heading-bg);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+            font-weight: normal;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Export & Share Options */
+        .export-options, .social-sharing {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .social-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 12px;
+            border-radius: 4px;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            transition: opacity 0.3s;
+        }
+        .social-btn:hover {
+            opacity: 0.8;
+        }
+        
+        .email { background-color: #777; }
+        .whatsapp { background-color: #25D366; }
+        .linkedin { background-color: #0077B5; }
+        .twitter { background-color: #1DA1F2; }
+        
+        /* Tabs (optional for APR, but kept for consistency if user wants more breakdown views later) */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: var(--light-bg-secondary);
+            border: none;
+            border-radius: 4px 4px 0 0;
+            margin-right: 5px;
+            color: var(--text-color);
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background-color: var(--primary);
+            color: white;
+            border-bottom: 2px solid var(--primary);
+        }
+        .tab:not(.active):hover {
+            background-color: rgba(var(--primary), 0.1); /* Subtle hover for non-active */
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: absolute; 
+            top: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 1.2em;
+            width: 40px; /* Fixed width/height for round button */
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        /* Error Messages */
+        .error-message {
+            color: var(--danger);
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        /* Print Specific Styles */
+        @media print {
+            .no-print, .ad-container, .theme-toggle {
+                display: none !important;
+            }
+            body {
+                background: none;
+                padding: 0;
+                color: black; /* Force black text for print */
+            }
+            .calculator-container {
+                display: block;
+            }
+            .input-section {
+                display: none; /* Hide input section in print */
+            }
+            .results-section {
+                box-shadow: none; /* Remove shadow for print */
+                padding: 0;
+            }
+            table {
+                font-size: 10px; /* Smaller font for print tables */
+                color: black;
+            }
+            th, td {
+                padding: 8px;
+                border-color: #ccc; /* Lighter border for print */
+            }
+            th {
+                background-color: #eee !important; /* Lighter header for print */
+                color: black !important;
+            }
+            tr:hover {
+                background-color: transparent !important;
+            }
+            .chart-container canvas {
+                max-width: 500px; /* Constrain chart size for print */
+                max-height: 300px;
+                display: block; /* Ensure chart is block level for print */
+                margin: 0 auto;
+            }
+            .summary-card h3, .summary-card p {
+                color: black !important; /* Ensure readable colors in print */
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle no-print" id="themeToggle">🌓</button>
+    
+    <h1>Advanced APR Calculator</h1>
+    
+    <div class="calculator-container">
+        <div class="input-section">
+            <h2>Loan Details & Fees</h2>
+            
+            <div class="input-group">
+                <label for="loanAmount">
+                    Loan Amount ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">The total principal amount borrowed.</span>
+                    </span>
+                </label>
+                <input type="number" id="loanAmount" min="100" step="100" value="10000">
+                <div class="error-message" id="loanAmount-error"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="nominalAnnualRate">
+                    Annual Nominal Interest Rate (%)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">The stated annual interest rate on the loan principal.</span>
+                    </span>
+                </label>
+                <input type="number" id="nominalAnnualRate" min="0" max="50" step="0.01" value="5">
+                <div class="error-message" id="nominalAnnualRate-error"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="loanTermYears">
+                    Loan Term (Years)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">The total duration of the loan in years.</span>
+                    </span>
+                </label>
+                <input type="number" id="loanTermYears" min="1" max="50" step="1" value="5">
+                <div class="error-message" id="loanTermYears-error"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="paymentFrequency">
+                    Payment Frequency
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">How often loan payments are made.</span>
+                    </span>
+                </label>
+                <select id="paymentFrequency">
+                    <option value="12" selected>Monthly</option>
+                    <option value="4">Quarterly</option>
+                    <option value="2">Semi-Annually</option>
+                    <option value="1">Annually</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label for="upfrontFees">
+                    Upfront Fees ($)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">Fees paid at loan closing (e.g., origination fees, closing costs). These reduce the actual amount you receive.</span>
+                    </span>
+                </label>
+                <input type="number" id="upfrontFees" min="0" step="10" value="100">
+                <div class="error-message" id="upfrontFees-error"></div>
+            </div>
+
+            <div class="input-group">
+                <label for="periodicFees">
+                    Periodic Fees ($ per period)
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">Fees added to each regular payment (e.g., monthly service charges).</span>
+                    </span>
+                </label>
+                <input type="number" id="periodicFees" min="0" step="1" value="0">
+                <div class="error-message" id="periodicFees-error"></div>
+            </div>
+            
+            <button id="calculateBtn">Calculate APR</button>
+        </div>
+        
+        <div class="results-section">
+            <h2>Calculation Results</h2>
+            
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <h3>Calculated APR</h3>
+                    <p id="calculatedAPR">0.00%</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Nominal Payment</h3>
+                    <p id="nominalPayment">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>APR-Adjusted Payment</h3>
+                    <p id="aprAdjustedPayment">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Interest Cost</h3>
+                    <p id="totalInterestCost">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Fees Cost</h3>
+                    <p id="totalFeesCost">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Loan Cost</h3>
+                    <p id="totalLoanCost">$0.00</p>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="loanCostChart"></canvas>
+            </div>
+            
+            <div class="ad-container">
+                Advertisement Space (e.g., Adsterra 728x90)
+                <small>This space is reserved for ad network code.</small>
+            </div>
+
+            <div class="export-options no-print">
+                <button id="printBtn">Print Summary</button>
+                <button id="pdfBtn">Save as PDF</button>
+                <button id="excelBtn">Save as Excel</button>
+                <button id="csvBtn">Save as CSV</button>
+                <button id="jsonBtn">Save as JSON</button>
+            </div>
+            
+            <div class="social-sharing no-print">
+                <a href="#" class="social-btn email" id="emailShare">Email</a>
+                <a href="#" class="social-btn whatsapp" id="whatsappShare">WhatsApp</a>
+                <a href="#" class="social-btn linkedin" id="linkedinShare">LinkedIn</a>
+                <a href="#" class="social-btn twitter" id="twitterShare">Twitter</a>
+            </div>
+
+            <div class="ad-container" style="height: 250px;">
+                Advertisement Space (e.g., Yllix 300x250)
+                <small>This space is reserved for ad network code.</small>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variable to store current calculation results for export
+        let currentCalculationResults = {};
+        let loanCostChartInstance = null; // To manage Chart.js instance
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up theme toggle
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+            
+            // Set up event listeners for calculation and exports
+            document.getElementById('calculateBtn').addEventListener('click', calculateAPR);
+            document.getElementById('printBtn').addEventListener('click', printSummary);
+            document.getElementById('pdfBtn').addEventListener('click', exportToPDF);
+            document.getElementById('excelBtn').addEventListener('click', exportToExcel);
+            document.getElementById('csvBtn').addEventListener('click', exportToCSV);
+            document.getElementById('jsonBtn').addEventListener('click', exportToJSON);
+            
+            // Initial calculation on page load
+            calculateAPR();
+            setupSocialSharing(); // Needs initial data
+        });
+        
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            }
+            // Update chart colors on theme change
+            if (loanCostChartInstance) {
+                const rootStyle = getComputedStyle(document.documentElement);
+                loanCostChartInstance.data.datasets[0].backgroundColor = [
+                    rootStyle.getPropertyValue('--chart-color-principal'),
+                    rootStyle.getPropertyValue('--chart-color-interest'),
+                    rootStyle.getPropertyValue('--chart-color-fees')
+                ];
+                loanCostChartInstance.options.plugins.legend.labels.color = rootStyle.getPropertyValue('--text-color');
+                loanCostChartInstance.options.plugins.title.color = rootStyle.getPropertyValue('--text-color');
+                loanCostChartInstance.update();
+            }
+        }
+        
+        // --- Error Handling Utilities ---
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+        }
+
+        function showError(elementId, message) {
+            document.getElementById(elementId + '-error').textContent = message;
+        }
+        
+        // --- Core APR Calculation Logic ---
+        function calculateAPR() {
+            clearErrors(); // Clear previous errors
+
+            // Get input values
+            const loanAmount = parseFloat(document.getElementById('loanAmount').value);
+            let nominalAnnualRate = parseFloat(document.getElementById('nominalAnnualRate').value);
+            const loanTermYears = parseInt(document.getElementById('loanTermYears').value);
+            const paymentFrequency = parseInt(document.getElementById('paymentFrequency').value);
+            const upfrontFees = parseFloat(document.getElementById('upfrontFees').value);
+            const periodicFees = parseFloat(document.getElementById('periodicFees').value);
+            
+            // Convert percentages to decimals
+            nominalAnnualRate /= 100;
+
+            // --- Input Validation ---
+            let isValid = true;
+            if (isNaN(loanAmount) || loanAmount <= 0) {
+                showError('loanAmount', 'Must be a positive number.'); isValid = false;
+            }
+            if (isNaN(nominalAnnualRate) || nominalAnnualRate < 0 || nominalAnnualRate > 1) { // 0-100%
+                showError('nominalAnnualRate', 'Must be between 0 and 100%.'); isValid = false;
+            }
+            if (isNaN(loanTermYears) || loanTermYears <= 0 || !Number.isInteger(loanTermYears)) {
+                showError('loanTermYears', 'Must be a positive whole number.'); isValid = false;
+            }
+            if (isNaN(upfrontFees) || upfrontFees < 0) {
+                showError('upfrontFees', 'Must be a non-negative number.'); isValid = false;
+            }
+            if (isNaN(periodicFees) || periodicFees < 0) {
+                showError('periodicFees', 'Must be a non-negative number.'); isValid = false;
+            }
+            // Check if upfront fees exceed loan amount
+            if (loanAmount <= upfrontFees) {
+                showError('upfrontFees', 'Upfront fees cannot be greater than or equal to loan amount.'); isValid = false;
+            }
+            
+            if (!isValid) {
+                document.getElementById('results-section').style.display = 'none';
+                return;
+            }
+
+            // Loan Parameters
+            const periods = loanTermYears * paymentFrequency;
+            const nominalPeriodicRate = nominalAnnualRate / paymentFrequency;
+            const amountFinanced = loanAmount - upfrontFees;
+
+            // Calculate Nominal Monthly Payment (P&I only)
+            let nominalPayment;
+            if (nominalPeriodicRate === 0) {
+                nominalPayment = loanAmount / periods;
+            } else {
+                nominalPayment = loanAmount * (nominalPeriodicRate * Math.pow(1 + nominalPeriodicRate, periods)) / 
+                                 (Math.pow(1 + nominalPeriodicRate, periods) - 1);
+            }
+            
+            // Total Payment per period (Nominal Payment + Periodic Fees)
+            const totalPaymentPerPeriod = nominalPayment + periodicFees;
+
+            // --- APR Calculation (Iterative Method) ---
+            let aprPeriodicRate = nominalPeriodicRate; // Start with nominal rate as initial guess
+            const tolerance = 0.0000001; // How close we need to get
+            const maxIterations = 1000;
+            let lowRate = 0;
+            let highRate = 1; // Max 100% periodic rate (very high, but a safe upper bound)
+
+            // Bisection method for finding APR
+            // We're looking for the rate 'r' such that PV(totalPaymentPerPeriod, r, periods) = amountFinanced
+            // Function f(r) = PV(totalPaymentPerPeriod, r, periods) - amountFinanced
+            // We want to find r where f(r) = 0
+            if (totalPaymentPerPeriod > 0) { // Avoid division by zero if payments are 0
+                for (let i = 0; i < maxIterations; i++) {
+                    const pvGuess = calculatePV(totalPaymentPerPeriod, aprPeriodicRate, periods);
+                    const diff = pvGuess - amountFinanced;
+
+                    if (Math.abs(diff) < tolerance) {
+                        break; // Found it!
+                    }
+
+                    if (diff > 0) { // Current PV is too high, means our rate is too low
+                        lowRate = aprPeriodicRate;
+                    } else { // Current PV is too low, means our rate is too high
+                        highRate = aprPeriodicRate;
+                    }
+
+                    if (highRate === lowRate) { // Avoid infinite loop if rates converge to each other
+                        break;
+                    }
+
+                    aprPeriodicRate = (lowRate + highRate) / 2; // New midpoint guess
+                }
+            } else { // No payments, APR is effectively 0 if amount financed is received, else undefined
+                 if (amountFinanced > 0) {
+                     aprPeriodicRate = Infinity; // Should not happen for a loan with payment
+                 } else {
+                     aprPeriodicRate = 0; // If loan is 0 or less than fees, and no payments.
+                 }
+            }
+
+
+            // Convert APR periodic rate back to annual percentage
+            const calculatedAPR = aprPeriodicRate * paymentFrequency * 100;
+
+            // Calculate total costs for display
+            const totalNominalPayments = nominalPayment * periods;
+            const totalPeriodicFees = periodicFees * periods;
+            const totalInterestCost = totalNominalPayments - loanAmount; // Interest from nominal calculation
+            const totalFeesCost = upfrontFees + totalPeriodicFees;
+            const totalLoanCost = loanAmount + totalInterestCost + totalFeesCost;
+
+            // Store results in global object for export
+            currentCalculationResults = {
+                loanAmount: loanAmount,
+                nominalAnnualRate: nominalAnnualRate * 100,
+                loanTermYears: loanTermYears,
+                paymentFrequency: paymentFrequency,
+                upfrontFees: upfrontFees,
+                periodicFees: periodicFees,
+                amountFinanced: amountFinanced,
+                nominalPayment: nominalPayment,
+                totalPaymentPerPeriod: totalPaymentPerPeriod,
+                calculatedAPR: calculatedAPR,
+                totalInterestCost: totalInterestCost,
+                totalFeesCost: totalFeesCost,
+                totalLoanCost: totalLoanCost,
+                periods: periods
+            };
+
+            // Update UI
+            updateSummaryCards(currentCalculationResults);
+            updateChart(currentCalculationResults);
+            setupSocialSharing(); // Update sharing links with new data
+
+            document.getElementById('results-section').style.display = 'block';
+        }
+
+        // Helper function to calculate Present Value
+        function calculatePV(payment, rate, periods) {
+            if (rate === 0) {
+                return payment * periods;
+            }
+            return payment * (1 - Math.pow(1 + rate, -periods)) / rate;
+        }
+        
+        // --- UI Update Functions ---
+        function updateSummaryCards(results) {
+            document.getElementById('calculatedAPR').textContent = `${formatPercentage(results.calculatedAPR)}`;
+            document.getElementById('nominalPayment').textContent = formatCurrency(results.nominalPayment);
+            document.getElementById('aprAdjustedPayment').textContent = formatCurrency(results.totalPaymentPerPeriod);
+            document.getElementById('totalInterestCost').textContent = formatCurrency(results.totalInterestCost);
+            document.getElementById('totalFeesCost').textContent = formatCurrency(results.totalFeesCost);
+            document.getElementById('totalLoanCost').textContent = formatCurrency(results.totalLoanCost);
+        }
+        
+        function updateChart(results) {
+            const ctx = document.getElementById('loanCostChart').getContext('2d');
+            
+            // Destroy previous chart if exists
+            if (loanCostChartInstance) {
+                loanCostChartInstance.destroy();
+            }
+
+            if (results.totalLoanCost <= 0) { // No meaningful data to chart
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                return;
+            }
+
+            const labels = ['Loan Amount', 'Total Interest', 'Total Fees'];
+            const data = [results.loanAmount, results.totalInterestCost, results.totalFeesCost];
+
+            // Filter out zero values for chart if they are not relevant for visual representation
+            const filteredLabels = [];
+            const filteredData = [];
+            const backgroundColors = [];
+            const rootStyle = getComputedStyle(document.documentElement);
+            const chartColors = [
+                rootStyle.getPropertyValue('--chart-color-principal'),
+                rootStyle.getPropertyValue('--chart-color-interest'),
+                rootStyle.getPropertyValue('--chart-color-fees')
+            ];
+
+            for(let i = 0; i < data.length; i++) {
+                if (Math.abs(data[i]) > 0.01) { // Filter out very small values (near zero)
+                    filteredData.push(data[i]);
+                    filteredLabels.push(labels[i]);
+                    backgroundColors.push(chartColors[i]);
+                }
+            }
+
+            loanCostChartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: filteredLabels,
+                    datasets: [{
+                        data: filteredData,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: rootStyle.getPropertyValue('--text-color')
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                    return `${context.label}: ${formatCurrency(value)} (${percentage}%)`;
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Total Loan Cost Breakdown',
+                            color: rootStyle.getPropertyValue('--text-color')
+                        }
+                    }
+                }
+            });
+        }
+        
+        // --- Formatting Utilities ---
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        }
+
+        function formatPercentage(value) {
+            return value.toFixed(2) + '%';
+        }
+        
+        // --- Export Functions ---
+        function printSummary() {
+            window.print();
+        }
+        
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'pt', 'letter');
+            let currentY = 40;
+            const margin = 40;
+            const pageWidth = doc.internal.pageSize.width;
+
+            doc.setFontSize(18);
+            doc.text('APR Calculation Report', pageWidth / 2, currentY, { align: 'center' });
+            currentY += 30;
+
+            doc.setFontSize(12);
+            doc.text(`Calculated On: ${new Date().toLocaleDateString()}`, margin, currentY);
+            currentY += 20;
+
+            // Input Details
+            const inputDetails = [
+                ["Loan Amount", formatCurrency(currentCalculationResults.loanAmount)],
+                ["Annual Nominal Rate", formatPercentage(currentCalculationResults.nominalAnnualRate)],
+                ["Loan Term (Years)", currentCalculationResults.loanTermYears],
+                ["Payment Frequency", document.getElementById('paymentFrequency').options[document.getElementById('paymentFrequency').selectedIndex].text],
+                ["Upfront Fees", formatCurrency(currentCalculationResults.upfrontFees)],
+                ["Periodic Fees (per period)", formatCurrency(currentCalculationResults.periodicFees)]
+            ];
+            doc.autoTable({
+                startY: currentY,
+                head: [['Parameter', 'Value']],
+                body: inputDetails,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                margin: { left: margin, right: margin }
+            });
+            currentY = doc.autoTable.previous.finalY + 20;
+
+            // Summary Results
+            const summaryResults = [
+                ["Calculated APR", formatPercentage(currentCalculationResults.calculatedAPR)],
+                ["Nominal Payment", formatCurrency(currentCalculationResults.nominalPayment)],
+                ["APR-Adjusted Payment", formatCurrency(currentCalculationResults.totalPaymentPerPeriod)],
+                ["Total Interest Cost", formatCurrency(currentCalculationResults.totalInterestCost)],
+                ["Total Fees Cost", formatCurrency(currentCalculationResults.totalFeesCost)],
+                ["Total Loan Cost", formatCurrency(currentCalculationResults.totalLoanCost)]
+            ];
+            doc.autoTable({
+                startY: currentY,
+                head: [['Result', 'Value']],
+                body: summaryResults,
+                theme: 'grid',
+                headStyles: { fillColor: [46, 204, 113], textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 5 },
+                margin: { left: margin, right: margin }
+            });
+            currentY = doc.autoTable.previous.finalY + 30;
+            
+            doc.save('apr_report.pdf');
+        }
+        
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+            
+            // Sheet 1: Summary
+            const summaryData = [
+                ["APR Calculation Report", ""],
+                ["Calculated On", new Date().toLocaleDateString()],
+                [],
+                ["Input Details", ""],
+                ["Loan Amount", currentCalculationResults.loanAmount],
+                ["Annual Nominal Rate", `${currentCalculationResults.nominalAnnualRate}%`],
+                ["Loan Term (Years)", currentCalculationResults.loanTermYears],
+                ["Payment Frequency", document.getElementById('paymentFrequency').options[document.getElementById('paymentFrequency').selectedIndex].text],
+                ["Upfront Fees", currentCalculationResults.upfrontFees],
+                ["Periodic Fees (per period)", currentCalculationResults.periodicFees],
+                [],
+                ["Results", ""],
+                ["Calculated APR", `${currentCalculationResults.calculatedAPR.toFixed(2)}%`],
+                ["Nominal Payment", currentCalculationResults.nominalPayment.toFixed(2)],
+                ["APR-Adjusted Payment", currentCalculationResults.totalPaymentPerPeriod.toFixed(2)],
+                ["Total Interest Cost", currentCalculationResults.totalInterestCost.toFixed(2)],
+                ["Total Fees Cost", currentCalculationResults.totalFeesCost.toFixed(2)],
+                ["Total Loan Cost", currentCalculationResults.totalLoanCost.toFixed(2)]
+            ];
+            const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, summaryWs, "APR Summary");
+            
+            XLSX.writeFile(wb, 'apr_report.xlsx');
+        }
+        
+        function exportToCSV() {
+            let csvContent = "";
+
+            // Summary data
+            csvContent += "APR Calculation Report\n";
+            csvContent += `"Calculated On","${new Date().toLocaleDateString()}"\n\n`;
+            csvContent += `"Input Details",\n`;
+            csvContent += `"Loan Amount",${currentCalculationResults.loanAmount}\n`;
+            csvContent += `"Annual Nominal Rate",${currentCalculationResults.nominalAnnualRate}%\n`;
+            csvContent += `"Loan Term (Years)",${currentCalculationResults.loanTermYears}\n`;
+            csvContent += `"Payment Frequency","${document.getElementById('paymentFrequency').options[document.getElementById('paymentFrequency').selectedIndex].text}"\n`;
+            csvContent += `"Upfront Fees",${currentCalculationResults.upfrontFees}\n`;
+            csvContent += `"Periodic Fees (per period)",${currentCalculationResults.periodicFees}\n\n`;
+            csvContent += `"Results",\n`;
+            csvContent += `"Calculated APR","${currentCalculationResults.calculatedAPR.toFixed(2)}%""\n`;
+            csvContent += `"Nominal Payment","${currentCalculationResults.nominalPayment.toFixed(2)}"\n`;
+            csvContent += `"APR-Adjusted Payment","${currentCalculationResults.totalPaymentPerPeriod.toFixed(2)}"\n`;
+            csvContent += `"Total Interest Cost","${currentCalculationResults.totalInterestCost.toFixed(2)}"\n`;
+            csvContent += `"Total Fees Cost","${currentCalculationResults.totalFeesCost.toFixed(2)}"\n`;
+            csvContent += `"Total Loan Cost","${currentCalculationResults.totalLoanCost.toFixed(2)}"\n`;
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'apr_report.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function exportToJSON() {
+            const jsonContent = JSON.stringify(currentCalculationResults, null, 2); // Pretty print JSON
+            const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'apr_report.json');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        function setupSocialSharing() {
+            const loanAmount = currentCalculationResults.loanAmount || 0;
+            const nominalRate = currentCalculationResults.nominalAnnualRate || 0;
+            const loanTerm = currentCalculationResults.loanTermYears || 0;
+            const apr = currentCalculationResults.calculatedAPR || 0;
+            const totalCost = currentCalculationResults.totalLoanCost || 0;
+
+            const shareText = `I calculated my loan's APR! For a $${loanAmount.toLocaleString('en-US')} loan at ${nominalRate.toFixed(2)}% over ${loanTerm} years, the APR is ${apr.toFixed(2)}%, and the total cost is ${formatCurrency(totalCost)}. Calculate yours here:`;
+            
+            const shareUrl = window.location.href; // Current page URL
+            
+            document.getElementById('emailShare').href = `mailto:?subject=APR Calculation Results&body=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
+            document.getElementById('whatsappShare').href = `https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
+            document.getElementById('linkedinShare').href = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent('Advanced APR Calculation')}&summary=${encodeURIComponent(shareText)}`;
+            document.getElementById('twitterShare').href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+        }
+    </script>
+</body>
+</html>
